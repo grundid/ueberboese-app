@@ -457,7 +457,7 @@ void main() {
       expect(find.byIcon(Icons.wifi_off), findsOneWidget);
     });
 
-    testWidgets('applies gray background to disconnected speaker cards',
+    testWidgets('applies error container background to disconnected speaker cards',
         (WidgetTester tester) async {
       final appState = MyAppState();
       await appState.initializeSpeakers();
@@ -482,22 +482,17 @@ void main() {
 
       await tester.pump();
 
-      // Find the Container that should have gray background
-      final containerFinder = find.descendant(
-        of: find.byType(Card),
-        matching: find.byType(Container),
+      // Find the Card that should have errorContainer background
+      final cardFinder = find.ancestor(
+        of: find.text('Test Speaker'),
+        matching: find.byType(Card),
       );
 
-      expect(containerFinder, findsWidgets);
+      expect(cardFinder, findsOneWidget);
 
-      // Verify at least one container has a gray color (disconnected state)
-      final containers = tester.widgetList<Container>(containerFinder);
-      final hasGrayContainer = containers.any((container) {
-        final color = container.color;
-        return color != null && (color.a * 255.0).round() > 0;
-      });
-
-      expect(hasGrayContainer, isTrue);
+      // Verify the card has a color set (errorContainer for disconnected state)
+      final card = tester.widget<Card>(cardFinder);
+      expect(card.color, isNotNull);
     });
 
     testWidgets('card uses Stack for layering',

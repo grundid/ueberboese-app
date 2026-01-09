@@ -844,6 +844,7 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
             const SizedBox(height: 32),
             // Volume Control Section
             Card(
+              elevation: 1,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -952,6 +953,7 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
             const SizedBox(height: 16),
             // Multi-Room Zone Section
             Card(
+              elevation: 1,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -1247,6 +1249,7 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
             const SizedBox(height: 16),
             // Now Playing Section
             Card(
+              elevation: 1,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(

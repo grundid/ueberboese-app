@@ -118,6 +118,7 @@ class _RemoteControlPageState extends State<RemoteControlPage> {
       onTapUp: (_) => _sendKeyRelease(keyValue),
       onTapCancel: () => _sendKeyRelease(keyValue),
       child: Material(
+        elevation: 2,
         color: Theme.of(context).colorScheme.primary,
         borderRadius: BorderRadius.circular(20),
         child: InkWell(

@@ -112,6 +112,7 @@ class _PresetsPageState extends State<PresetsPage> {
             itemBuilder: (context, index) {
               final preset = presets[index];
               return Card(
+                elevation: 1,
                 margin: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 8,
@@ -169,13 +170,6 @@ class _PresetsPageState extends State<PresetsPage> {
                                 topRight: Radius.circular(8),
                                 bottomRight: Radius.circular(8),
                               ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: theme.colorScheme.shadow.withValues(alpha: 0.2),
-                                  blurRadius: 4,
-                                  offset: const Offset(2, 2),
-                                ),
-                              ],
                             ),
                             child: Center(
                               child: Text(

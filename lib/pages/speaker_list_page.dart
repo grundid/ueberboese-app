@@ -393,10 +393,12 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
           final cardTheme = Theme.of(context);
 
           return Card(
+            elevation: 1,
             margin: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 8,
             ),
+            color: !isConnected ? cardTheme.colorScheme.errorContainer : null,
             clipBehavior: Clip.antiAlias,
             child: Stack(
               children: [
@@ -420,7 +422,7 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
                               children: [
                                 child,
                                 Container(
-                                  color: cardTheme.colorScheme.scrim.withValues(alpha: 0.6),
+                                  color: cardTheme.colorScheme.scrim.withValues(alpha: 0.5),
                                 ),
                               ],
                             );
@@ -430,9 +432,7 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
                     ),
                   ),
                 // Actual content
-                Container(
-                  color: !isConnected ? cardTheme.colorScheme.surfaceContainerHighest : null,
-                  child: ListTile(
+                ListTile(
                     leading: Text(
                       speaker.emoji,
                       style: Theme.of(context).textTheme.headlineMedium,
@@ -441,7 +441,11 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
                       speaker.name,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: isPlaying && hasArtwork ? cardTheme.colorScheme.surface : null,
+                        color: isPlaying && hasArtwork
+                          ? cardTheme.colorScheme.surface
+                          : !isConnected
+                            ? cardTheme.colorScheme.onErrorContainer
+                            : null,
                       ),
                     ),
                     subtitle: Row(
@@ -453,7 +457,9 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: isPlaying && hasArtwork
                                   ? cardTheme.colorScheme.surface
-                                  : Theme.of(context).colorScheme.secondary,
+                                  : !isConnected
+                                    ? cardTheme.colorScheme.onErrorContainer
+                                    : Theme.of(context).colorScheme.secondary,
                             ),
                           ),
                         ),
@@ -462,7 +468,7 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
                           Icon(
                             Icons.wifi_off,
                             size: 16,
-                            color: cardTheme.colorScheme.error,
+                            color: cardTheme.colorScheme.onErrorContainer,
                           ),
                         ],
                       ],
@@ -482,7 +488,6 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
                       );
                     },
                   ),
-                ),
               ],
             ),
           );
@@ -518,7 +523,7 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Material(
-                      elevation: 4,
+                      elevation: 3,
                       borderRadius: BorderRadius.circular(8),
                       color: theme.colorScheme.surface,
                       child: Padding(
@@ -555,7 +560,7 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Material(
-                      elevation: 4,
+                      elevation: 3,
                       borderRadius: BorderRadius.circular(8),
                       color: theme.colorScheme.surface,
                       child: Padding(

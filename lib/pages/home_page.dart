@@ -33,8 +33,9 @@ class _HomePageState extends State<HomePage> {
         throw UnimplementedError('no widget for $selectedIndex');
     }
 
-    final mainArea = ColoredBox(
-      color: colorScheme.surfaceContainerHighest,
+    final mainArea = Material(
+      elevation: 0,
+      color: colorScheme.surface,
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 200),
         child: page,
