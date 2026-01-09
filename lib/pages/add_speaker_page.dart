@@ -218,6 +218,7 @@ class _AddSpeakerPageState extends State<AddSpeakerPage> {
                 const SizedBox(height: 16),
                 // Emoji Selector
                 Card(
+                  elevation: 1,
                   child: InkWell(
                     onTap: _isLoading
                         ? null
@@ -285,6 +286,7 @@ class _AddSpeakerPageState extends State<AddSpeakerPage> {
                 const SizedBox(height: 16),
                 // Info text
                 Card(
+                  elevation: 1,
                   color: theme.colorScheme.surfaceContainerHighest,
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -313,6 +315,7 @@ class _AddSpeakerPageState extends State<AddSpeakerPage> {
               color: theme.colorScheme.scrim.withValues(alpha: 0.6),
               child: const Center(
                 child: Card(
+                  elevation: 1,
                   child: Padding(
                     padding: EdgeInsets.all(24.0),
                     child: Column(

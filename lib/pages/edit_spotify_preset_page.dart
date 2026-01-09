@@ -413,6 +413,7 @@ class _EditSpotifyPresetPageState extends State<EditSpotifyPresetPage> {
             children: [
             if (_decodingError != null) ...[
               Card(
+                elevation: 1,
                 color: theme.colorScheme.errorContainer,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -505,6 +506,7 @@ class _EditSpotifyPresetPageState extends State<EditSpotifyPresetPage> {
               )
             else if (_entityFetchError != null)
               Card(
+                elevation: 1,
                 color: theme.colorScheme.secondaryContainer,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -532,6 +534,7 @@ class _EditSpotifyPresetPageState extends State<EditSpotifyPresetPage> {
             // Spotify Account Dropdown
             if (_isLoadingAccounts)
               const Card(
+                elevation: 1,
                 child: Padding(
                   padding: EdgeInsets.all(16.0),
                   child: Row(
@@ -549,6 +552,7 @@ class _EditSpotifyPresetPageState extends State<EditSpotifyPresetPage> {
               )
             else if (_accountsFetchError != null)
               Card(
+                elevation: 1,
                 color: theme.colorScheme.errorContainer,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),

@@ -203,6 +203,7 @@ class _EditInternetRadioPresetPageState extends State<EditInternetRadioPresetPag
               ),
               const SizedBox(height: 24),
               Card(
+                elevation: 1,
                 color: theme.colorScheme.secondaryContainer,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),

@@ -104,6 +104,7 @@ class _EditSpeakerPageState extends State<EditSpeakerPage> {
           const SizedBox(height: 16),
           // Emoji Selector
           Card(
+            elevation: 1,
             child: InkWell(
               onTap: () {
                 setState(() {
@@ -134,6 +135,7 @@ class _EditSpeakerPageState extends State<EditSpeakerPage> {
           // Emoji Grid
           if (_showEmojiSelector)
             Card(
+              elevation: 1,
               child: EmojiSelector(
                 selectedEmoji: _selectedEmoji,
                 onEmojiSelected: (emoji) {
@@ -147,6 +149,7 @@ class _EditSpeakerPageState extends State<EditSpeakerPage> {
           if (_showEmojiSelector) const SizedBox(height: 24),
           // Editable Speaker Name
           Card(
+            elevation: 1,
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: TextField(
@@ -166,6 +169,7 @@ class _EditSpeakerPageState extends State<EditSpeakerPage> {
           const SizedBox(height: 16),
           // Read-only Speaker Type
           Card(
+            elevation: 1,
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -189,6 +193,7 @@ class _EditSpeakerPageState extends State<EditSpeakerPage> {
           const SizedBox(height: 16),
           // Read-only IP Address
           Card(
+            elevation: 1,
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -212,6 +217,7 @@ class _EditSpeakerPageState extends State<EditSpeakerPage> {
           const SizedBox(height: 16),
           // Read-only Device ID
           Card(
+            elevation: 1,
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
