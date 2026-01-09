@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:ueberboese_app/models/speaker.dart';
 import 'package:ueberboese_app/models/app_config.dart';
@@ -40,6 +41,21 @@ class MyApp extends StatelessWidget {
           ),
         ),
         themeMode: ThemeMode.system,
+        builder: (context, child) {
+          // Configure system navigation bar based on theme brightness
+          final brightness = Theme.of(context).brightness;
+          return AnnotatedRegion<SystemUiOverlayStyle>(
+            value: SystemUiOverlayStyle(
+              systemNavigationBarColor: brightness == Brightness.dark
+                  ? Colors.black
+                  : Colors.white,
+              systemNavigationBarIconBrightness: brightness == Brightness.dark
+                  ? Brightness.light
+                  : Brightness.dark,
+            ),
+            child: child!,
+          );
+        },
         home: const HomePage(),
       ),
     );

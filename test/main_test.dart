@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ueberboese_app/main.dart';
@@ -50,6 +51,39 @@ void main() {
       appState.addSpeaker(newSpeaker);
 
       expect(notified, true);
+    });
+  });
+
+  group('MyApp', () {
+    testWidgets('builds correctly in light mode',
+        (WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final appState = MyAppState();
+      await appState.initialize();
+
+      await tester.pumpWidget(MyApp(appState: appState));
+      await tester.pumpAndSettle();
+
+      // Verify that the app builds without errors
+      expect(find.byType(MaterialApp), findsOneWidget);
+    });
+
+    testWidgets('builds correctly in dark mode',
+        (WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final appState = MyAppState();
+      await appState.initialize();
+
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(platformBrightness: Brightness.dark),
+          child: MyApp(appState: appState),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Verify that the app builds without errors in dark mode
+      expect(find.byType(MaterialApp), findsOneWidget);
     });
   });
 }
