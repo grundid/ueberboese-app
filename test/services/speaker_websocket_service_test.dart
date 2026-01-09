@@ -29,6 +29,19 @@ void main() {
       service.dispose();
     });
 
+    test('zone update stream is available', () async {
+      final service = SpeakerWebsocketService('192.168.1.100');
+
+      final zoneUpdates = <void>[];
+      service.zoneStream.listen((_) {
+        zoneUpdates.add(null);
+      });
+
+      // Note: Fully testing zone update parsing would require mocking the WebSocket channel
+      // For now, this test verifies the zone stream can be created and listened to
+      service.dispose();
+    });
+
     test('creates service with correct IP address', () {
       final service = SpeakerWebsocketService('192.168.1.100');
       expect(service.ipAddress, equals('192.168.1.100'));
@@ -46,6 +59,7 @@ void main() {
 
       bool volumeStreamClosed = false;
       bool nowPlayingStreamClosed = false;
+      bool zoneStreamClosed = false;
 
       service.volumeStream.listen(
         (_) {},
@@ -61,6 +75,13 @@ void main() {
         },
       );
 
+      service.zoneStream.listen(
+        (_) {},
+        onDone: () {
+          zoneStreamClosed = true;
+        },
+      );
+
       service.dispose();
 
       // Wait a bit for the streams to close
@@ -68,6 +89,7 @@ void main() {
 
       expect(volumeStreamClosed, isTrue);
       expect(nowPlayingStreamClosed, isTrue);
+      expect(zoneStreamClosed, isTrue);
     });
 
     test('disconnect prevents reconnection', () async {

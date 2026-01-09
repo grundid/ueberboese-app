@@ -32,6 +32,7 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
   SpeakerWebsocketService? _websocketService;
   StreamSubscription<Volume>? _volumeSubscription;
   StreamSubscription<NowPlaying>? _nowPlayingSubscription;
+  StreamSubscription<void>? _zoneSubscription;
 
   Volume? _currentVolume;
   NowPlaying? _nowPlaying;
@@ -95,6 +96,18 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
       },
     );
 
+    // Subscribe to zone updates
+    _zoneSubscription = _websocketService!.zoneStream.listen(
+      (_) {
+        if (!mounted) return;
+        // Refresh zone data when zone update is received
+        _loadZone();
+      },
+      onError: (error) {
+        // Errors are logged in the service
+      },
+    );
+
     // Connect to the WebSocket
     _websocketService!.connect();
   }
@@ -103,6 +116,7 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
   void dispose() {
     _volumeSubscription?.cancel();
     _nowPlayingSubscription?.cancel();
+    _zoneSubscription?.cancel();
     _websocketService?.dispose();
     super.dispose();
   }

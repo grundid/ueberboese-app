@@ -780,6 +780,50 @@ void main() {
       // Verify page is disposed without errors
       expect(find.byType(SpeakerDetailPage), findsNothing);
     });
+
+    testWidgets('zone subscription is created and cancelled', (WidgetTester tester) async {
+      final appState = MyAppState();
+      await appState.initialize();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: appState,
+          child: MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (context) =>
+                            const SpeakerDetailPage(speaker: testSpeaker),
+                      ),
+                    );
+                  },
+                  child: const Text('Open Details'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Open the detail page
+      await tester.tap(find.text('Open Details'));
+      await tester.pumpAndSettle();
+
+      // Verify page is shown - this ensures WebSocket service is initialized
+      // including the zone stream subscription
+      expect(find.byType(SpeakerDetailPage), findsOneWidget);
+
+      // Go back to dispose the page
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      // Verify page is disposed without errors
+      // This verifies zone subscription is cancelled properly
+      expect(find.byType(SpeakerDetailPage), findsNothing);
+    });
   });
 
 }

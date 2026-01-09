@@ -10,6 +10,7 @@ class SpeakerWebsocketService {
   WebSocketChannel? _channel;
   final _volumeController = StreamController<Volume>.broadcast();
   final _nowPlayingController = StreamController<NowPlaying>.broadcast();
+  final _zoneController = StreamController<void>.broadcast();
   StreamSubscription<dynamic>? _messageSubscription;
   bool _isConnected = false;
   bool _isDisposed = false;
@@ -22,6 +23,7 @@ class SpeakerWebsocketService {
 
   Stream<Volume> get volumeStream => _volumeController.stream;
   Stream<NowPlaying> get nowPlayingStream => _nowPlayingController.stream;
+  Stream<void> get zoneStream => _zoneController.stream;
 
   bool get isConnected => _isConnected;
 
@@ -80,8 +82,14 @@ class SpeakerWebsocketService {
         _handleNowPlayingUpdate(nowPlayingUpdatedElements.first);
       }
 
+      // Check for zone updates
+      final zoneUpdatedElements = updatesElement.findElements('zoneUpdated');
+      if (zoneUpdatedElements.isNotEmpty) {
+        _handleZoneUpdate();
+      }
+
       // Check for other update types and log them
-      final knownTypes = {'volumeUpdated', 'nowPlayingUpdated'};
+      final knownTypes = {'volumeUpdated', 'nowPlayingUpdated', 'zoneUpdated'};
       final childElements = updatesElement.childElements;
       for (final child in childElements) {
         if (!knownTypes.contains(child.name.local)) {
@@ -227,6 +235,18 @@ class SpeakerWebsocketService {
     }
   }
 
+  void _handleZoneUpdate() {
+    try {
+      debugPrint('[WebSocket] Zone update received');
+
+      if (!_zoneController.isClosed) {
+        _zoneController.add(null);
+      }
+    } catch (e) {
+      debugPrint('[WebSocket] Error handling zone update: $e');
+    }
+  }
+
   void _handleError(Object error) {
     debugPrint('[WebSocket] Stream error: $error');
     _isConnected = false;
@@ -278,5 +298,6 @@ class SpeakerWebsocketService {
     disconnect();
     _volumeController.close();
     _nowPlayingController.close();
+    _zoneController.close();
   }
 }
