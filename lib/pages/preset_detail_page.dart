@@ -323,10 +323,15 @@ class _PresetDetailPageState extends State<PresetDetailPage> with SingleTickerPr
         ),
           ),
           if (_isFabExpanded)
-            GestureDetector(
-              onTap: _closeFab,
-              child: Container(
-                color: theme.colorScheme.scrim.withValues(alpha: 0.4),
+            Positioned.fill(
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: GestureDetector(
+                  onTap: _closeFab,
+                  child: Container(
+                    color: theme.colorScheme.scrim.withValues(alpha: 0.4),
+                  ),
+                ),
               ),
             ),
         ],
@@ -346,7 +351,7 @@ class _PresetDetailPageState extends State<PresetDetailPage> with SingleTickerPr
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Material(
-                            elevation: 4,
+                            elevation: 3,
                             borderRadius: BorderRadius.circular(8),
                             color: theme.colorScheme.surface,
                             child: Padding(
@@ -383,7 +388,7 @@ class _PresetDetailPageState extends State<PresetDetailPage> with SingleTickerPr
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Material(
-                            elevation: 4,
+                            elevation: 3,
                             borderRadius: BorderRadius.circular(8),
                             color: theme.colorScheme.surface,
                             child: Padding(

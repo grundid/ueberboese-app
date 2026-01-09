@@ -422,7 +422,7 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
                               children: [
                                 child,
                                 Container(
-                                  color: cardTheme.colorScheme.scrim.withValues(alpha: 0.5),
+                                  color: cardTheme.colorScheme.scrim.withValues(alpha: 0.4),
                                 ),
                               ],
                             );
@@ -500,10 +500,15 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
         children: [
           content,
           if (_isFabExpanded)
-            GestureDetector(
-              onTap: _closeFab,
-              child: Container(
-                color: theme.colorScheme.scrim.withValues(alpha: 0.4),
+            Positioned.fill(
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: GestureDetector(
+                  onTap: _closeFab,
+                  child: Container(
+                    color: theme.colorScheme.scrim.withValues(alpha: 0.4),
+                  ),
+                ),
               ),
             ),
         ],

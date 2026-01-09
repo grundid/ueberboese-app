@@ -353,9 +353,9 @@ class _SpotifyPresetDetailPageState extends State<SpotifyPresetDetailPage> with 
       body: Stack(
         children: [
           SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
             if (widget.preset.containerArt != null && widget.preset.containerArt!.isNotEmpty)
               Center(
                 child: Padding(
@@ -477,10 +477,15 @@ class _SpotifyPresetDetailPageState extends State<SpotifyPresetDetailPage> with 
         ),
           ),
           if (_isFabExpanded)
-            GestureDetector(
-              onTap: _closeFab,
-              child: Container(
-                color: theme.colorScheme.scrim.withValues(alpha: 0.4),
+            Positioned.fill(
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: GestureDetector(
+                  onTap: _closeFab,
+                  child: Container(
+                    color: theme.colorScheme.scrim.withValues(alpha: 0.4),
+                  ),
+                ),
               ),
             ),
         ],
@@ -500,7 +505,7 @@ class _SpotifyPresetDetailPageState extends State<SpotifyPresetDetailPage> with 
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Material(
-                            elevation: 4,
+                            elevation: 3,
                             borderRadius: BorderRadius.circular(8),
                             color: theme.colorScheme.surface,
                             child: Padding(
@@ -537,7 +542,7 @@ class _SpotifyPresetDetailPageState extends State<SpotifyPresetDetailPage> with 
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Material(
-                            elevation: 4,
+                            elevation: 3,
                             borderRadius: BorderRadius.circular(8),
                             color: theme.colorScheme.surface,
                             child: Padding(
