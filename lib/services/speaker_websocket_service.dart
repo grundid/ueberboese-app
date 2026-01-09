@@ -33,7 +33,7 @@ class SpeakerWebsocketService {
       final uri = Uri.parse('ws://$ipAddress:8080');
       debugPrint('[WebSocket] Connecting to $uri');
 
-      _channel = WebSocketChannel.connect(uri);
+      _channel = WebSocketChannel.connect(uri, protocols: ['gabbo']);
       _isConnected = true;
       _reconnectAttempts = 0;
 
