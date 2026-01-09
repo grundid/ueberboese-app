@@ -7,6 +7,7 @@ import 'package:ueberboese_app/services/speaker_api_service.dart';
 import 'package:ueberboese_app/services/spotify_api_service.dart';
 import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/pages/edit_spotify_preset_page.dart';
+import 'package:ueberboese_app/pages/edit_tunein_preset_page.dart';
 
 class SpotifyPresetDetailPage extends StatefulWidget {
   final Preset preset;
@@ -22,7 +23,7 @@ class SpotifyPresetDetailPage extends StatefulWidget {
   State<SpotifyPresetDetailPage> createState() => _SpotifyPresetDetailPageState();
 }
 
-class _SpotifyPresetDetailPageState extends State<SpotifyPresetDetailPage> {
+class _SpotifyPresetDetailPageState extends State<SpotifyPresetDetailPage> with SingleTickerProviderStateMixin {
   final _speakerApiService = SpeakerApiService();
   late final SpotifyApiService _spotifyApiService;
   bool _isDeleting = false;
@@ -31,6 +32,10 @@ class _SpotifyPresetDetailPageState extends State<SpotifyPresetDetailPage> {
   String? _accountDisplayName;
   bool _isLoadingAccount = false;
   String? _accountFetchError;
+  bool _isFabExpanded = false;
+  late AnimationController _animationController;
+  late Animation<double> _rotationAnimation;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
@@ -43,8 +48,46 @@ class _SpotifyPresetDetailPageState extends State<SpotifyPresetDetailPage> {
           password: config.mgmtPassword,
         );
 
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+    _rotationAnimation = Tween<double>(begin: 0, end: 0.125).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    );
+
     _decodeSpotifyUri();
     _fetchSpotifyAccount();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _toggleFab() {
+    setState(() {
+      _isFabExpanded = !_isFabExpanded;
+      if (_isFabExpanded) {
+        _animationController.forward();
+      } else {
+        _animationController.reverse();
+      }
+    });
+  }
+
+  void _closeFab() {
+    if (_isFabExpanded) {
+      setState(() {
+        _isFabExpanded = false;
+        _animationController.reverse();
+      });
+    }
   }
 
   void _decodeSpotifyUri() {
@@ -245,11 +288,22 @@ class _SpotifyPresetDetailPageState extends State<SpotifyPresetDetailPage> {
     );
   }
 
-  void _onEditPressed() {
+  void _onEditSpotify() {
+    _closeFab();
     Navigator.push(
       context,
       MaterialPageRoute<void>(
         builder: (context) => EditSpotifyPresetPage(preset: widget.preset),
+      ),
+    );
+  }
+
+  void _onEditTuneIn() {
+    _closeFab();
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (context) => EditTuneInPresetPage(preset: widget.preset),
       ),
     );
   }
@@ -296,7 +350,9 @@ class _SpotifyPresetDetailPageState extends State<SpotifyPresetDetailPage> {
             ),
         ],
       ),
-      body: SingleChildScrollView(
+      body: Stack(
+        children: [
+          SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -419,11 +475,105 @@ class _SpotifyPresetDetailPageState extends State<SpotifyPresetDetailPage> {
             ),
           ],
         ),
+          ),
+          if (_isFabExpanded)
+            GestureDetector(
+              onTap: _closeFab,
+              child: Container(
+                color: theme.colorScheme.scrim.withValues(alpha: 0.4),
+              ),
+            ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _onEditPressed,
-        child: const Icon(Icons.edit),
-      ),
+      floatingActionButton: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                // Sub-FAB 2: TuneIn
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: ScaleTransition(
+                    scale: _fadeAnimation,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Material(
+                            elevation: 4,
+                            borderRadius: BorderRadius.circular(8),
+                            color: theme.colorScheme.surface,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              child: Text(
+                                'TuneIn',
+                                style: theme.textTheme.bodyMedium,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          FloatingActionButton.small(
+                            heroTag: 'edit_tunein_fab',
+                            onPressed: _onEditTuneIn,
+                            tooltip: 'Edit as TuneIn',
+                            child: const Icon(Icons.podcasts),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // Sub-FAB 1: Spotify
+                FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: ScaleTransition(
+                    scale: _fadeAnimation,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Material(
+                            elevation: 4,
+                            borderRadius: BorderRadius.circular(8),
+                            color: theme.colorScheme.surface,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              child: Text(
+                                'Spotify',
+                                style: theme.textTheme.bodyMedium,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          FloatingActionButton.small(
+                            heroTag: 'edit_spotify_fab',
+                            onPressed: _onEditSpotify,
+                            tooltip: 'Edit as Spotify',
+                            child: const Icon(Icons.audiotrack),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                // Main FAB
+                RotationTransition(
+                  turns: _rotationAnimation,
+                  child: FloatingActionButton(
+                    onPressed: _toggleFab,
+                    tooltip: 'Edit preset',
+                    child: Icon(_isFabExpanded ? Icons.close : Icons.edit),
+                  ),
+                ),
+              ],
+            ),
     );
   }
 

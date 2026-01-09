@@ -159,7 +159,7 @@ void main() {
       expect(find.text('Location'), findsOneWidget);
     });
 
-    testWidgets('displays FAB with edit icon', (WidgetTester tester) async {
+    testWidgets('displays FABs with edit icon', (WidgetTester tester) async {
       const testPreset = Preset(
         id: '1',
         itemName: 'Test',
@@ -181,11 +181,13 @@ void main() {
         ),
       );
 
-      expect(find.byType(FloatingActionButton), findsOneWidget);
+      // There are now 3 FABs (main + 2 sub-FABs)
+      expect(find.byType(FloatingActionButton), findsNWidgets(3));
+      // Main FAB should have edit icon
       expect(find.byIcon(Icons.edit), findsOneWidget);
     });
 
-    testWidgets('tapping FAB navigates to EditTuneInPresetPage for TUNEIN presets', (WidgetTester tester) async {
+    testWidgets('sub-FABs are accessible and can be tapped', (WidgetTester tester) async {
       const testPreset = Preset(
         id: '1',
         itemName: 'Test Station',
@@ -207,14 +209,18 @@ void main() {
         ),
       );
 
-      await tester.tap(find.byType(FloatingActionButton));
+      // Tap the main FAB to open sub-menu
+      await tester.tap(find.widgetWithIcon(FloatingActionButton, Icons.edit));
       await tester.pumpAndSettle();
 
-      // Should navigate to EditTuneInPresetPage
-      expect(find.text('Search TuneIn Stations'), findsOneWidget);
+      // Verify sub-menu is open with all options
+      expect(find.text('TuneIn'), findsOneWidget);
+      expect(find.text('Spotify'), findsOneWidget);
+      expect(find.widgetWithIcon(FloatingActionButton, Icons.podcasts), findsOneWidget);
+      expect(find.widgetWithIcon(FloatingActionButton, Icons.audiotrack), findsOneWidget);
     });
 
-    testWidgets('tapping FAB shows error dialog for unsupported preset types', (WidgetTester tester) async {
+    testWidgets('tapping main FAB opens sub-menu with 2 options', (WidgetTester tester) async {
       const testPreset = Preset(
         id: '1',
         itemName: 'Test Preset',
@@ -236,11 +242,15 @@ void main() {
         ),
       );
 
-      await tester.tap(find.byType(FloatingActionButton));
+      // Tap the main FAB to open sub-menu
+      await tester.tap(find.widgetWithIcon(FloatingActionButton, Icons.edit));
       await tester.pumpAndSettle();
 
-      expect(find.text('Error'), findsOneWidget);
-      expect(find.text('Editing PRODUCT presets is not yet supported'), findsOneWidget);
+      // Check that all 2 sub-FABs are visible
+      expect(find.widgetWithIcon(FloatingActionButton, Icons.audiotrack), findsOneWidget); // Spotify
+      expect(find.widgetWithIcon(FloatingActionButton, Icons.podcasts), findsOneWidget); // TuneIn
+      expect(find.text('Spotify'), findsOneWidget);
+      expect(find.text('TuneIn'), findsOneWidget);
     });
   });
 }

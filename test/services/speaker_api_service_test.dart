@@ -1605,5 +1605,131 @@ void main() {
         expect(captured[2], '<name>$specialName</name>');
       });
     });
+
+    group('storeInternetRadioPreset', () {
+      const ipAddress = '192.168.1.100';
+      const presetId = '1';
+      const url = 'https://stream.example.com/radio';
+      const itemName = 'My Radio Station';
+
+      test('stores Internet Radio preset successfully', () async {
+        const xmlResponse = '''<?xml version="1.0" encoding="UTF-8"?>
+<presets>
+  <preset id="1" createdOn="1234567890" updatedOn="1234567890">
+    <ContentItem source="LOCAL_INTERNET_RADIO" type="stationurl" location="https://stream.example.com/radio" isPresetable="false">
+      <itemName>My Radio Station</itemName>
+    </ContentItem>
+  </preset>
+</presets>''';
+
+        when(mockClient.post(
+          any,
+          headers: anyNamed('headers'),
+          body: anyNamed('body'),
+        )).thenAnswer((_) async => http.Response(xmlResponse, 200));
+
+        final presets = await apiService.storeInternetRadioPreset(
+          ipAddress,
+          presetId,
+          url,
+          itemName,
+          null,
+        );
+
+        expect(presets, hasLength(1));
+        expect(presets[0].id, '1');
+        expect(presets[0].source, 'LOCAL_INTERNET_RADIO');
+        expect(presets[0].type, 'stationurl');
+        expect(presets[0].location, url);
+        expect(presets[0].itemName, itemName);
+      });
+
+      test('stores Internet Radio preset with container art', () async {
+        const containerArt = 'https://example.com/art.png';
+        const xmlResponse = '''<?xml version="1.0" encoding="UTF-8"?>
+<presets>
+  <preset id="1" createdOn="1234567890" updatedOn="1234567890">
+    <ContentItem source="LOCAL_INTERNET_RADIO" type="stationurl" location="https://stream.example.com/radio" isPresetable="false">
+      <itemName>My Radio Station</itemName>
+      <containerArt>https://example.com/art.png</containerArt>
+    </ContentItem>
+  </preset>
+</presets>''';
+
+        when(mockClient.post(
+          any,
+          headers: anyNamed('headers'),
+          body: anyNamed('body'),
+        )).thenAnswer((_) async => http.Response(xmlResponse, 200));
+
+        final presets = await apiService.storeInternetRadioPreset(
+          ipAddress,
+          presetId,
+          url,
+          itemName,
+          containerArt,
+        );
+
+        expect(presets, hasLength(1));
+        expect(presets[0].containerArt, containerArt);
+      });
+
+      test('sends correct XML body format', () async {
+        const xmlResponse = '''<?xml version="1.0" encoding="UTF-8"?>
+<presets>
+  <preset id="1" createdOn="1234567890" updatedOn="1234567890">
+    <ContentItem source="LOCAL_INTERNET_RADIO" type="stationurl" location="https://stream.example.com/radio" isPresetable="false">
+      <itemName>My Radio Station</itemName>
+    </ContentItem>
+  </preset>
+</presets>''';
+
+        when(mockClient.post(
+          any,
+          headers: anyNamed('headers'),
+          body: anyNamed('body'),
+        )).thenAnswer((_) async => http.Response(xmlResponse, 200));
+
+        await apiService.storeInternetRadioPreset(
+          ipAddress,
+          presetId,
+          url,
+          itemName,
+          null,
+        );
+
+        final captured = verify(mockClient.post(
+          captureAny,
+          headers: captureAnyNamed('headers'),
+          body: captureAnyNamed('body'),
+        )).captured;
+
+        final body = captured[2] as String;
+        expect(body, contains('source="LOCAL_INTERNET_RADIO"'));
+        expect(body, contains('type="stationurl"'));
+        expect(body, contains('location="$url"'));
+        expect(body, contains('isPresetable="false"'));
+        expect(body, contains('<itemName>$itemName</itemName>'));
+      });
+
+      test('throws exception on HTTP error', () async {
+        when(mockClient.post(
+          any,
+          headers: anyNamed('headers'),
+          body: anyNamed('body'),
+        )).thenAnswer((_) async => http.Response('Error', 500));
+
+        expect(
+          () => apiService.storeInternetRadioPreset(
+            ipAddress,
+            presetId,
+            url,
+            itemName,
+            null,
+          ),
+          throwsA(isA<Exception>()),
+        );
+      });
+    });
   });
 }

@@ -8,7 +8,6 @@ import 'package:ueberboese_app/models/app_config.dart';
 import 'package:ueberboese_app/models/preset.dart';
 import 'package:ueberboese_app/models/spotify_account.dart';
 import 'package:ueberboese_app/pages/spotify_preset_detail_page.dart';
-import 'package:ueberboese_app/pages/edit_spotify_preset_page.dart';
 import 'package:ueberboese_app/services/spotify_api_service.dart';
 
 @GenerateMocks([SpotifyApiService])
@@ -312,11 +311,13 @@ void main() {
         ),
       );
 
-      expect(find.byType(FloatingActionButton), findsOneWidget);
+      // There are now 3 FABs (main + 2 sub-FABs)
+      expect(find.byType(FloatingActionButton), findsNWidgets(3));
+      // Main FAB should have edit icon
       expect(find.byIcon(Icons.edit), findsOneWidget);
     });
 
-    testWidgets('tapping FAB navigates to EditSpotifyPresetPage', (WidgetTester tester) async {
+    testWidgets('sub-FABs are accessible and can be tapped', (WidgetTester tester) async {
       const testPreset = Preset(
         id: '1',
         itemName: 'Test Playlist',
@@ -338,11 +339,15 @@ void main() {
         ),
       );
 
-      await tester.tap(find.byType(FloatingActionButton));
+      // Tap the main FAB to open sub-menu
+      await tester.tap(find.widgetWithIcon(FloatingActionButton, Icons.edit));
       await tester.pumpAndSettle();
 
-      expect(find.byType(EditSpotifyPresetPage), findsOneWidget);
-      expect(find.text('Edit Spotify Preset'), findsOneWidget);
+      // Verify sub-menu is open with all options
+      expect(find.text('Spotify'), findsOneWidget);
+      expect(find.text('TuneIn'), findsOneWidget);
+      expect(find.widgetWithIcon(FloatingActionButton, Icons.audiotrack), findsOneWidget);
+      expect(find.widgetWithIcon(FloatingActionButton, Icons.podcasts), findsOneWidget);
     });
 
     testWidgets('has delete option in menu', (WidgetTester tester) async {

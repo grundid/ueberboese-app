@@ -1,0 +1,263 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:ueberboese_app/main.dart';
+import 'package:ueberboese_app/models/preset.dart';
+import 'package:ueberboese_app/services/speaker_api_service.dart';
+
+class EditInternetRadioPresetPage extends StatefulWidget {
+  final Preset preset;
+  final SpeakerApiService? speakerApiService;
+
+  const EditInternetRadioPresetPage({
+    super.key,
+    required this.preset,
+    this.speakerApiService,
+  });
+
+  @override
+  State<EditInternetRadioPresetPage> createState() => _EditInternetRadioPresetPageState();
+}
+
+class _EditInternetRadioPresetPageState extends State<EditInternetRadioPresetPage> {
+  late final SpeakerApiService _speakerApiService;
+  late TextEditingController _nameController;
+  late TextEditingController _urlController;
+  late TextEditingController _containerArtController;
+  bool _isSaving = false;
+  String? _urlError;
+
+  @override
+  void initState() {
+    super.initState();
+    _speakerApiService = widget.speakerApiService ?? SpeakerApiService();
+    _nameController = TextEditingController();
+    _urlController = TextEditingController();
+    _containerArtController = TextEditingController();
+
+    // Add listener to URL field for validation
+    _urlController.addListener(_validateUrl);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _urlController.dispose();
+    _containerArtController.dispose();
+    super.dispose();
+  }
+
+  void _validateUrl() {
+    final url = _urlController.text.trim();
+    if (url.isEmpty) {
+      setState(() {
+        _urlError = null;
+      });
+      return;
+    }
+
+    if (_isValidUrl(url)) {
+      setState(() {
+        _urlError = null;
+      });
+    } else {
+      setState(() {
+        _urlError = 'Please enter a valid URL starting with http:// or https://';
+      });
+    }
+  }
+
+  bool _isValidUrl(String url) {
+    if (url.trim().isEmpty) return false;
+    try {
+      final uri = Uri.parse(url.trim());
+      return uri.scheme == 'http' || uri.scheme == 'https';
+    } catch (e) {
+      return false;
+    }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _onSavePressed() async {
+    final appState = context.read<MyAppState>();
+
+    // Validate required fields
+    final name = _nameController.text.trim();
+    final url = _urlController.text.trim();
+
+    if (name.isEmpty) {
+      _showErrorDialog('Station name cannot be empty');
+      return;
+    }
+
+    if (url.isEmpty) {
+      _showErrorDialog('Stream URL cannot be empty');
+      return;
+    }
+
+    if (!_isValidUrl(url)) {
+      _showErrorDialog('Please enter a valid URL starting with http:// or https://');
+      return;
+    }
+
+    if (appState.speakers.isEmpty) {
+      _showErrorDialog('No speakers available');
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      final speaker = appState.speakers.first;
+      final containerArt = _containerArtController.text.trim();
+
+      await _speakerApiService.storeInternetRadioPreset(
+        speaker.ipAddress,
+        widget.preset.id,
+        url,
+        name,
+        containerArt.isEmpty ? null : containerArt,
+      );
+
+      if (!mounted) return;
+
+      // Show success snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Preset saved successfully'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      // Navigate back to presets list
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _isSaving = false;
+      });
+
+      _showErrorDialog('Failed to save preset: ${e.toString()}');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Edit Internet Radio Preset'),
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Station Name *',
+                  border: OutlineInputBorder(),
+                  helperText: 'Required',
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _urlController,
+                decoration: InputDecoration(
+                  labelText: 'Stream URL *',
+                  border: const OutlineInputBorder(),
+                  helperText: 'Required (e.g., https://stream.example.com/radio)',
+                  errorText: _urlError,
+                ),
+                keyboardType: TextInputType.url,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _containerArtController,
+                decoration: const InputDecoration(
+                  labelText: 'Cover Art URL',
+                  border: OutlineInputBorder(),
+                  helperText: 'Optional (e.g., https://example.com/cover.png)',
+                ),
+                keyboardType: TextInputType.url,
+              ),
+              const SizedBox(height: 24),
+              Card(
+                color: theme.colorScheme.secondaryContainer,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            color: theme.colorScheme.onSecondaryContainer,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Note',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: theme.colorScheme.onSecondaryContainer,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Make sure the stream URL is a direct link to an audio stream. '
+                        'Most internet radio stations provide stream URLs on their websites.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSecondaryContainer,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: !_isSaving ? _onSavePressed : null,
+                child: _isSaving
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Theme.of(context).colorScheme.onPrimary,
+                          ),
+                        ),
+                      )
+                    : const Text('Save'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

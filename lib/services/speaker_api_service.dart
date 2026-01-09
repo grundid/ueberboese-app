@@ -752,6 +752,70 @@ class SpeakerApiService {
     }
   }
 
+  Future<List<Preset>> storeInternetRadioPreset(
+    String ipAddress,
+    String presetId,
+    String url,
+    String itemName,
+    String? containerArt,
+  ) async {
+    final presetUrl = Uri.parse('http://$ipAddress:8090/storePreset');
+    final client = httpClient ?? http.Client();
+
+    try {
+      // Get current timestamp in seconds
+      final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+
+      // Build XML body
+      final containerArtElement = containerArt != null && containerArt.isNotEmpty
+          ? '<containerArt>$containerArt</containerArt>'
+          : '';
+
+      final body = '''<preset id="$presetId" createdOn="$timestamp" updatedOn="$timestamp">
+  <ContentItem source="LOCAL_INTERNET_RADIO" type="stationurl" location="$url" isPresetable="false">
+    <itemName>$itemName</itemName>$containerArtElement
+  </ContentItem>
+</preset>''';
+
+      final response = await client
+          .post(
+            presetUrl,
+            headers: {'Content-Type': 'text/xml'},
+            body: body,
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to store Internet Radio preset: HTTP ${response.statusCode}',
+        );
+      }
+
+      // Parse response XML
+      final bodyText = utf8.decode(response.bodyBytes);
+      final document = XmlDocument.parse(bodyText);
+
+      // Find all preset elements in the updated list
+      final presetElements = document.findAllElements('preset');
+
+      // Parse each preset
+      final presets = presetElements
+          .map((element) => Preset.fromXml(element))
+          .toList();
+
+      return presets;
+    } catch (e) {
+      if (e is Exception) {
+        rethrow;
+      }
+      throw Exception('Failed to store Internet Radio preset: $e');
+    } finally {
+      if (httpClient == null) {
+        client.close();
+      }
+    }
+  }
+
   Future<void> sendKey(String ipAddress, String keyValue, String state) async {
     // Valid key values (case sensitive)
     const validKeys = [
