@@ -311,8 +311,8 @@ void main() {
         ),
       );
 
-      // There are now 3 FABs (main + 2 sub-FABs)
-      expect(find.byType(FloatingActionButton), findsNWidgets(3));
+      // There are now 4 FABs (main + 3 sub-FABs)
+      expect(find.byType(FloatingActionButton), findsNWidgets(4));
       // Main FAB should have edit icon
       expect(find.byIcon(Icons.edit), findsOneWidget);
     });

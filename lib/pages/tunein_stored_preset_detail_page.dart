@@ -3,8 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/models/preset.dart';
 import 'package:ueberboese_app/services/speaker_api_service.dart';
-import 'package:ueberboese_app/pages/edit_tunein_preset_page.dart';
-import 'package:ueberboese_app/pages/edit_spotify_preset_page.dart';
+import 'package:ueberboese_app/widgets/preset_edit_fab.dart';
 
 class TuneInStoredPresetDetailPage extends StatefulWidget {
   final Preset preset;
@@ -18,55 +17,10 @@ class TuneInStoredPresetDetailPage extends StatefulWidget {
   State<TuneInStoredPresetDetailPage> createState() => _TuneInStoredPresetDetailPageState();
 }
 
-class _TuneInStoredPresetDetailPageState extends State<TuneInStoredPresetDetailPage> with SingleTickerProviderStateMixin {
+class _TuneInStoredPresetDetailPageState extends State<TuneInStoredPresetDetailPage> {
   final _speakerApiService = SpeakerApiService();
   bool _isDeleting = false;
-  bool _isFabExpanded = false;
-  late AnimationController _animationController;
-  late Animation<double> _rotationAnimation;
-  late Animation<double> _fadeAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 200),
-      vsync: this,
-    );
-    _rotationAnimation = Tween<double>(begin: 0, end: 0.125).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-    _fadeAnimation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    );
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  void _toggleFab() {
-    setState(() {
-      _isFabExpanded = !_isFabExpanded;
-      if (_isFabExpanded) {
-        _animationController.forward();
-      } else {
-        _animationController.reverse();
-      }
-    });
-  }
-
-  void _closeFab() {
-    if (_isFabExpanded) {
-      setState(() {
-        _isFabExpanded = false;
-        _animationController.reverse();
-      });
-    }
-  }
+  final _fabExpandedNotifier = ValueNotifier<bool>(false);
 
   Future<void> _showDeleteConfirmationDialog() async {
     final confirmed = await showDialog<bool>(
@@ -157,25 +111,6 @@ class _TuneInStoredPresetDetailPageState extends State<TuneInStoredPresetDetailP
     );
   }
 
-  void _onEditSpotify() {
-    _closeFab();
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(
-        builder: (context) => EditSpotifyPresetPage(preset: widget.preset),
-      ),
-    );
-  }
-
-  void _onEditTuneIn() {
-    _closeFab();
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(
-        builder: (context) => EditTuneInPresetPage(preset: widget.preset),
-      ),
-    );
-  }
 
   String? _extractStationId() {
     // Extract station ID from location format: /v1/playback/station/s288368
@@ -233,6 +168,7 @@ class _TuneInStoredPresetDetailPageState extends State<TuneInStoredPresetDetailP
         ],
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
           SingleChildScrollView(
         child: Column(
@@ -305,112 +241,29 @@ class _TuneInStoredPresetDetailPageState extends State<TuneInStoredPresetDetailP
                 ],
               ),
             ),
-          ],
-        ),
+            ],
           ),
-          if (_isFabExpanded)
-            Positioned.fill(
-              child: FadeTransition(
-                opacity: _fadeAnimation,
+        ),
+          ValueListenableBuilder<bool>(
+            valueListenable: _fabExpandedNotifier,
+            builder: (context, isExpanded, child) {
+              if (!isExpanded) return const SizedBox.shrink();
+              return Positioned.fill(
                 child: GestureDetector(
-                  onTap: _closeFab,
+                  onTap: () => _fabExpandedNotifier.value = false,
                   child: Container(
                     color: theme.colorScheme.scrim.withValues(alpha: 0.4),
                   ),
                 ),
-              ),
-            ),
+              );
+            },
+          ),
         ],
       ),
-      floatingActionButton: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                // Sub-FAB 2: TuneIn
-                FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: ScaleTransition(
-                    scale: _fadeAnimation,
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Material(
-                            elevation: 3,
-                            borderRadius: BorderRadius.circular(8),
-                            color: theme.colorScheme.surface,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              child: Text(
-                                'TuneIn',
-                                style: theme.textTheme.bodyMedium,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          FloatingActionButton.small(
-                            heroTag: 'edit_tunein_fab',
-                            onPressed: _onEditTuneIn,
-                            tooltip: 'Edit as TuneIn',
-                            child: const Icon(Icons.podcasts),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                // Sub-FAB 1: Spotify
-                FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: ScaleTransition(
-                    scale: _fadeAnimation,
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Material(
-                            elevation: 3,
-                            borderRadius: BorderRadius.circular(8),
-                            color: theme.colorScheme.surface,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              child: Text(
-                                'Spotify',
-                                style: theme.textTheme.bodyMedium,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          FloatingActionButton.small(
-                            heroTag: 'edit_spotify_fab',
-                            onPressed: _onEditSpotify,
-                            tooltip: 'Edit as Spotify',
-                            child: const Icon(Icons.audiotrack),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                // Main FAB
-                RotationTransition(
-                  turns: _rotationAnimation,
-                  child: FloatingActionButton(
-                    onPressed: _toggleFab,
-                    tooltip: 'Edit preset',
-                    child: Icon(_isFabExpanded ? Icons.close : Icons.edit),
-                  ),
-                ),
-              ],
-            ),
+      floatingActionButton: PresetEditFab(
+        preset: widget.preset,
+        isExpandedNotifier: _fabExpandedNotifier,
+      ),
     );
   }
 
