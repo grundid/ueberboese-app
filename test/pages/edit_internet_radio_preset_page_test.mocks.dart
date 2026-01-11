@@ -237,6 +237,7 @@ class MockSpeakerApiService extends _i1.Mock implements _i5.SpeakerApiService {
     String? url,
     String? itemName,
     String? containerArt,
+    String? apiUrl,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#storeInternetRadioPreset, [
@@ -245,6 +246,7 @@ class MockSpeakerApiService extends _i1.Mock implements _i5.SpeakerApiService {
               url,
               itemName,
               containerArt,
+              apiUrl,
             ]),
             returnValue: _i6.Future<List<_i8.Preset>>.value(<_i8.Preset>[]),
           )

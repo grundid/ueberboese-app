@@ -4,6 +4,7 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
 import 'package:ueberboese_app/main.dart';
+import 'package:ueberboese_app/models/app_config.dart';
 import 'package:ueberboese_app/models/preset.dart';
 import 'package:ueberboese_app/models/speaker.dart';
 import 'package:ueberboese_app/pages/edit_internet_radio_preset_page.dart';
@@ -30,6 +31,16 @@ void main() {
           ipAddress: '192.168.1.100',
           type: 'SoundTouch 10',
           deviceId: 'test123',
+        ),
+      );
+
+      // Add test config with API URL
+      appState.updateConfig(
+        const AppConfig(
+          apiUrl: 'https://ueberboese.example.com',
+          accountId: 'test123',
+          mgmtUsername: 'admin',
+          mgmtPassword: 'test',
         ),
       );
     });
@@ -273,6 +284,7 @@ void main() {
         any,
         any,
         any,
+        any,
       )).thenAnswer((_) async => [testPreset]);
 
       await tester.pumpWidget(
@@ -304,6 +316,7 @@ void main() {
         'https://stream.example.com/radio',
         'My Radio Station',
         null,
+        'https://ueberboese.example.com',
       )).called(1);
     });
 
@@ -318,6 +331,7 @@ void main() {
       );
 
       when(mockSpeakerApiService.storeInternetRadioPreset(
+        any,
         any,
         any,
         any,
@@ -358,6 +372,7 @@ void main() {
         'https://stream.example.com/radio',
         'My Radio Station',
         'https://example.com/art.png',
+        'https://ueberboese.example.com',
       )).called(1);
     });
 
@@ -372,6 +387,7 @@ void main() {
       );
 
       when(mockSpeakerApiService.storeInternetRadioPreset(
+        any,
         any,
         any,
         any,

@@ -133,6 +133,7 @@ class _EditInternetRadioPresetPageState extends State<EditInternetRadioPresetPag
         url,
         name,
         containerArt.isEmpty ? null : containerArt,
+        appState.config.apiUrl,
       );
 
       if (!mounted) return;

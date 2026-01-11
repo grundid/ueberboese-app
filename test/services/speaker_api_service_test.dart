@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:mockito/annotations.dart';
@@ -1611,12 +1612,16 @@ void main() {
       const presetId = '1';
       const url = 'https://stream.example.com/radio';
       const itemName = 'My Radio Station';
+      const apiUrl = 'https://ueberboese.example.com';
 
       test('stores Internet Radio preset successfully', () async {
+        // Expected Base64 encoded JSON: {"name":"My Radio Station","imageUrl":"","streamUrl":"https://stream.example.com/radio"}
+        const expectedLocation = 'https://ueberboese.example.com/core02/svc-bmx-adapter-orion/prod/orion/station?data=eyJuYW1lIjoiTXkgUmFkaW8gU3RhdGlvbiIsImltYWdlVXJsIjoiIiwic3RyZWFtVXJsIjoiaHR0cHM6Ly9zdHJlYW0uZXhhbXBsZS5jb20vcmFkaW8ifQ==';
+
         const xmlResponse = '''<?xml version="1.0" encoding="UTF-8"?>
 <presets>
   <preset id="1" createdOn="1234567890" updatedOn="1234567890">
-    <ContentItem source="LOCAL_INTERNET_RADIO" type="stationurl" location="https://stream.example.com/radio" isPresetable="false">
+    <ContentItem source="LOCAL_INTERNET_RADIO" type="stationurl" location="https://ueberboese.example.com/core02/svc-bmx-adapter-orion/prod/orion/station?data=eyJuYW1lIjoiTXkgUmFkaW8gU3RhdGlvbiIsImltYWdlVXJsIjoiIiwic3RyZWFtVXJsIjoiaHR0cHM6Ly9zdHJlYW0uZXhhbXBsZS5jb20vcmFkaW8ifQ==" isPresetable="true">
       <itemName>My Radio Station</itemName>
     </ContentItem>
   </preset>
@@ -1634,22 +1639,26 @@ void main() {
           url,
           itemName,
           null,
+          apiUrl,
         );
 
         expect(presets, hasLength(1));
         expect(presets[0].id, '1');
         expect(presets[0].source, 'LOCAL_INTERNET_RADIO');
         expect(presets[0].type, 'stationurl');
-        expect(presets[0].location, url);
+        expect(presets[0].location, expectedLocation);
         expect(presets[0].itemName, itemName);
+        expect(presets[0].isPresetable, true);
       });
 
       test('stores Internet Radio preset with container art', () async {
         const containerArt = 'https://example.com/art.png';
+        // Expected Base64 encoded JSON: {"name":"My Radio Station","imageUrl":"https://example.com/art.png","streamUrl":"https://stream.example.com/radio"}
+
         const xmlResponse = '''<?xml version="1.0" encoding="UTF-8"?>
 <presets>
   <preset id="1" createdOn="1234567890" updatedOn="1234567890">
-    <ContentItem source="LOCAL_INTERNET_RADIO" type="stationurl" location="https://stream.example.com/radio" isPresetable="false">
+    <ContentItem source="LOCAL_INTERNET_RADIO" type="stationurl" location="https://ueberboese.example.com/core02/svc-bmx-adapter-orion/prod/orion/station?data=eyJuYW1lIjoiTXkgUmFkaW8gU3RhdGlvbiIsImltYWdlVXJsIjoiaHR0cHM6Ly9leGFtcGxlLmNvbS9hcnQucG5nIiwic3RyZWFtVXJsIjoiaHR0cHM6Ly9zdHJlYW0uZXhhbXBsZS5jb20vcmFkaW8ifQ==" isPresetable="true">
       <itemName>My Radio Station</itemName>
       <containerArt>https://example.com/art.png</containerArt>
     </ContentItem>
@@ -1668,6 +1677,7 @@ void main() {
           url,
           itemName,
           containerArt,
+          apiUrl,
         );
 
         expect(presets, hasLength(1));
@@ -1678,7 +1688,7 @@ void main() {
         const xmlResponse = '''<?xml version="1.0" encoding="UTF-8"?>
 <presets>
   <preset id="1" createdOn="1234567890" updatedOn="1234567890">
-    <ContentItem source="LOCAL_INTERNET_RADIO" type="stationurl" location="https://stream.example.com/radio" isPresetable="false">
+    <ContentItem source="LOCAL_INTERNET_RADIO" type="stationurl" location="https://ueberboese.example.com/core02/svc-bmx-adapter-orion/prod/orion/station?data=eyJuYW1lIjoiTXkgUmFkaW8gU3RhdGlvbiIsImltYWdlVXJsIjoiIiwic3RyZWFtVXJsIjoiaHR0cHM6Ly9zdHJlYW0uZXhhbXBsZS5jb20vcmFkaW8ifQ==" isPresetable="true">
       <itemName>My Radio Station</itemName>
     </ContentItem>
   </preset>
@@ -1696,6 +1706,7 @@ void main() {
           url,
           itemName,
           null,
+          apiUrl,
         );
 
         final captured = verify(mockClient.post(
@@ -1707,8 +1718,8 @@ void main() {
         final body = captured[2] as String;
         expect(body, contains('source="LOCAL_INTERNET_RADIO"'));
         expect(body, contains('type="stationurl"'));
-        expect(body, contains('location="$url"'));
-        expect(body, contains('isPresetable="false"'));
+        expect(body, contains('location="$apiUrl/core02/svc-bmx-adapter-orion/prod/orion/station?data='));
+        expect(body, contains('isPresetable="true"'));
         expect(body, contains('<itemName>$itemName</itemName>'));
       });
 
@@ -1726,9 +1737,57 @@ void main() {
             url,
             itemName,
             null,
+            apiUrl,
           ),
           throwsA(isA<Exception>()),
         );
+      });
+
+      test('encodes JSON data correctly in Base64', () async {
+        const xmlResponse = '''<?xml version="1.0" encoding="UTF-8"?>
+<presets>
+  <preset id="1" createdOn="1234567890" updatedOn="1234567890">
+    <ContentItem source="LOCAL_INTERNET_RADIO" type="stationurl" location="https://ueberboese.example.com/core02/svc-bmx-adapter-orion/prod/orion/station?data=test" isPresetable="true">
+      <itemName>My Radio Station</itemName>
+    </ContentItem>
+  </preset>
+</presets>''';
+
+        when(mockClient.post(
+          any,
+          headers: anyNamed('headers'),
+          body: anyNamed('body'),
+        )).thenAnswer((_) async => http.Response(xmlResponse, 200));
+
+        await apiService.storeInternetRadioPreset(
+          ipAddress,
+          presetId,
+          url,
+          itemName,
+          null,
+          apiUrl,
+        );
+
+        final captured = verify(mockClient.post(
+          captureAny,
+          headers: captureAnyNamed('headers'),
+          body: captureAnyNamed('body'),
+        )).captured;
+
+        final body = captured[2] as String;
+
+        // Extract the Base64 data from the location URL
+        final locationMatch = RegExp(r'location="[^"]*\?data=([^"]+)"').firstMatch(body);
+        expect(locationMatch, isNotNull);
+
+        final base64Data = locationMatch!.group(1)!;
+        final decodedBytes = base64Decode(base64Data);
+        final decodedJson = utf8.decode(decodedBytes);
+        final jsonData = jsonDecode(decodedJson) as Map<String, dynamic>;
+
+        expect(jsonData['name'], itemName);
+        expect(jsonData['imageUrl'], '');
+        expect(jsonData['streamUrl'], url);
       });
     });
   });

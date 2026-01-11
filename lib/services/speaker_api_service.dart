@@ -758,6 +758,7 @@ class SpeakerApiService {
     String url,
     String itemName,
     String? containerArt,
+    String apiUrl,
   ) async {
     final presetUrl = Uri.parse('http://$ipAddress:8090/storePreset');
     final client = httpClient ?? http.Client();
@@ -766,13 +767,27 @@ class SpeakerApiService {
       // Get current timestamp in seconds
       final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
+      // Create JSON object with radio station data
+      final radioData = {
+        'name': itemName,
+        'imageUrl': containerArt ?? '',
+        'streamUrl': url,
+      };
+      final jsonString = jsonEncode(radioData);
+
+      // Base64 encode the JSON
+      final base64Data = base64Encode(utf8.encode(jsonString));
+
+      // Build location URL with encoded data
+      final location = '$apiUrl/core02/svc-bmx-adapter-orion/prod/orion/station?data=$base64Data';
+
       // Build XML body
       final containerArtElement = containerArt != null && containerArt.isNotEmpty
           ? '<containerArt>$containerArt</containerArt>'
           : '';
 
       final body = '''<preset id="$presetId" createdOn="$timestamp" updatedOn="$timestamp">
-  <ContentItem source="LOCAL_INTERNET_RADIO" type="stationurl" location="$url" isPresetable="false">
+  <ContentItem source="LOCAL_INTERNET_RADIO" type="stationurl" location="$location" isPresetable="true">
     <itemName>$itemName</itemName>$containerArtElement
   </ContentItem>
 </preset>''';
