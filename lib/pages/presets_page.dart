@@ -8,19 +8,22 @@ import 'package:ueberboese_app/pages/spotify_preset_detail_page.dart';
 import 'package:ueberboese_app/pages/tunein_stored_preset_detail_page.dart';
 
 class PresetsPage extends StatefulWidget {
-  const PresetsPage({super.key});
+  final SpeakerApiService? apiService;
+
+  const PresetsPage({super.key, this.apiService});
 
   @override
   State<PresetsPage> createState() => _PresetsPageState();
 }
 
 class _PresetsPageState extends State<PresetsPage> {
-  final _speakerApiService = SpeakerApiService();
+  late final SpeakerApiService _speakerApiService;
   Future<List<Preset>>? _presetsFuture;
 
   @override
   void initState() {
     super.initState();
+    _speakerApiService = widget.apiService ?? SpeakerApiService();
     _loadPresets();
   }
 

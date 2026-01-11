@@ -11,11 +11,13 @@ import 'package:ueberboese_app/widgets/preset_edit_fab.dart';
 class SpotifyPresetDetailPage extends StatefulWidget {
   final Preset preset;
   final SpotifyApiService? spotifyApiService;
+  final SpeakerApiService? speakerApiService;
 
   const SpotifyPresetDetailPage({
     super.key,
     required this.preset,
     this.spotifyApiService,
+    this.speakerApiService,
   });
 
   @override
@@ -23,7 +25,7 @@ class SpotifyPresetDetailPage extends StatefulWidget {
 }
 
 class _SpotifyPresetDetailPageState extends State<SpotifyPresetDetailPage> {
-  final _speakerApiService = SpeakerApiService();
+  late final SpeakerApiService _speakerApiService;
   late final SpotifyApiService _spotifyApiService;
   bool _isDeleting = false;
   String? _decodedUri;
@@ -36,6 +38,7 @@ class _SpotifyPresetDetailPageState extends State<SpotifyPresetDetailPage> {
   @override
   void initState() {
     super.initState();
+    _speakerApiService = widget.speakerApiService ?? SpeakerApiService();
 
     final config = context.read<MyAppState>().config;
     _spotifyApiService = widget.spotifyApiService ??

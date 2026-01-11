@@ -7,10 +7,12 @@ import 'package:ueberboese_app/widgets/preset_edit_fab.dart';
 
 class TuneInStoredPresetDetailPage extends StatefulWidget {
   final Preset preset;
+  final SpeakerApiService? apiService;
 
   const TuneInStoredPresetDetailPage({
     super.key,
     required this.preset,
+    this.apiService,
   });
 
   @override
@@ -18,9 +20,15 @@ class TuneInStoredPresetDetailPage extends StatefulWidget {
 }
 
 class _TuneInStoredPresetDetailPageState extends State<TuneInStoredPresetDetailPage> {
-  final _speakerApiService = SpeakerApiService();
+  late final SpeakerApiService _speakerApiService;
   bool _isDeleting = false;
   final _fabExpandedNotifier = ValueNotifier<bool>(false);
+
+  @override
+  void initState() {
+    super.initState();
+    _speakerApiService = widget.apiService ?? SpeakerApiService();
+  }
 
   Future<void> _showDeleteConfirmationDialog() async {
     final confirmed = await showDialog<bool>(

@@ -13,7 +13,9 @@ import 'package:ueberboese_app/pages/add_speaker_page.dart';
 import 'package:ueberboese_app/pages/configuration_page.dart';
 
 class SpeakerListPage extends StatefulWidget {
-  const SpeakerListPage({super.key});
+  final SpeakerApiService? apiService;
+
+  const SpeakerListPage({super.key, this.apiService});
 
   @override
   State<SpeakerListPage> createState() => _SpeakerListPageState();
@@ -25,7 +27,7 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
   late Animation<double> _rotationAnimation;
   late Animation<double> _fadeAnimation;
 
-  final _speakerApiService = SpeakerApiService();
+  late final SpeakerApiService _speakerApiService;
   final _managementApiService = ManagementApiService();
 
   // Speaker status tracking
@@ -36,6 +38,7 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
   @override
   void initState() {
     super.initState();
+    _speakerApiService = widget.apiService ?? SpeakerApiService();
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 200),
       vsync: this,

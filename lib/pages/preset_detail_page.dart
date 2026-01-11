@@ -8,10 +8,12 @@ import 'package:ueberboese_app/widgets/preset_edit_fab.dart';
 
 class PresetDetailPage extends StatefulWidget {
   final Preset preset;
+  final SpeakerApiService? apiService;
 
   const PresetDetailPage({
     super.key,
     required this.preset,
+    this.apiService,
   });
 
   @override
@@ -19,9 +21,15 @@ class PresetDetailPage extends StatefulWidget {
 }
 
 class _PresetDetailPageState extends State<PresetDetailPage> {
-  final _speakerApiService = SpeakerApiService();
+  late final SpeakerApiService _speakerApiService;
   bool _isDeleting = false;
   final _fabExpandedNotifier = ValueNotifier<bool>(false);
+
+  @override
+  void initState() {
+    super.initState();
+    _speakerApiService = widget.apiService ?? SpeakerApiService();
+  }
 
   String _formatTimestamp(int? timestamp) {
     if (timestamp == null) return 'N/A';
