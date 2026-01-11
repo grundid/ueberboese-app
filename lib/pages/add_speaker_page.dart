@@ -8,7 +8,9 @@ import 'package:ueberboese_app/widgets/emoji_selector.dart';
 import 'package:ueberboese_app/services/speaker_api_service.dart';
 
 class AddSpeakerPage extends StatefulWidget {
-  const AddSpeakerPage({super.key});
+  final SpeakerApiService? apiService;
+
+  const AddSpeakerPage({super.key, this.apiService});
 
   @override
   State<AddSpeakerPage> createState() => _AddSpeakerPageState();
@@ -19,7 +21,7 @@ class AddSpeakerPage extends StatefulWidget {
 class _AddSpeakerPageState extends State<AddSpeakerPage> {
   final _formKey = GlobalKey<FormState>();
   final _ipController = TextEditingController();
-  final _apiService = SpeakerApiService();
+  late final SpeakerApiService _apiService;
   late String _selectedEmoji;
   bool _showEmojiSelector = false;
   bool _isLoading = false;
@@ -27,6 +29,7 @@ class _AddSpeakerPageState extends State<AddSpeakerPage> {
   @override
   void initState() {
     super.initState();
+    _apiService = widget.apiService ?? SpeakerApiService();
     _selectedEmoji = _getNextAvailableEmoji();
   }
 

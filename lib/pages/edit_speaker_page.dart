@@ -7,10 +7,12 @@ import 'package:ueberboese_app/services/speaker_api_service.dart';
 
 class EditSpeakerPage extends StatefulWidget {
   final Speaker speaker;
+  final SpeakerApiService? apiService;
 
   const EditSpeakerPage({
     super.key,
     required this.speaker,
+    this.apiService,
   });
 
   @override
@@ -18,7 +20,7 @@ class EditSpeakerPage extends StatefulWidget {
 }
 
 class _EditSpeakerPageState extends State<EditSpeakerPage> {
-  final SpeakerApiService _apiService = SpeakerApiService();
+  late final SpeakerApiService _apiService;
   late String _selectedEmoji;
   late TextEditingController _nameController;
   bool _showEmojiSelector = false;
@@ -27,6 +29,7 @@ class _EditSpeakerPageState extends State<EditSpeakerPage> {
   @override
   void initState() {
     super.initState();
+    _apiService = widget.apiService ?? SpeakerApiService();
     _selectedEmoji = widget.speaker.emoji;
     _nameController = TextEditingController(text: widget.speaker.name);
   }

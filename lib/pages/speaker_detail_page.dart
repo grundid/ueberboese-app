@@ -17,10 +17,12 @@ import 'package:ueberboese_app/pages/album_art_viewer_page.dart';
 
 class SpeakerDetailPage extends StatefulWidget {
   final Speaker speaker;
+  final SpeakerApiService? apiService;
 
   const SpeakerDetailPage({
     super.key,
     required this.speaker,
+    this.apiService,
   });
 
   @override
@@ -28,7 +30,7 @@ class SpeakerDetailPage extends StatefulWidget {
 }
 
 class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
-  final SpeakerApiService _apiService = SpeakerApiService();
+  late final SpeakerApiService _apiService;
   SpeakerWebsocketService? _websocketService;
   StreamSubscription<Volume>? _volumeSubscription;
   StreamSubscription<NowPlaying>? _nowPlayingSubscription;
@@ -56,6 +58,7 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
   @override
   void initState() {
     super.initState();
+    _apiService = widget.apiService ?? SpeakerApiService();
     _loadVolume();
     _loadNowPlaying();
     _loadZone();

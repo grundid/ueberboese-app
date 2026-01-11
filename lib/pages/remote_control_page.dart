@@ -4,10 +4,12 @@ import 'package:ueberboese_app/services/speaker_api_service.dart';
 
 class RemoteControlPage extends StatefulWidget {
   final Speaker speaker;
+  final SpeakerApiService? apiService;
 
   const RemoteControlPage({
     super.key,
     required this.speaker,
+    this.apiService,
   });
 
   @override
@@ -15,8 +17,14 @@ class RemoteControlPage extends StatefulWidget {
 }
 
 class _RemoteControlPageState extends State<RemoteControlPage> {
-  final SpeakerApiService _apiService = SpeakerApiService();
+  late final SpeakerApiService _apiService;
   bool _isProcessing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _apiService = widget.apiService ?? SpeakerApiService();
+  }
 
   Future<void> _sendSimpleKey(String keyValue) async {
     if (_isProcessing) {

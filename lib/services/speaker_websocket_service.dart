@@ -5,8 +5,12 @@ import 'package:xml/xml.dart';
 import 'package:ueberboese_app/models/volume.dart';
 import 'package:ueberboese_app/models/now_playing.dart';
 
+// Factory function type for creating WebSocket connections
+typedef WebSocketFactory = WebSocketChannel Function(Uri uri, {List<String>? protocols});
+
 class SpeakerWebsocketService {
   final String ipAddress;
+  final WebSocketFactory? webSocketFactory;
   WebSocketChannel? _channel;
   final _volumeController = StreamController<Volume>.broadcast();
   final _nowPlayingController = StreamController<NowPlaying>.broadcast();
@@ -19,7 +23,7 @@ class SpeakerWebsocketService {
   static const Duration _baseReconnectDelay = Duration(seconds: 1);
   Timer? _reconnectTimer;
 
-  SpeakerWebsocketService(this.ipAddress);
+  SpeakerWebsocketService(this.ipAddress, {this.webSocketFactory});
 
   Stream<Volume> get volumeStream => _volumeController.stream;
   Stream<NowPlaying> get nowPlayingStream => _nowPlayingController.stream;
@@ -35,7 +39,9 @@ class SpeakerWebsocketService {
       final uri = Uri.parse('ws://$ipAddress:8080');
       debugPrint('[WebSocket] Connecting to $uri');
 
-      _channel = WebSocketChannel.connect(uri, protocols: ['gabbo']);
+      _channel = webSocketFactory != null
+          ? webSocketFactory!(uri, protocols: ['gabbo'])
+          : WebSocketChannel.connect(uri, protocols: ['gabbo']);
       _isConnected = true;
       _reconnectAttempts = 0;
 
