@@ -14,6 +14,7 @@ import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/pages/edit_speaker_page.dart';
 import 'package:ueberboese_app/pages/remote_control_page.dart';
 import 'package:ueberboese_app/pages/album_art_viewer_page.dart';
+import 'package:ueberboese_app/pages/recents_page.dart';
 
 class SpeakerDetailPage extends StatefulWidget {
   final Speaker speaker;
@@ -729,6 +730,13 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                     builder: (context) => RemoteControlPage(speaker: widget.speaker),
                   ),
                 );
+              } else if (value == 'recent') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (context) => RecentsPage(speaker: widget.speaker),
+                  ),
+                );
               } else if (value == 'standby') {
                 _sendToStandby();
               } else if (value == 'delete') {
@@ -753,6 +761,16 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                     Icon(Icons.settings_remote),
                     SizedBox(width: 8),
                     Text('Remote Control'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem<String>(
+                value: 'recent',
+                child: Row(
+                  children: [
+                    Icon(Icons.history),
+                    SizedBox(width: 8),
+                    Text('Recent'),
                   ],
                 ),
               ),

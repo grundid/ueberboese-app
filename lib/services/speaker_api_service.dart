@@ -6,6 +6,7 @@ import 'package:ueberboese_app/models/volume.dart';
 import 'package:ueberboese_app/models/now_playing.dart';
 import 'package:ueberboese_app/models/zone.dart';
 import 'package:ueberboese_app/models/preset.dart';
+import 'package:ueberboese_app/models/recent.dart';
 
 class SpeakerApiService {
   final http.Client? httpClient;
@@ -540,6 +541,48 @@ class SpeakerApiService {
         rethrow;
       }
       throw Exception('Failed to fetch presets: $e');
+    } finally {
+      if (httpClient == null) {
+        client.close();
+      }
+    }
+  }
+
+  Future<List<Recent>> getRecents(String ipAddress) async {
+    final url = Uri.parse('http://$ipAddress:8090/recents');
+    final client = httpClient ?? http.Client();
+
+    try {
+      final response = await client
+          .get(url)
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to fetch recents: HTTP ${response.statusCode}',
+        );
+      }
+
+      final bodyText = utf8.decode(response.bodyBytes);
+      final document = XmlDocument.parse(bodyText);
+
+      // Find all recent elements
+      final recentElements = document.findAllElements('recent');
+
+      // Parse each recent
+      final recents = recentElements
+          .map((element) => Recent.fromXml(element))
+          .toList();
+
+      // Sort by utcTime descending (newest first)
+      recents.sort((a, b) => b.utcTime.compareTo(a.utcTime));
+
+      return recents;
+    } catch (e) {
+      if (e is Exception) {
+        rethrow;
+      }
+      throw Exception('Failed to fetch recents: $e');
     } finally {
       if (httpClient == null) {
         client.close();

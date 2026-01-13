@@ -1790,5 +1790,134 @@ void main() {
         expect(jsonData['streamUrl'], url);
       });
     });
+
+    group('getRecents', () {
+      test('getRecents parses multiple recents correctly and sorts by utcTime', () async {
+        const xmlResponse = '''<?xml version="1.0" encoding="UTF-8"?>
+<recents>
+  <recent deviceID="1004567890AA" utcTime="1697087351" id="2">
+    <contentItem source="TUNEIN" type="stationurl" location="/v1/playback/station/s33255" sourceAccount="" isPresetable="true">
+      <itemName>89.7 | The River (College Radio)</itemName>
+    </contentItem>
+  </recent>
+  <recent deviceID="44EAD8A17CC7" utcTime="1768323670" id="1">
+    <contentItem source="TUNEIN" type="stationurl" location="/v1/playback/station/s80044" sourceAccount="" isPresetable="true">
+      <itemName>Radio TEDDY</itemName>
+    </contentItem>
+  </recent>
+  <recent deviceID="44EAD8A17CC7" utcTime="1768304677" id="4">
+    <contentItem source="SPOTIFY" type="tracklisturl" location="/playback/container/c3BvdGlmeTpwbGF5bGlzdDoybjZXMnA1QzBNQUQ5YTR6NXhUVDdu" sourceAccount="z5zt8py3wuxytbza4cxa431ge" isPresetable="true">
+      <itemName>Komplett Entspannt</itemName>
+    </contentItem>
+  </recent>
+</recents>''';
+
+        when(mockClient.get(any)).thenAnswer(
+          (_) async => http.Response(xmlResponse, 200, headers: {'content-type': 'text/xml; charset=utf-8'}),
+        );
+
+        final recents = await apiService.getRecents('192.168.1.131');
+
+        expect(recents.length, 3);
+
+        // Check that items are sorted by utcTime descending (newest first)
+        expect(recents[0].utcTime, 1768323670); // Newest
+        expect(recents[0].id, '1');
+        expect(recents[0].itemName, 'Radio TEDDY');
+        expect(recents[0].deviceId, '44EAD8A17CC7');
+        expect(recents[0].source, 'TUNEIN');
+        expect(recents[0].location, '/v1/playback/station/s80044');
+        expect(recents[0].type, 'stationurl');
+        expect(recents[0].isPresetable, true);
+
+        expect(recents[1].utcTime, 1768304677); // Second newest
+        expect(recents[1].id, '4');
+        expect(recents[1].itemName, 'Komplett Entspannt');
+        expect(recents[1].source, 'SPOTIFY');
+        expect(recents[1].sourceAccount, 'z5zt8py3wuxytbza4cxa431ge');
+
+        expect(recents[2].utcTime, 1697087351); // Oldest
+        expect(recents[2].id, '2');
+        expect(recents[2].itemName, '89.7 | The River (College Radio)');
+      });
+
+      test('getRecents returns empty list when no recents', () async {
+        const xmlResponse = '''<?xml version="1.0" encoding="UTF-8"?>
+<recents>
+</recents>''';
+
+        when(mockClient.get(any)).thenAnswer(
+          (_) async => http.Response(xmlResponse, 200, headers: {'content-type': 'text/xml; charset=utf-8'}),
+        );
+
+        final recents = await apiService.getRecents('192.168.1.131');
+
+        expect(recents, isEmpty);
+      });
+
+      test('getRecents throws exception on non-200 status code', () async {
+        when(mockClient.get(any)).thenAnswer(
+          (_) async => http.Response('Not Found', 404),
+        );
+
+        expect(
+          () => apiService.getRecents('192.168.1.131'),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('getRecents throws exception on timeout', () async {
+        when(mockClient.get(any)).thenAnswer(
+          (_) async => Future.delayed(
+            const Duration(seconds: 11),
+            () => http.Response('', 200),
+          ),
+        );
+
+        expect(
+          () => apiService.getRecents('192.168.1.131'),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('getRecents throws exception on XML parsing error', () async {
+        const xmlResponse = '''This is not valid XML''';
+
+        when(mockClient.get(any)).thenAnswer(
+          (_) async => http.Response(xmlResponse, 200, headers: {'content-type': 'text/xml; charset=utf-8'}),
+        );
+
+        expect(
+          () => apiService.getRecents('192.168.1.131'),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('getRecents parses LOCAL_INTERNET_RADIO recent correctly', () async {
+        const xmlResponse = '''<?xml version="1.0" encoding="UTF-8"?>
+<recents>
+  <recent deviceID="1004567890AA" utcTime="1699027517" id="2485930515">
+    <contentItem source="LOCAL_INTERNET_RADIO" type="stationurl" location="https://content.api.bose.io/core02/svc-bmx-adapter-orion/prod/orion/station?data=eyJuYW1lIjoidGVzdCBzdGF0aW9uIiwiaW1hZ2VVcmwiOiIiLCJzdHJlYW1VcmwiOiJodHRwczovL2ZyZWV0ZXN0ZGF0YS5jb20vd3AtY29udGVudC91cGxvYWRzLzIwMjEvMDkvRnJlZV9UZXN0X0RhdGFfMU1CX01QMy5tcDMifQ%3D%3D" sourceAccount="" isPresetable="true">
+      <itemName>test station</itemName>
+    </contentItem>
+  </recent>
+</recents>''';
+
+        when(mockClient.get(any)).thenAnswer(
+          (_) async => http.Response(xmlResponse, 200, headers: {'content-type': 'text/xml; charset=utf-8'}),
+        );
+
+        final recents = await apiService.getRecents('192.168.1.131');
+
+        expect(recents.length, 1);
+        expect(recents[0].deviceId, '1004567890AA');
+        expect(recents[0].utcTime, 1699027517);
+        expect(recents[0].id, '2485930515');
+        expect(recents[0].itemName, 'test station');
+        expect(recents[0].source, 'LOCAL_INTERNET_RADIO');
+        expect(recents[0].type, 'stationurl');
+        expect(recents[0].isPresetable, true);
+      });
+    });
   });
 }
