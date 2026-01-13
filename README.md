@@ -13,6 +13,7 @@ The app has two main purposes:
    - **Multi-Room Audio**: Control and view speaker zones for synchronized playback
    - **Volume Control**: Adjust volume levels for individual speakers
    - **Now Playing**: See what's currently playing on your speakers
+   - **Recently Played**: See what got recently played
 
 ## Screenshots
 
