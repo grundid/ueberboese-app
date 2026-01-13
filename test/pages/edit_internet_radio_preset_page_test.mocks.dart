@@ -282,4 +282,13 @@ class MockSpeakerApiService extends _i1.Mock implements _i5.SpeakerApiService {
             returnValueForMissingStub: _i6.Future<void>.value(),
           )
           as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> selectContentItem(String? ipAddress, _i9.Recent? recent) =>
+      (super.noSuchMethod(
+            Invocation.method(#selectContentItem, [ipAddress, recent]),
+            returnValue: _i6.Future<void>.value(),
+            returnValueForMissingStub: _i6.Future<void>.value(),
+          )
+          as _i6.Future<void>);
 }

@@ -246,5 +246,239 @@ void main() {
 
       expect(find.byType(Image), findsOneWidget);
     });
+
+    testWidgets('tapping recent item calls selectContentItem', (WidgetTester tester) async {
+      final testRecents = [
+        const Recent(
+          deviceId: '44EAD8A17CC7',
+          utcTime: 1768323670,
+          id: '1',
+          itemName: 'Radio TEDDY',
+          source: 'TUNEIN',
+          location: '/v1/playback/station/s80044',
+          type: 'stationurl',
+          isPresetable: true,
+        ),
+      ];
+
+      when(mockApiService.getRecents(any)).thenAnswer(
+        (_) async => testRecents,
+      );
+
+      when(mockApiService.selectContentItem(any, any)).thenAnswer(
+        (_) async => Future<void>.value(),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RecentsPage(
+            speaker: testSpeaker,
+            apiService: mockApiService,
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Tap on the recent item
+      await tester.tap(find.text('Radio TEDDY'));
+      await tester.pump();
+
+      // Verify selectContentItem was called
+      verify(mockApiService.selectContentItem('192.168.1.100', testRecents[0])).called(1);
+    });
+
+    testWidgets('shows loading indicator while playing', (WidgetTester tester) async {
+      final testRecents = [
+        const Recent(
+          deviceId: '44EAD8A17CC7',
+          utcTime: 1768323670,
+          id: '1',
+          itemName: 'Radio TEDDY',
+          source: 'TUNEIN',
+          location: '/v1/playback/station/s80044',
+          type: 'stationurl',
+          isPresetable: true,
+        ),
+      ];
+
+      when(mockApiService.getRecents(any)).thenAnswer(
+        (_) async => testRecents,
+      );
+
+      when(mockApiService.selectContentItem(any, any)).thenAnswer(
+        (_) async => Future.delayed(const Duration(milliseconds: 100)),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RecentsPage(
+            speaker: testSpeaker,
+            apiService: mockApiService,
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify play icon is shown initially
+      expect(find.byIcon(Icons.play_arrow), findsOneWidget);
+
+      // Tap on the recent item
+      await tester.tap(find.text('Radio TEDDY'));
+      await tester.pump();
+
+      // Verify loading indicator appears
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byIcon(Icons.play_arrow), findsNothing);
+
+      // Wait for completion
+      await tester.pumpAndSettle();
+
+      // Verify play icon returns
+      expect(find.byIcon(Icons.play_arrow), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+
+    testWidgets('shows success SnackBar after playing', (WidgetTester tester) async {
+      final testRecents = [
+        const Recent(
+          deviceId: '44EAD8A17CC7',
+          utcTime: 1768323670,
+          id: '1',
+          itemName: 'Radio TEDDY',
+          source: 'TUNEIN',
+          location: '/v1/playback/station/s80044',
+          type: 'stationurl',
+          isPresetable: true,
+        ),
+      ];
+
+      when(mockApiService.getRecents(any)).thenAnswer(
+        (_) async => testRecents,
+      );
+
+      when(mockApiService.selectContentItem(any, any)).thenAnswer(
+        (_) async => Future<void>.value(),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RecentsPage(
+            speaker: testSpeaker,
+            apiService: mockApiService,
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Tap on the recent item
+      await tester.tap(find.text('Radio TEDDY'));
+      await tester.pumpAndSettle();
+
+      // Verify success SnackBar appears
+      expect(find.text('Playing "Radio TEDDY"'), findsOneWidget);
+    });
+
+    testWidgets('shows error SnackBar on failure', (WidgetTester tester) async {
+      final testRecents = [
+        const Recent(
+          deviceId: '44EAD8A17CC7',
+          utcTime: 1768323670,
+          id: '1',
+          itemName: 'Radio TEDDY',
+          source: 'TUNEIN',
+          location: '/v1/playback/station/s80044',
+          type: 'stationurl',
+          isPresetable: true,
+        ),
+      ];
+
+      when(mockApiService.getRecents(any)).thenAnswer(
+        (_) async => testRecents,
+      );
+
+      when(mockApiService.selectContentItem(any, any)).thenAnswer(
+        (_) async => throw Exception('Failed to select content: HTTP 500'),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RecentsPage(
+            speaker: testSpeaker,
+            apiService: mockApiService,
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Tap on the recent item
+      await tester.tap(find.text('Radio TEDDY'));
+      await tester.pumpAndSettle();
+
+      // Verify error SnackBar appears
+      expect(find.textContaining('Failed to play:'), findsOneWidget);
+    });
+
+    testWidgets('disables items while playing', (WidgetTester tester) async {
+      final testRecents = [
+        const Recent(
+          deviceId: '44EAD8A17CC7',
+          utcTime: 1768323670,
+          id: '1',
+          itemName: 'Radio TEDDY',
+          source: 'TUNEIN',
+          location: '/v1/playback/station/s80044',
+          type: 'stationurl',
+          isPresetable: true,
+        ),
+        const Recent(
+          deviceId: '44EAD8A17CC7',
+          utcTime: 1768304677,
+          id: '4',
+          itemName: 'Komplett Entspannt',
+          source: 'SPOTIFY',
+          location: '/playback/container/c3BvdGlmeTpwbGF5bGlzdDoybjZXMnA1QzBNQUQ5YTR6NXhUVDdu',
+          type: 'tracklisturl',
+          isPresetable: true,
+        ),
+      ];
+
+      when(mockApiService.getRecents(any)).thenAnswer(
+        (_) async => testRecents,
+      );
+
+      when(mockApiService.selectContentItem(any, any)).thenAnswer(
+        (_) async => Future.delayed(const Duration(milliseconds: 100)),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RecentsPage(
+            speaker: testSpeaker,
+            apiService: mockApiService,
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Tap on the first item
+      await tester.tap(find.text('Radio TEDDY'));
+      await tester.pump();
+
+      // Try to tap on the second item (should be disabled)
+      await tester.tap(find.text('Komplett Entspannt'));
+      await tester.pump();
+
+      // Verify only one call was made (to the first item)
+      verify(mockApiService.selectContentItem('192.168.1.100', testRecents[0])).called(1);
+      verifyNever(mockApiService.selectContentItem('192.168.1.100', testRecents[1]));
+
+      // Wait for completion
+      await tester.pumpAndSettle();
+    });
   });
 }

@@ -5,6 +5,7 @@ import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:ueberboese_app/services/speaker_api_service.dart';
 import 'package:ueberboese_app/models/zone.dart';
+import 'package:ueberboese_app/models/recent.dart';
 
 import 'speaker_api_service_test.mocks.dart';
 
@@ -1917,6 +1918,190 @@ void main() {
         expect(recents[0].source, 'LOCAL_INTERNET_RADIO');
         expect(recents[0].type, 'stationurl');
         expect(recents[0].isPresetable, true);
+      });
+    });
+
+    group('selectContentItem', () {
+      test('selectContentItem sends correct XML for TUNEIN content', () async {
+        const xmlResponse = '''<?xml version="1.0" encoding="UTF-8" ?><status>/select</status>''';
+
+        when(mockClient.post(any, headers: anyNamed('headers'), body: anyNamed('body')))
+            .thenAnswer((_) async => http.Response(xmlResponse, 200));
+
+        const recent = Recent(
+          deviceId: '44EAD8A17CC7',
+          utcTime: 1768323670,
+          id: '1',
+          itemName: 'Radio TEDDY',
+          source: 'TUNEIN',
+          location: '/v1/playback/station/s80044',
+          type: 'stationurl',
+          isPresetable: true,
+        );
+
+        await apiService.selectContentItem('192.168.1.131', recent);
+
+        final captured = verify(
+          mockClient.post(
+            any,
+            headers: captureAnyNamed('headers'),
+            body: captureAnyNamed('body'),
+          ),
+        ).captured;
+
+        expect(captured[0], {'Content-Type': 'text/xml'});
+        final body = captured[1] as String;
+        expect(body, contains('<ContentItem'));
+        expect(body, contains('source="TUNEIN"'));
+        expect(body, contains('type="stationurl"'));
+        expect(body, contains('location="/v1/playback/station/s80044"'));
+        expect(body, contains('isPresetable="true"'));
+        expect(body, contains('<itemName>Radio TEDDY</itemName>'));
+      });
+
+      test('selectContentItem sends correct XML for SPOTIFY content with sourceAccount', () async {
+        const xmlResponse = '''<?xml version="1.0" encoding="UTF-8" ?><status>/select</status>''';
+
+        when(mockClient.post(any, headers: anyNamed('headers'), body: anyNamed('body')))
+            .thenAnswer((_) async => http.Response(xmlResponse, 200));
+
+        const recent = Recent(
+          deviceId: '44EAD8A17CC7',
+          utcTime: 1768304677,
+          id: '4',
+          itemName: 'Komplett Entspannt',
+          source: 'SPOTIFY',
+          location: '/playback/container/c3BvdGlmeTpwbGF5bGlzdDoybjZXMnA1QzBNQUQ5YTR6NXhUVDdu',
+          type: 'tracklisturl',
+          isPresetable: true,
+          sourceAccount: 'z5zt8py3wuxytbza4cxa431ge',
+        );
+
+        await apiService.selectContentItem('192.168.1.131', recent);
+
+        final captured = verify(
+          mockClient.post(
+            any,
+            headers: captureAnyNamed('headers'),
+            body: captureAnyNamed('body'),
+          ),
+        ).captured;
+
+        final body = captured[1] as String;
+        expect(body, contains('source="SPOTIFY"'));
+        expect(body, contains('sourceAccount="z5zt8py3wuxytbza4cxa431ge"'));
+        expect(body, contains('<itemName>Komplett Entspannt</itemName>'));
+      });
+
+      test('selectContentItem does not include sourceAccount if empty', () async {
+        const xmlResponse = '''<?xml version="1.0" encoding="UTF-8" ?><status>/select</status>''';
+
+        when(mockClient.post(any, headers: anyNamed('headers'), body: anyNamed('body')))
+            .thenAnswer((_) async => http.Response(xmlResponse, 200));
+
+        const recent = Recent(
+          deviceId: '1004567890AA',
+          utcTime: 1697087351,
+          id: '2',
+          itemName: '89.7 | The River (College Radio)',
+          source: 'TUNEIN',
+          location: '/v1/playback/station/s33255',
+          type: 'stationurl',
+          isPresetable: true,
+          sourceAccount: '',
+        );
+
+        await apiService.selectContentItem('192.168.1.131', recent);
+
+        final captured = verify(
+          mockClient.post(
+            any,
+            headers: captureAnyNamed('headers'),
+            body: captureAnyNamed('body'),
+          ),
+        ).captured;
+
+        final body = captured[1] as String;
+        expect(body, isNot(contains('sourceAccount')));
+      });
+
+      test('selectContentItem escapes special characters in itemName', () async {
+        const xmlResponse = '''<?xml version="1.0" encoding="UTF-8" ?><status>/select</status>''';
+
+        when(mockClient.post(any, headers: anyNamed('headers'), body: anyNamed('body')))
+            .thenAnswer((_) async => http.Response(xmlResponse, 200));
+
+        const recent = Recent(
+          deviceId: '44EAD8A17CC7',
+          utcTime: 1768323670,
+          id: '1',
+          itemName: 'Rock & Roll <with> "quotes"',
+          source: 'TUNEIN',
+          location: '/v1/playback/station/s80044',
+          type: 'stationurl',
+          isPresetable: true,
+        );
+
+        await apiService.selectContentItem('192.168.1.131', recent);
+
+        final captured = verify(
+          mockClient.post(
+            any,
+            headers: captureAnyNamed('headers'),
+            body: captureAnyNamed('body'),
+          ),
+        ).captured;
+
+        final body = captured[1] as String;
+        // XML library escapes & and < but > and " don't need escaping in text content
+        expect(body, contains('Rock &amp; Roll &lt;with> "quotes"'));
+      });
+
+      test('selectContentItem throws exception on non-200 status code', () async {
+        when(mockClient.post(any, headers: anyNamed('headers'), body: anyNamed('body')))
+            .thenAnswer((_) async => http.Response('Not Found', 404));
+
+        const recent = Recent(
+          deviceId: '44EAD8A17CC7',
+          utcTime: 1768323670,
+          id: '1',
+          itemName: 'Radio TEDDY',
+          source: 'TUNEIN',
+          location: '/v1/playback/station/s80044',
+          type: 'stationurl',
+          isPresetable: true,
+        );
+
+        expect(
+          () => apiService.selectContentItem('192.168.1.131', recent),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('selectContentItem throws exception on timeout', () async {
+        when(mockClient.post(any, headers: anyNamed('headers'), body: anyNamed('body')))
+            .thenAnswer(
+          (_) async => Future.delayed(
+            const Duration(seconds: 11),
+            () => http.Response('', 200),
+          ),
+        );
+
+        const recent = Recent(
+          deviceId: '44EAD8A17CC7',
+          utcTime: 1768323670,
+          id: '1',
+          itemName: 'Radio TEDDY',
+          source: 'TUNEIN',
+          location: '/v1/playback/station/s80044',
+          type: 'stationurl',
+          isPresetable: true,
+        );
+
+        expect(
+          () => apiService.selectContentItem('192.168.1.131', recent),
+          throwsA(isA<Exception>()),
+        );
       });
     });
   });

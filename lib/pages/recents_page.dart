@@ -21,6 +21,8 @@ class RecentsPage extends StatefulWidget {
 class _RecentsPageState extends State<RecentsPage> {
   late final SpeakerApiService _speakerApiService;
   Future<List<Recent>>? _recentsFuture;
+  bool _isPlaying = false;
+  String? _playingRecentId;
 
   @override
   void initState() {
@@ -37,6 +39,33 @@ class _RecentsPageState extends State<RecentsPage> {
 
   void _retryLoad() {
     _loadRecents();
+  }
+
+  Future<void> _playRecent(Recent recent) async {
+    setState(() {
+      _isPlaying = true;
+      _playingRecentId = recent.id;
+    });
+
+    try {
+      await _speakerApiService.selectContentItem(widget.speaker.ipAddress, recent);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Playing "${recent.itemName}"')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to play: ${e.toString()}')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPlaying = false;
+          _playingRecentId = null;
+        });
+      }
+    }
   }
 
   String _formatTimestamp(int utcTime) {
@@ -161,6 +190,7 @@ class _RecentsPageState extends State<RecentsPage> {
               final recent = recents[index];
               final sourceColor = _getSourceColor(context, recent.source);
               final sourceIcon = _getSourceIcon(recent.source);
+              final isPlayingThis = _playingRecentId == recent.id;
 
               return Card(
                 elevation: 1,
@@ -169,6 +199,8 @@ class _RecentsPageState extends State<RecentsPage> {
                   vertical: 8,
                 ),
                 child: ListTile(
+                  enabled: !_isPlaying,
+                  onTap: () => _playRecent(recent),
                   leading: recent.containerArt != null &&
                           recent.containerArt!.isNotEmpty
                       ? ClipRRect(
@@ -238,6 +270,16 @@ class _RecentsPageState extends State<RecentsPage> {
                       ),
                     ],
                   ),
+                  trailing: isPlayingThis
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(
+                          Icons.play_arrow,
+                          color: theme.colorScheme.primary,
+                        ),
                 ),
               );
             },

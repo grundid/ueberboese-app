@@ -977,4 +977,50 @@ class SpeakerApiService {
       }
     }
   }
+
+  Future<void> selectContentItem(String ipAddress, Recent recent) async {
+    final url = Uri.parse('http://$ipAddress:8090/select');
+    final client = httpClient ?? http.Client();
+
+    try {
+      // Build ContentItem XML using XmlBuilder for proper escaping
+      final builder = XmlBuilder();
+      builder.element('ContentItem', nest: () {
+        builder.attribute('source', recent.source);
+        builder.attribute('type', recent.type);
+        builder.attribute('location', recent.location);
+        final sourceAccount = recent.sourceAccount;
+        if (sourceAccount != null && sourceAccount.isNotEmpty) {
+          builder.attribute('sourceAccount', sourceAccount);
+        }
+        builder.attribute('isPresetable', 'true');
+        builder.element('itemName', nest: recent.itemName);
+      });
+
+      final body = builder.buildDocument().toXmlString();
+
+      final response = await client
+          .post(
+            url,
+            headers: {'Content-Type': 'text/xml'},
+            body: body,
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to select content: HTTP ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      if (e is Exception) {
+        rethrow;
+      }
+      throw Exception('Failed to select content: $e');
+    } finally {
+      if (httpClient == null) {
+        client.close();
+      }
+    }
+  }
 }
