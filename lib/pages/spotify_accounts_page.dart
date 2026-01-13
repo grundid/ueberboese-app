@@ -69,14 +69,14 @@ class _SpotifyAccountsPageState extends State<SpotifyAccountsPage> {
       _linkSubscription = _appLinks.uriLinkStream.listen((Uri uri) {
         _handleIncomingLink(uri);
       }, onError: (Object err) {
-        print('Error listening to deep links: $err');
+        debugPrint('Error listening to deep links: $err');
       });
 
       // Note: We intentionally don't check getInitialLink() here to avoid
       // processing stale auth codes when navigating back to this page.
       // The uriLinkStream listener above handles all deep link redirects.
     } catch (e) {
-      print('Error initializing deep link listener: $e');
+      debugPrint('Error initializing deep link listener: $e');
     }
   }
 

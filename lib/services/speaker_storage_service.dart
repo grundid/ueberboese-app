@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ueberboese_app/models/speaker.dart';
 
@@ -13,7 +14,7 @@ class SpeakerStorageService {
       await prefs.setString(_speakersKey, jsonString);
     } catch (e) {
       // Log error but don't crash the app
-      print('Error saving speakers: $e');
+      debugPrint('Error saving speakers: $e');
     }
   }
 
@@ -30,7 +31,7 @@ class SpeakerStorageService {
       return jsonList.map((json) => Speaker.fromJson(json as Map<String, dynamic>)).toList();
     } catch (e) {
       // Log error and return empty list if data is corrupted
-      print('Error loading speakers: $e');
+      debugPrint('Error loading speakers: $e');
       return [];
     }
   }

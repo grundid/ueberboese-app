@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ueberboese_app/models/app_config.dart';
 
@@ -11,7 +12,7 @@ class ConfigStorageService {
       final jsonString = jsonEncode(config.toJson());
       await prefs.setString(_configKey, jsonString);
     } catch (e) {
-      print('Error saving config: $e');
+      debugPrint('Error saving config: $e');
     }
   }
 
@@ -27,7 +28,7 @@ class ConfigStorageService {
       final Map<String, dynamic> json = jsonDecode(jsonString) as Map<String, dynamic>;
       return AppConfig.fromJson(json);
     } catch (e) {
-      print('Error loading config: $e');
+      debugPrint('Error loading config: $e');
       return const AppConfig();
     }
   }
