@@ -348,6 +348,29 @@ void main() {
       // Without API mocking, this test verifies the Volume section structure exists.
     });
 
+    testWidgets('volume section includes volume level display between buttons', (WidgetTester tester) async {
+      final appState = MyAppState();
+      await appState.initialize();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: appState,
+          child: const MaterialApp(
+            home: SpeakerDetailPage(speaker: testSpeaker),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // The Volume section should be visible
+      expect(find.text('Volume'), findsOneWidget);
+
+      // Note: Without API mocking, we can't test the actual volume display between buttons
+      // This test verifies the page structure remains correct with the new layout
+      expect(find.byType(SpeakerDetailPage), findsOneWidget);
+    });
+
     testWidgets('displays CircularProgressIndicator while loading volumes', (WidgetTester tester) async {
       final appState = MyAppState();
       await appState.initialize();

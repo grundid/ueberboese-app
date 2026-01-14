@@ -72,12 +72,13 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
 
     // Subscribe to volume updates
     _volumeSubscription = _websocketService!.volumeStream.listen(
-      (volume) {
+          (volume) {
         if (!mounted) return;
         setState(() {
           _currentVolume = volume;
           // Also update zone member volume if speaker is in a zone
-          if (_currentZone != null && _currentZone!.isInZone(widget.speaker.deviceId)) {
+          if (_currentZone != null &&
+              _currentZone!.isInZone(widget.speaker.deviceId)) {
             _zoneMemberVolumes[widget.speaker.deviceId] = volume;
           }
         });
@@ -89,7 +90,7 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
 
     // Subscribe to now playing updates
     _nowPlayingSubscription = _websocketService!.nowPlayingStream.listen(
-      (nowPlaying) {
+          (nowPlaying) {
         if (!mounted) return;
         setState(() {
           _nowPlaying = nowPlaying;
@@ -102,7 +103,7 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
 
     // Subscribe to zone updates
     _zoneSubscription = _websocketService!.zoneStream.listen(
-      (_) {
+          (_) {
         if (!mounted) return;
         // Refresh zone data when zone update is received
         _loadZone();
@@ -154,7 +155,8 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
     });
 
     try {
-      final nowPlaying = await _apiService.getNowPlaying(widget.speaker.ipAddress);
+      final nowPlaying = await _apiService.getNowPlaying(
+          widget.speaker.ipAddress);
       if (!mounted) return;
       setState(() {
         _nowPlaying = nowPlaying;
@@ -198,7 +200,8 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
 
   Future<void> _loadSpeakerInfo() async {
     try {
-      final speakerInfo = await _apiService.fetchSpeakerInfo(widget.speaker.ipAddress);
+      final speakerInfo = await _apiService.fetchSpeakerInfo(
+          widget.speaker.ipAddress);
       if (!mounted) return;
 
       // Get configured API URL from app settings
@@ -206,14 +209,20 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
       final configuredApiUrl = appState.config.apiUrl;
 
       // Normalize URLs for comparison (remove trailing slashes, convert to lowercase)
-      final normalizedMargeUrl = speakerInfo.margeUrl?.trim().toLowerCase().replaceAll(RegExp(r'/+$'), '');
-      final normalizedConfigUrl = configuredApiUrl.trim().toLowerCase().replaceAll(RegExp(r'/+$'), '');
+      final normalizedMargeUrl = speakerInfo.margeUrl
+          ?.trim()
+          .toLowerCase()
+          .replaceAll(RegExp(r'/+$'), '');
+      final normalizedConfigUrl = configuredApiUrl
+          .trim()
+          .toLowerCase()
+          .replaceAll(RegExp(r'/+$'), '');
 
       // Check for mismatch: both must be non-empty and different
       final hasMismatch = normalizedMargeUrl != null &&
-                          normalizedMargeUrl.isNotEmpty &&
-                          normalizedConfigUrl.isNotEmpty &&
-                          normalizedMargeUrl != normalizedConfigUrl;
+          normalizedMargeUrl.isNotEmpty &&
+          normalizedConfigUrl.isNotEmpty &&
+          normalizedMargeUrl != normalizedConfigUrl;
 
       setState(() {
         _speakerInfo = speakerInfo;
@@ -268,20 +277,23 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
       _isLoadingVolume = true;
       _volumeErrorMessage = null;
       // Also update zone member volume loading state if speaker is in a zone
-      if (_currentZone != null && _currentZone!.isInZone(widget.speaker.deviceId)) {
+      if (_currentZone != null &&
+          _currentZone!.isInZone(widget.speaker.deviceId)) {
         _loadingVolumes[widget.speaker.deviceId] = true;
         _volumeErrors[widget.speaker.deviceId] = null;
       }
     });
 
     try {
-      final volume = await _apiService.setVolume(widget.speaker.ipAddress, newVolume);
+      final volume = await _apiService.setVolume(
+          widget.speaker.ipAddress, newVolume);
       if (!mounted) return;
       setState(() {
         _currentVolume = volume;
         _isLoadingVolume = false;
         // Also update zone member volume if speaker is in a zone
-        if (_currentZone != null && _currentZone!.isInZone(widget.speaker.deviceId)) {
+        if (_currentZone != null &&
+            _currentZone!.isInZone(widget.speaker.deviceId)) {
           _zoneMemberVolumes[widget.speaker.deviceId] = volume;
           _loadingVolumes[widget.speaker.deviceId] = false;
         }
@@ -292,8 +304,10 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
         _volumeErrorMessage = 'Failed to adjust volume: ${e.toString()}';
         _isLoadingVolume = false;
         // Also update zone member volume error state if speaker is in a zone
-        if (_currentZone != null && _currentZone!.isInZone(widget.speaker.deviceId)) {
-          _volumeErrors[widget.speaker.deviceId] = 'Failed to adjust volume: ${e.toString()}';
+        if (_currentZone != null &&
+            _currentZone!.isInZone(widget.speaker.deviceId)) {
+          _volumeErrors[widget.speaker.deviceId] =
+          'Failed to adjust volume: ${e.toString()}';
           _loadingVolumes[widget.speaker.deviceId] = false;
         }
       });
@@ -361,10 +375,11 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
         ),
         ...selectedSpeakers
             .where((s) => s.id != widget.speaker.id)
-            .map((s) => ZoneMember(
-                  deviceId: s.deviceId,
-                  ipAddress: s.ipAddress,
-                )),
+            .map((s) =>
+            ZoneMember(
+              deviceId: s.deviceId,
+              ipAddress: s.ipAddress,
+            )),
       ];
 
       await _apiService.createZone(
@@ -402,11 +417,12 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
     try {
       final newMembers = selectedSpeakers
           .where((s) =>
-              !_currentZone!.members.any((m) => m.deviceId == s.deviceId))
-          .map((s) => ZoneMember(
-                deviceId: s.deviceId,
-                ipAddress: s.ipAddress,
-              ))
+      !_currentZone!.members.any((m) => m.deviceId == s.deviceId))
+          .map((s) =>
+          ZoneMember(
+            deviceId: s.deviceId,
+            ipAddress: s.ipAddress,
+          ))
           .toList();
 
       if (newMembers.isEmpty) {
@@ -480,7 +496,6 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
     });
 
     try {
-
       await _apiService.userPlayControl(
         widget.speaker.ipAddress,
         'PLAY_PAUSE_CONTROL',
@@ -532,12 +547,13 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
 
     showDialog<void>(
       context: context,
-      builder: (context) => _ZoneDialog(
-        availableSpeakers: availableSpeakers,
-        currentZone: _currentZone,
-        onCreateZone: _createZone,
-        onAddToZone: _addToZone,
-      ),
+      builder: (context) =>
+          _ZoneDialog(
+            availableSpeakers: availableSpeakers,
+            currentZone: _currentZone,
+            onCreateZone: _createZone,
+            onAddToZone: _addToZone,
+          ),
     );
   }
 
@@ -546,28 +562,30 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
 
     showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Speaker'),
-        content: Text(
-          'Are you sure you want to delete "${widget.speaker.name}"? This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _deleteSpeaker(context);
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor: theme.colorScheme.error,
+      builder: (context) =>
+          AlertDialog(
+            title: const Text('Delete Speaker'),
+            content: Text(
+              'Are you sure you want to delete "${widget.speaker
+                  .name}"? This action cannot be undone.',
             ),
-            child: const Text('Delete'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _deleteSpeaker(context);
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: theme.colorScheme.error,
+                ),
+                child: const Text('Delete'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -667,16 +685,17 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
   void _showErrorDialog(String message) {
     showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Error'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+      builder: (context) =>
+          AlertDialog(
+            title: const Text('Error'),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -686,13 +705,14 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
     Navigator.push(
       context,
       MaterialPageRoute<void>(
-        builder: (context) => AlbumArtViewerPage(
-          imageUrl: _nowPlaying!.art!,
-          heroTag: 'album-art-${widget.speaker.id}',
-          track: _nowPlaying!.track,
-          artist: _nowPlaying!.artist,
-          album: _nowPlaying!.album,
-        ),
+        builder: (context) =>
+            AlbumArtViewerPage(
+              imageUrl: _nowPlaying!.art!,
+              heroTag: 'album-art-${widget.speaker.id}',
+              track: _nowPlaying!.track,
+              artist: _nowPlaying!.artist,
+              album: _nowPlaying!.album,
+            ),
       ),
     );
   }
@@ -720,14 +740,16 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute<void>(
-                    builder: (context) => EditSpeakerPage(speaker: widget.speaker),
+                    builder: (context) =>
+                        EditSpeakerPage(speaker: widget.speaker),
                   ),
                 );
               } else if (value == 'remote') {
                 Navigator.push(
                   context,
                   MaterialPageRoute<void>(
-                    builder: (context) => RemoteControlPage(speaker: widget.speaker),
+                    builder: (context) =>
+                        RemoteControlPage(speaker: widget.speaker),
                   ),
                 );
               } else if (value == 'recent') {
@@ -743,7 +765,8 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                 _showDeleteConfirmationDialog(context);
               }
             },
-            itemBuilder: (BuildContext context) => [
+            itemBuilder: (BuildContext context) =>
+            [
               const PopupMenuItem<String>(
                 value: 'edit',
                 child: Row(
@@ -826,7 +849,8 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Speaker: ${_speakerInfo!.margeUrl}\nSettings: ${appState.config.apiUrl}',
+                          'Speaker: ${_speakerInfo!
+                              .margeUrl}\nSettings: ${appState.config.apiUrl}',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onErrorContainer,
                           ),
@@ -845,667 +869,828 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-            Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    widget.speaker.emoji,
-                    style: const TextStyle(fontSize: 48),
-                  ),
-                  const SizedBox(width: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.speaker.name,
-                        style: theme.textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      SelectableText(
-                        '${widget.speaker.type} • ${widget.speaker.ipAddress}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 32),
-            // Volume Control Section
-            Card(
-              elevation: 1,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.volume_up,
-                          color: theme.colorScheme.primary,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Volume',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    if (_isLoadingVolume && _currentVolume == null)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
-                    else if (_volumeErrorMessage != null)
-                      Column(
+                    Center(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Text(
-                            _volumeErrorMessage!,
-                            style: TextStyle(
-                              color: theme.colorScheme.error,
-                              fontSize: 14,
-                            ),
+                            widget.speaker.emoji,
+                            style: const TextStyle(fontSize: 48),
                           ),
-                          const SizedBox(height: 8),
-                          TextButton(
-                            onPressed: _loadVolume,
-                            child: const Text('Retry'),
-                          ),
-                        ],
-                      )
-                    else if (_currentVolume != null)
-                      Column(
-                        children: [
-                          // Volume percentage display
-                          Text(
-                            '${_currentVolume!.actualVolume}%',
-                            style: theme.textTheme.headlineLarge?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.primary,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          // Volume bar
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: LinearProgressIndicator(
-                              value: _currentVolume!.actualVolume / 100,
-                              minHeight: 12,
-                              backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                theme.colorScheme.primary,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          // Volume control buttons
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          const SizedBox(width: 16),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              FilledButton.icon(
-                                onPressed: _isLoadingVolume ? null : () => _adjustVolume(-5),
-                                icon: const Icon(Icons.volume_down),
-                                label: const Text('Down'),
-                                style: FilledButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 16,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              FilledButton.icon(
-                                onPressed: _isLoadingVolume ? null : () => _adjustVolume(5),
-                                icon: const Icon(Icons.volume_up),
-                                label: const Text('Up'),
-                                style: FilledButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 16,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Multi-Room Zone Section
-            Card(
-              elevation: 1,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.speaker_group,
-                          color: theme.colorScheme.primary,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Multi-Room Zone',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    if (_isLoadingZone && _currentZone == null)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
-                    else if (_zoneErrorMessage != null)
-                      Column(
-                        children: [
-                          Text(
-                            _zoneErrorMessage!,
-                            style: TextStyle(
-                              color: theme.colorScheme.error,
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          TextButton(
-                            onPressed: _loadZone,
-                            child: const Text('Retry'),
-                          ),
-                        ],
-                      )
-                    else if (_currentZone == null || _currentZone!.isEmpty)
-                      Column(
-                        children: [
-                          Text(
-                            'This speaker is not in a zone',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          FilledButton.icon(
-                            onPressed: _isLoadingZone ? null : () => _showZoneDialog(context),
-                            icon: const Icon(Icons.add),
-                            label: const Text('Create Zone'),
-                          ),
-                        ],
-                      )
-                    else
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.album,
-                                size: 18,
-                                color: theme.colorScheme.primary,
-                              ),
-                              const SizedBox(width: 8),
                               Text(
-                                _currentZone!.isMaster(widget.speaker.deviceId)
-                                    ? 'Master Speaker'
-                                    : 'Zone Member',
-                                style: theme.textTheme.bodyLarge?.copyWith(
+                                widget.speaker.name,
+                                style: theme.textTheme.headlineMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
+                              const SizedBox(height: 4),
+                              SelectableText(
+                                '${widget.speaker.type} • ${widget.speaker
+                                    .ipAddress}',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
                             ],
                           ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Zone Members (${_currentZone!.allMemberDeviceIds.length})',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    // Now Playing Section
+                    Card(
+                      elevation: 1,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.music_note,
+                                  color: theme.colorScheme.primary,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Now Playing',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          ..._currentZone!.allMemberDeviceIds.map((deviceId) {
-                            final isCurrentSpeaker = deviceId == widget.speaker.deviceId;
-                            final isMaster = _currentZone!.isMaster(deviceId);
-                            final speaker = _getSpeakerByDeviceId(deviceId);
-
-                            // Find the member object for this device (null if it's the master)
-                            final member = _currentZone!.members
-                                .where((m) => m.deviceId == deviceId)
-                                .firstOrNull;
-
-                            // Get volume state for this member
-                            final memberVolume = _zoneMemberVolumes[deviceId];
-                            final isLoadingMemberVolume = _loadingVolumes[deviceId] ?? false;
-                            final volumeError = _volumeErrors[deviceId];
-
-                            // Determine role text
-                            final roleText = isMaster ? 'Master' : 'Zone Member';
-
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8.0),
-                              child: Column(
-                                children: [
-                                  Row(
+                            const SizedBox(height: 16),
+                            if (_isLoadingNowPlaying && _nowPlaying == null)
+                              const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16.0),
+                                  child: CircularProgressIndicator(),
+                                ),
+                              )
+                            else
+                              if (_nowPlayingErrorMessage != null)
+                                Column(
+                                  children: [
+                                    Text(
+                                      _nowPlayingErrorMessage!,
+                                      style: TextStyle(
+                                        color: theme.colorScheme.error,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    TextButton(
+                                      onPressed: _loadNowPlaying,
+                                      child: const Text('Retry'),
+                                    ),
+                                  ],
+                                )
+                              else
+                                if (_nowPlaying != null)
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment
+                                        .start,
                                     children: [
-                                      // Speaker emoji and info
-                                      if (speaker != null) ...[
+                                      if (_nowPlaying!.track != null) ...[
                                         Text(
-                                          speaker.emoji,
-                                          style: const TextStyle(fontSize: 24),
+                                          _nowPlaying!.track!,
+                                          style: theme.textTheme.titleLarge
+                                              ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                        const SizedBox(height: 8),
+                                      ],
+                                      if (_nowPlaying!.artist != null) ...[
+                                        Text(
+                                          _nowPlaying!.artist!,
+                                          style: theme.textTheme.titleMedium
+                                              ?.copyWith(
+                                            color: theme.colorScheme
+                                                .onSurfaceVariant,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 16),
+                                      ],
+                                      // Album art and settings
+                                      Row(
+                                        crossAxisAlignment: CrossAxisAlignment
+                                            .start,
+                                        children: [
+                                          if (_nowPlaying!.art != null &&
+                                              _nowPlaying!.artImageStatus ==
+                                                  'IMAGE_PRESENT')
+                                            GestureDetector(
+                                              onTap: _openAlbumArtFullScreen,
+                                              child: Hero(
+                                                tag: 'album-art-${widget.speaker
+                                                    .id}',
+                                                child: ClipRRect(
+                                                  borderRadius: BorderRadius
+                                                      .circular(8),
+                                                  child: Image.network(
+                                                    _nowPlaying!.art!,
+                                                    width: 100,
+                                                    height: 100,
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder: (context,
+                                                        error, stackTrace) {
+                                                      return Container(
+                                                        width: 100,
+                                                        height: 100,
+                                                        decoration: BoxDecoration(
+                                                          color: theme
+                                                              .colorScheme
+                                                              .surfaceContainerHighest,
+                                                          borderRadius: BorderRadius
+                                                              .circular(8),
+                                                        ),
+                                                        child: Icon(
+                                                          Icons.music_note,
+                                                          size: 48,
+                                                          color: theme
+                                                              .colorScheme
+                                                              .onSurfaceVariant,
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          const SizedBox(width: 16),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment
+                                                  .start,
+                                              children: [
+                                                if (_nowPlaying!
+                                                    .shuffleSetting !=
+                                                    null) ...[
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        Icons.shuffle,
+                                                        size: 18,
+                                                        color: _nowPlaying!
+                                                            .shuffleSetting ==
+                                                            'SHUFFLE_ON'
+                                                            ? theme.colorScheme
+                                                            .primary
+                                                            : theme.colorScheme
+                                                            .onSurfaceVariant,
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      Text(
+                                                        _nowPlaying!
+                                                            .shuffleSetting ==
+                                                            'SHUFFLE_ON'
+                                                            ? 'Shuffle On'
+                                                            : 'Shuffle Off',
+                                                        style: theme.textTheme
+                                                            .bodyMedium,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                ],
+                                                if (_nowPlaying!
+                                                    .repeatSetting != null) ...[
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        _nowPlaying!
+                                                            .repeatSetting ==
+                                                            'REPEAT_ALL'
+                                                            ? Icons.repeat
+                                                            : _nowPlaying!
+                                                            .repeatSetting ==
+                                                            'REPEAT_ONE'
+                                                            ? Icons.repeat_one
+                                                            : Icons.repeat,
+                                                        size: 18,
+                                                        color: _nowPlaying!
+                                                            .repeatSetting !=
+                                                            'REPEAT_OFF'
+                                                            ? theme.colorScheme
+                                                            .primary
+                                                            : theme.colorScheme
+                                                            .onSurfaceVariant,
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      Text(
+                                                        _nowPlaying!
+                                                            .repeatSetting ==
+                                                            'REPEAT_ALL'
+                                                            ? 'Repeat All'
+                                                            : _nowPlaying!
+                                                            .repeatSetting ==
+                                                            'REPEAT_ONE'
+                                                            ? 'Repeat One'
+                                                            : 'Repeat Off',
+                                                        style: theme.textTheme
+                                                            .bodyMedium,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      // Action buttons (Play/Pause and Open in Spotify)
+                                      if ((_nowPlaying!.playStatus ==
+                                          'PLAY_STATE' ||
+                                          _nowPlaying!.playStatus ==
+                                              'PAUSE_STATE') ||
+                                          (_nowPlaying!.source == 'SPOTIFY' &&
+                                              _nowPlaying!.location != null &&
+                                              _decodeSpotifyUri(
+                                                  _nowPlaying!.location) !=
+                                                  null)) ...[
+                                        const SizedBox(height: 16),
+                                        Center(
+                                          child: Wrap(
+                                            spacing: 12,
+                                            runSpacing: 12,
+                                            alignment: WrapAlignment.center,
                                             children: [
-                                              Text(
-                                                speaker.name,
-                                                style: theme.textTheme.bodyMedium?.copyWith(
-                                                  fontWeight: FontWeight.w500,
+                                              // Play/Pause button
+                                              if (_nowPlaying!.playStatus !=
+                                                  null &&
+                                                  (_nowPlaying!.playStatus ==
+                                                      'PLAY_STATE' ||
+                                                      _nowPlaying!.playStatus ==
+                                                          'PAUSE_STATE'))
+                                                FilledButton.icon(
+                                                  onPressed: _isLoadingNowPlaying
+                                                      ? null
+                                                      : _togglePlayPause,
+                                                  icon: Icon(
+                                                    _nowPlaying!.playStatus ==
+                                                        'PLAY_STATE'
+                                                        ? Icons.pause
+                                                        : Icons.play_arrow,
+                                                  ),
+                                                  label: Text(
+                                                    _nowPlaying!.playStatus ==
+                                                        'PLAY_STATE'
+                                                        ? 'Pause'
+                                                        : 'Play',
+                                                  ),
+                                                  style: FilledButton.styleFrom(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                      horizontal: 32,
+                                                      vertical: 16,
+                                                    ),
+                                                  ),
                                                 ),
-                                              ),
-                                              Text(
-                                                roleText,
-                                                style: theme.textTheme.bodySmall?.copyWith(
-                                                  color: theme.colorScheme.onSurfaceVariant,
+                                              // Open in Spotify button
+                                              if (_nowPlaying!.source ==
+                                                  'SPOTIFY' &&
+                                                  _nowPlaying!.location !=
+                                                      null &&
+                                                  _decodeSpotifyUri(
+                                                      _nowPlaying!.location) !=
+                                                      null)
+                                                OutlinedButton.icon(
+                                                  onPressed: _openInSpotify,
+                                                  icon: const Icon(
+                                                      Icons.open_in_new),
+                                                  label: const Text(
+                                                      'Open in Spotify'),
+                                                  style: OutlinedButton
+                                                      .styleFrom(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                      horizontal: 24,
+                                                      vertical: 16,
+                                                    ),
+                                                  ),
                                                 ),
-                                              ),
                                             ],
                                           ),
-                                        ),
-                                      ] else
-                                        Expanded(
-                                          child: Text(
-                                            member?.ipAddress ?? deviceId,
-                                            style: theme.textTheme.bodyMedium,
-                                          ),
-                                        ),
-                                      // Volume controls - always present to maintain alignment
-                                      if (speaker != null) ...[
-                                        const SizedBox(width: 16),
-                                        SizedBox(
-                                          height: 40,
-                                          width: 40,
-                                          child: FilledButton(
-                                            onPressed: (isLoadingMemberVolume || memberVolume == null)
-                                                ? null
-                                                : () => _adjustMemberVolume(deviceId, -5),
-                                            style: FilledButton.styleFrom(
-                                              padding: EdgeInsets.zero,
-                                              minimumSize: const Size(40, 40),
-                                            ),
-                                            child: const Icon(Icons.volume_down, size: 18),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 4),
-                                        if (isLoadingMemberVolume)
-                                          const SizedBox(
-                                            width: 50,
-                                            height: 16,
-                                            child: Center(
-                                              child: SizedBox(
-                                                width: 16,
-                                                height: 16,
-                                                child: CircularProgressIndicator(strokeWidth: 2),
-                                              ),
-                                            ),
-                                          )
-                                        else if (memberVolume != null) ...[
-                                          SizedBox(
-                                            width: 50,
-                                            child: Text(
-                                              '${memberVolume.actualVolume}%',
-                                              style: theme.textTheme.bodySmall?.copyWith(
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                          ),
-                                        ] else
-                                          const SizedBox(width: 50),
-                                        const SizedBox(width: 4),
-                                        SizedBox(
-                                          height: 40,
-                                          width: 40,
-                                          child: FilledButton(
-                                            onPressed: (isLoadingMemberVolume || memberVolume == null)
-                                                ? null
-                                                : () => _adjustMemberVolume(deviceId, 5),
-                                            style: FilledButton.styleFrom(
-                                              padding: EdgeInsets.zero,
-                                              minimumSize: const Size(40, 40),
-                                            ),
-                                            child: const Icon(Icons.volume_up, size: 18),
-                                          ),
-                                        ),
-                                        // Remove button - fixed width to maintain alignment
-                                        const SizedBox(width: 4),
-                                        SizedBox(
-                                          width: 40,
-                                          height: 40,
-                                          child: (!isCurrentSpeaker &&
-                                                  !isMaster &&
-                                                  _currentZone!.isMaster(widget.speaker.deviceId) &&
-                                                  member != null)
-                                              ? FilledButton(
-                                                  onPressed: _isLoadingZone
-                                                      ? null
-                                                      : () => _removeFromZone(member),
-                                                  style: FilledButton.styleFrom(
-                                                    padding: EdgeInsets.zero,
-                                                    minimumSize: const Size(40, 40),
-                                                    backgroundColor: theme.colorScheme.errorContainer,
-                                                    foregroundColor: theme.colorScheme.onErrorContainer,
-                                                  ),
-                                                  child: const Icon(Icons.remove_circle_outline, size: 18),
-                                                )
-                                              : null,
                                         ),
                                       ],
                                     ],
                                   ),
-                                  // Show error message if volume load failed
-                                  if (volumeError != null)
-                                    Padding(
-                                      padding: const EdgeInsets.only(left: 36, top: 4),
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              volumeError,
-                                              style: TextStyle(
-                                                color: theme.colorScheme.error,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          ),
-                                          TextButton(
-                                            onPressed: () async {
-                                              if (speaker == null) return;
-                                              setState(() {
-                                                _loadingVolumes[deviceId] = true;
-                                                _volumeErrors[deviceId] = null;
-                                              });
-                                              try {
-                                                final volume = await _apiService.getVolume(speaker.ipAddress);
-                                                if (!mounted) return;
-                                                setState(() {
-                                                  _zoneMemberVolumes[deviceId] = volume;
-                                                  _loadingVolumes[deviceId] = false;
-                                                });
-                                              } catch (e) {
-                                                if (!mounted) return;
-                                                setState(() {
-                                                  _volumeErrors[deviceId] = 'Failed to load volume: ${e.toString()}';
-                                                  _loadingVolumes[deviceId] = false;
-                                                });
-                                              }
-                                            },
-                                            child: const Text('Retry', style: TextStyle(fontSize: 12)),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            );
-                          }),
-                          const SizedBox(height: 16),
-                          if (_currentZone!.isMaster(widget.speaker.deviceId))
-                            FilledButton.icon(
-                              onPressed: _isLoadingZone ? null : () => _showZoneDialog(context),
-                              icon: const Icon(Icons.add),
-                              label: const Text('Add Speakers'),
-                            ),
-                        ],
+                          ],
+                        ),
                       ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Now Playing Section
-            Card(
-              elevation: 1,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.music_note,
-                          color: theme.colorScheme.primary,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Now Playing',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
                     ),
                     const SizedBox(height: 16),
-                    if (_isLoadingNowPlaying && _nowPlaying == null)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
-                    else if (_nowPlayingErrorMessage != null)
-                      Column(
-                        children: [
-                          Text(
-                            _nowPlayingErrorMessage!,
-                            style: TextStyle(
-                              color: theme.colorScheme.error,
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          TextButton(
-                            onPressed: _loadNowPlaying,
-                            child: const Text('Retry'),
-                          ),
-                        ],
-                      )
-                    else if (_nowPlaying != null)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (_nowPlaying!.track != null) ...[
-                            Text(
-                              _nowPlaying!.track!,
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                          ],
-                          if (_nowPlaying!.artist != null) ...[
-                            Text(
-                              _nowPlaying!.artist!,
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                          ],
-                          // Album art and settings
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (_nowPlaying!.art != null &&
-                                  _nowPlaying!.artImageStatus == 'IMAGE_PRESENT')
-                                GestureDetector(
-                                  onTap: _openAlbumArtFullScreen,
-                                  child: Hero(
-                                    tag: 'album-art-${widget.speaker.id}',
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Image.network(
-                                        _nowPlaying!.art!,
-                                        width: 100,
-                                        height: 100,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) {
-                                          return Container(
-                                            width: 100,
-                                            height: 100,
-                                            decoration: BoxDecoration(
-                                              color: theme.colorScheme.surfaceContainerHighest,
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: Icon(
-                                              Icons.music_note,
-                                              size: 48,
-                                              color: theme.colorScheme.onSurfaceVariant,
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
+                    // Volume Control Section
+                    Card(
+                      elevation: 1,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.volume_up,
+                                  color: theme.colorScheme.primary,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Volume',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            if (_isLoadingVolume && _currentVolume == null)
+                              const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16.0),
+                                  child: CircularProgressIndicator(),
+                                ),
+                              )
+                            else
+                              if (_volumeErrorMessage != null)
+                                Column(
                                   children: [
-                                    if (_nowPlaying!.shuffleSetting != null) ...[
+                                    Text(
+                                      _volumeErrorMessage!,
+                                      style: TextStyle(
+                                        color: theme.colorScheme.error,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    TextButton(
+                                      onPressed: _loadVolume,
+                                      child: const Text('Retry'),
+                                    ),
+                                  ],
+                                )
+                              else
+                                if (_currentVolume != null)
+                                  Column(
+                                    children: [
+                                      const SizedBox(height: 16),
+                                      // Volume bar
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: LinearProgressIndicator(
+                                          value: _currentVolume!.actualVolume /
+                                              100,
+                                          minHeight: 12,
+                                          backgroundColor: theme.colorScheme
+                                              .surfaceContainerHighest,
+                                          valueColor: AlwaysStoppedAnimation<
+                                              Color>(
+                                            theme.colorScheme.primary,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 24),
+                                      // Volume control buttons
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment
+                                            .center,
+                                        children: [
+                                          // Vol up buttonn
+                                          FilledButton.icon(
+                                            onPressed: _isLoadingVolume
+                                                ? null
+                                                : () => _adjustVolume(-5),
+                                            icon: const Icon(Icons.volume_down),
+                                            label: const Text('Down'),
+                                          ),
+                                          const SizedBox(width: 16),
+                                          Text(
+                                            '${_currentVolume!.actualVolume} %',
+                                            style: theme.textTheme.titleLarge
+                                                ?.copyWith(
+                                                fontWeight: FontWeight.bold
+                                            ),
+                                          ),
+                                          const SizedBox(width: 16),
+                                          FilledButton.icon(
+                                            onPressed: _isLoadingVolume
+                                                ? null
+                                                : () => _adjustVolume(5),
+                                            icon: const Icon(Icons.volume_up),
+                                            label: const Text('Up'),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Multi-Room Zone Section
+                    Card(
+                      elevation: 1,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.speaker_group,
+                                  color: theme.colorScheme.primary,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Multi-Room Zone',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            if (_isLoadingZone && _currentZone == null)
+                              const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16.0),
+                                  child: CircularProgressIndicator(),
+                                ),
+                              )
+                            else
+                              if (_zoneErrorMessage != null)
+                                Column(
+                                  children: [
+                                    Text(
+                                      _zoneErrorMessage!,
+                                      style: TextStyle(
+                                        color: theme.colorScheme.error,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    TextButton(
+                                      onPressed: _loadZone,
+                                      child: const Text('Retry'),
+                                    ),
+                                  ],
+                                )
+                              else
+                                if (_currentZone == null ||
+                                    _currentZone!.isEmpty)
+                                  Column(
+                                    children: [
+                                      Text(
+                                        'This speaker is not in a zone',
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(
+                                          color: theme.colorScheme
+                                              .onSurfaceVariant,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      FilledButton.icon(
+                                        onPressed: _isLoadingZone ? null : () =>
+                                            _showZoneDialog(context),
+                                        icon: const Icon(Icons.add),
+                                        label: const Text('Create Zone'),
+                                      ),
+                                    ],
+                                  )
+                                else
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment
+                                        .start,
+                                    children: [
                                       Row(
                                         children: [
                                           Icon(
-                                            Icons.shuffle,
+                                            Icons.album,
                                             size: 18,
-                                            color: _nowPlaying!.shuffleSetting == 'SHUFFLE_ON'
-                                                ? theme.colorScheme.primary
-                                                : theme.colorScheme.onSurfaceVariant,
+                                            color: theme.colorScheme.primary,
                                           ),
                                           const SizedBox(width: 8),
                                           Text(
-                                            _nowPlaying!.shuffleSetting == 'SHUFFLE_ON'
-                                                ? 'Shuffle On'
-                                                : 'Shuffle Off',
-                                            style: theme.textTheme.bodyMedium,
+                                            _currentZone!.isMaster(
+                                                widget.speaker.deviceId)
+                                                ? 'Master Speaker'
+                                                : 'Zone Member',
+                                            style: theme.textTheme.bodyLarge
+                                                ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ],
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'Zone Members (${_currentZone!
+                                            .allMemberDeviceIds.length})',
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                       const SizedBox(height: 8),
-                                    ],
-                                    if (_nowPlaying!.repeatSetting != null) ...[
-                                      Row(
-                                        children: [
-                                          Icon(
-                                            _nowPlaying!.repeatSetting == 'REPEAT_ALL'
-                                                ? Icons.repeat
-                                                : _nowPlaying!.repeatSetting == 'REPEAT_ONE'
-                                                    ? Icons.repeat_one
-                                                    : Icons.repeat,
-                                            size: 18,
-                                            color: _nowPlaying!.repeatSetting != 'REPEAT_OFF'
-                                                ? theme.colorScheme.primary
-                                                : theme.colorScheme.onSurfaceVariant,
+                                      ..._currentZone!.allMemberDeviceIds.map((
+                                          deviceId) {
+                                        final isCurrentSpeaker = deviceId ==
+                                            widget.speaker.deviceId;
+                                        final isMaster = _currentZone!.isMaster(
+                                            deviceId);
+                                        final speaker = _getSpeakerByDeviceId(
+                                            deviceId);
+
+                                        // Find the member object for this device (null if it's the master)
+                                        final member = _currentZone!
+                                            .members
+                                            .where((m) =>
+                                        m.deviceId == deviceId)
+                                            .firstOrNull;
+
+                                        // Get volume state for this member
+                                        final memberVolume = _zoneMemberVolumes[deviceId];
+                                        final isLoadingMemberVolume = _loadingVolumes[deviceId] ??
+                                            false;
+                                        final volumeError = _volumeErrors[deviceId];
+
+                                        // Determine role text
+                                        final roleText = isMaster
+                                            ? 'Master'
+                                            : 'Zone Member';
+
+                                        return Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 8.0),
+                                          child: Column(
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  // Speaker emoji and info
+                                                  if (speaker != null) ...[
+                                                    Text(
+                                                      speaker.emoji,
+                                                      style: const TextStyle(
+                                                          fontSize: 24),
+                                                    ),
+                                                    const SizedBox(width: 12),
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment
+                                                            .start,
+                                                        children: [
+                                                          Text(
+                                                            speaker.name,
+                                                            style: theme
+                                                                .textTheme
+                                                                .bodyMedium
+                                                                ?.copyWith(
+                                                              fontWeight: FontWeight
+                                                                  .w500,
+                                                            ),
+                                                          ),
+                                                          Text(
+                                                            roleText,
+                                                            style: theme
+                                                                .textTheme
+                                                                .bodySmall
+                                                                ?.copyWith(
+                                                              color: theme
+                                                                  .colorScheme
+                                                                  .onSurfaceVariant,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ] else
+                                                    Expanded(
+                                                      child: Text(
+                                                        member?.ipAddress ??
+                                                            deviceId,
+                                                        style: theme.textTheme
+                                                            .bodyMedium,
+                                                      ),
+                                                    ),
+                                                  // Volume controls - always present to maintain alignment
+                                                  if (speaker != null) ...[
+                                                    const SizedBox(width: 16),
+                                                    SizedBox(
+                                                      height: 40,
+                                                      width: 40,
+                                                      child: FilledButton(
+                                                        onPressed: (isLoadingMemberVolume ||
+                                                            memberVolume ==
+                                                                null)
+                                                            ? null
+                                                            : () =>
+                                                            _adjustMemberVolume(
+                                                                deviceId, -5),
+                                                        style: FilledButton
+                                                            .styleFrom(
+                                                          padding: EdgeInsets
+                                                              .zero,
+                                                          minimumSize: const Size(
+                                                              40, 40),
+                                                        ),
+                                                        child: const Icon(
+                                                            Icons.volume_down,
+                                                            size: 18),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 4),
+                                                    if (isLoadingMemberVolume)
+                                                      const SizedBox(
+                                                        width: 50,
+                                                        height: 16,
+                                                        child: Center(
+                                                          child: SizedBox(
+                                                            width: 16,
+                                                            height: 16,
+                                                            child: CircularProgressIndicator(
+                                                                strokeWidth: 2),
+                                                          ),
+                                                        ),
+                                                      )
+                                                    else
+                                                      if (memberVolume !=
+                                                          null) ...[
+                                                        SizedBox(
+                                                          width: 50,
+                                                          child: Text(
+                                                            '${memberVolume
+                                                                .actualVolume}%',
+                                                            style: theme
+                                                                .textTheme
+                                                                .bodySmall
+                                                                ?.copyWith(
+                                                              fontWeight: FontWeight
+                                                                  .bold,
+                                                            ),
+                                                            textAlign: TextAlign
+                                                                .center,
+                                                          ),
+                                                        ),
+                                                      ] else
+                                                        const SizedBox(
+                                                            width: 50),
+                                                    const SizedBox(width: 4),
+                                                    SizedBox(
+                                                      height: 40,
+                                                      width: 40,
+                                                      child: FilledButton(
+                                                        onPressed: (isLoadingMemberVolume ||
+                                                            memberVolume ==
+                                                                null)
+                                                            ? null
+                                                            : () =>
+                                                            _adjustMemberVolume(
+                                                                deviceId, 5),
+                                                        style: FilledButton
+                                                            .styleFrom(
+                                                          padding: EdgeInsets
+                                                              .zero,
+                                                          minimumSize: const Size(
+                                                              40, 40),
+                                                        ),
+                                                        child: const Icon(
+                                                            Icons.volume_up,
+                                                            size: 18),
+                                                      ),
+                                                    ),
+                                                    // Remove button - fixed width to maintain alignment
+                                                    const SizedBox(width: 4),
+                                                    SizedBox(
+                                                      width: 40,
+                                                      height: 40,
+                                                      child: (!isCurrentSpeaker &&
+                                                          !isMaster &&
+                                                          _currentZone!
+                                                              .isMaster(
+                                                              widget.speaker
+                                                                  .deviceId) &&
+                                                          member != null)
+                                                          ? FilledButton(
+                                                        onPressed: _isLoadingZone
+                                                            ? null
+                                                            : () =>
+                                                            _removeFromZone(
+                                                                member),
+                                                        style: FilledButton
+                                                            .styleFrom(
+                                                          padding: EdgeInsets
+                                                              .zero,
+                                                          minimumSize: const Size(
+                                                              40, 40),
+                                                          backgroundColor: theme
+                                                              .colorScheme
+                                                              .errorContainer,
+                                                          foregroundColor: theme
+                                                              .colorScheme
+                                                              .onErrorContainer,
+                                                        ),
+                                                        child: const Icon(Icons
+                                                            .remove_circle_outline,
+                                                            size: 18),
+                                                      )
+                                                          : null,
+                                                    ),
+                                                  ],
+                                                ],
+                                              ),
+                                              // Show error message if volume load failed
+                                              if (volumeError != null)
+                                                Padding(
+                                                  padding: const EdgeInsets
+                                                      .only(left: 36, top: 4),
+                                                  child: Row(
+                                                    children: [
+                                                      Expanded(
+                                                        child: Text(
+                                                          volumeError,
+                                                          style: TextStyle(
+                                                            color: theme
+                                                                .colorScheme
+                                                                .error,
+                                                            fontSize: 12,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      TextButton(
+                                                        onPressed: () async {
+                                                          if (speaker == null) {
+                                                            return;
+                                                          }
+                                                          setState(() {
+                                                            _loadingVolumes[deviceId] =
+                                                            true;
+                                                            _volumeErrors[deviceId] =
+                                                            null;
+                                                          });
+                                                          try {
+                                                            final volume = await _apiService
+                                                                .getVolume(
+                                                                speaker
+                                                                    .ipAddress);
+                                                            if (!mounted) {
+                                                              return;
+                                                            }
+                                                            setState(() {
+                                                              _zoneMemberVolumes[deviceId] =
+                                                                  volume;
+                                                              _loadingVolumes[deviceId] =
+                                                              false;
+                                                            });
+                                                          } catch (e) {
+                                                            if (!mounted) {
+                                                              return;
+                                                            }
+                                                            setState(() {
+                                                              _volumeErrors[deviceId] =
+                                                              'Failed to load volume: ${e
+                                                                  .toString()}';
+                                                              _loadingVolumes[deviceId] =
+                                                              false;
+                                                            });
+                                                          }
+                                                        },
+                                                        child: const Text(
+                                                            'Retry',
+                                                            style: TextStyle(
+                                                                fontSize: 12)),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                            ],
                                           ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            _nowPlaying!.repeatSetting == 'REPEAT_ALL'
-                                                ? 'Repeat All'
-                                                : _nowPlaying!.repeatSetting == 'REPEAT_ONE'
-                                                    ? 'Repeat One'
-                                                    : 'Repeat Off',
-                                            style: theme.textTheme.bodyMedium,
-                                          ),
-                                        ],
-                                      ),
+                                        );
+                                      }),
+                                      const SizedBox(height: 16),
+                                      if (_currentZone!.isMaster(
+                                          widget.speaker.deviceId))
+                                        FilledButton.icon(
+                                          onPressed: _isLoadingZone
+                                              ? null
+                                              : () => _showZoneDialog(context),
+                                          icon: const Icon(Icons.add),
+                                          label: const Text('Add Speakers'),
+                                        ),
                                     ],
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          // Action buttons (Play/Pause and Open in Spotify)
-                          if ((_nowPlaying!.playStatus == 'PLAY_STATE' ||
-                                  _nowPlaying!.playStatus == 'PAUSE_STATE') ||
-                              (_nowPlaying!.source == 'SPOTIFY' &&
-                                  _nowPlaying!.location != null &&
-                                  _decodeSpotifyUri(_nowPlaying!.location) != null)) ...[
-                            const SizedBox(height: 16),
-                            Center(
-                              child: Wrap(
-                                spacing: 12,
-                                runSpacing: 12,
-                                alignment: WrapAlignment.center,
-                                children: [
-                                  // Play/Pause button
-                                  if (_nowPlaying!.playStatus != null &&
-                                      (_nowPlaying!.playStatus == 'PLAY_STATE' ||
-                                          _nowPlaying!.playStatus == 'PAUSE_STATE'))
-                                    FilledButton.icon(
-                                      onPressed: _isLoadingNowPlaying ? null : _togglePlayPause,
-                                      icon: Icon(
-                                        _nowPlaying!.playStatus == 'PLAY_STATE'
-                                            ? Icons.pause
-                                            : Icons.play_arrow,
-                                      ),
-                                      label: Text(
-                                        _nowPlaying!.playStatus == 'PLAY_STATE'
-                                            ? 'Pause'
-                                            : 'Play',
-                                      ),
-                                      style: FilledButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 32,
-                                          vertical: 16,
-                                        ),
-                                      ),
-                                    ),
-                                  // Open in Spotify button
-                                  if (_nowPlaying!.source == 'SPOTIFY' &&
-                                      _nowPlaying!.location != null &&
-                                      _decodeSpotifyUri(_nowPlaying!.location) != null)
-                                    OutlinedButton.icon(
-                                      onPressed: _openInSpotify,
-                                      icon: const Icon(Icons.open_in_new),
-                                      label: const Text('Open in Spotify'),
-                                      style: OutlinedButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 24,
-                                          vertical: 16,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
+                                  ),
                           ],
-                        ],
+                        ),
                       ),
-                  ],
-                ),
-              ),
-            ),
+                    ),
                     // Safe area padding for modern Android gesture navigation
                     const SizedBox(height: 80),
                   ],
@@ -1542,7 +1727,8 @@ class _ZoneDialogState extends State<_ZoneDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasZone = widget.currentZone != null && widget.currentZone!.isNotEmpty;
+    final hasZone = widget.currentZone != null &&
+        widget.currentZone!.isNotEmpty;
 
     return AlertDialog(
       title: Text(hasZone ? 'Add Speakers to Zone' : 'Create Multi-Room Zone'),
@@ -1575,14 +1761,14 @@ class _ZoneDialogState extends State<_ZoneDialog> {
                     onChanged: isInZone
                         ? null
                         : (value) {
-                            setState(() {
-                              if (value == true) {
-                                _selectedSpeakerIds.add(speaker.id);
-                              } else {
-                                _selectedSpeakerIds.remove(speaker.id);
-                              }
-                            });
-                          },
+                      setState(() {
+                        if (value == true) {
+                          _selectedSpeakerIds.add(speaker.id);
+                        } else {
+                          _selectedSpeakerIds.remove(speaker.id);
+                        }
+                      });
+                    },
                     title: Row(
                       children: [
                         Text(
@@ -1623,18 +1809,18 @@ class _ZoneDialogState extends State<_ZoneDialog> {
           onPressed: _selectedSpeakerIds.isEmpty
               ? null
               : () {
-                  final selectedSpeakers = widget.availableSpeakers
-                      .where((s) => _selectedSpeakerIds.contains(s.id))
-                      .toList();
+            final selectedSpeakers = widget.availableSpeakers
+                .where((s) => _selectedSpeakerIds.contains(s.id))
+                .toList();
 
-                  Navigator.of(context).pop();
+            Navigator.of(context).pop();
 
-                  if (hasZone) {
-                    widget.onAddToZone(selectedSpeakers);
-                  } else {
-                    widget.onCreateZone(selectedSpeakers);
-                  }
-                },
+            if (hasZone) {
+              widget.onAddToZone(selectedSpeakers);
+            } else {
+              widget.onCreateZone(selectedSpeakers);
+            }
+          },
           child: Text(hasZone ? 'Add' : 'Create Zone'),
         ),
       ],
