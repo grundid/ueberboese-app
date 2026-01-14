@@ -776,6 +776,145 @@ void main() {
       expect(find.text('Now Playing'), findsOneWidget);
       expect(find.text('Test Track'), findsOneWidget);
       expect(find.text('Test Artist'), findsOneWidget);
+      // Verify pause button is shown when playing
+      expect(find.text('Pause'), findsOneWidget);
+    });
+
+    testWidgets('shows play button when music is paused',
+        (WidgetTester tester) async {
+      final appState = MyAppState();
+      await appState.initialize();
+
+      final mockClient = MockClient();
+      final apiService = SpeakerApiService(httpClient: mockClient);
+
+      // Mock getNowPlaying to return paused Spotify playback
+      when(mockClient.get(any)).thenAnswer(
+        (_) async => http.Response('''<?xml version="1.0" encoding="UTF-8" ?>
+<nowPlaying deviceID="C4F312DD8A8F">
+  <ContentItem source="SPOTIFY" type="tracklisturl" location="/playback/container/abc123" isPresetable="true">
+    <itemName>Test Track</itemName>
+  </ContentItem>
+  <track>Test Track</track>
+  <artist>Test Artist</artist>
+  <album>Test Album</album>
+  <art>http://example.com/art.jpg</art>
+  <playStatus>PAUSE_STATE</playStatus>
+</nowPlaying>''', 200, headers: {'content-type': 'text/xml; charset=utf-8'}),
+      );
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: appState,
+          child: MaterialApp(
+            home: SpeakerDetailPage(
+              speaker: testSpeaker,
+              apiService: apiService,
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify the Now Playing Card is shown with content
+      expect(find.text('Now Playing'), findsOneWidget);
+      expect(find.text('Test Track'), findsOneWidget);
+      expect(find.text('Test Artist'), findsOneWidget);
+      // Verify play button is shown when paused
+      expect(find.text('Play'), findsOneWidget);
+      expect(find.text('Pause'), findsNothing);
+    });
+
+    testWidgets('shows play/pause button for TUNEIN source',
+        (WidgetTester tester) async {
+      final appState = MyAppState();
+      await appState.initialize();
+
+      final mockClient = MockClient();
+      final apiService = SpeakerApiService(httpClient: mockClient);
+
+      // Mock getNowPlaying to return TUNEIN playback
+      when(mockClient.get(any)).thenAnswer(
+        (_) async => http.Response('''<?xml version="1.0" encoding="UTF-8" ?>
+<nowPlaying deviceID="C4F312DD8A8F">
+  <ContentItem source="TUNEIN" location="s1234" isPresetable="true">
+    <itemName>Test Radio Station</itemName>
+  </ContentItem>
+  <track>Test Radio Station</track>
+  <playStatus>PLAY_STATE</playStatus>
+</nowPlaying>''', 200, headers: {'content-type': 'text/xml; charset=utf-8'}),
+      );
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: appState,
+          child: MaterialApp(
+            home: SpeakerDetailPage(
+              speaker: testSpeaker,
+              apiService: apiService,
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify the Now Playing Card is shown with content
+      expect(find.text('Now Playing'), findsOneWidget);
+      expect(find.text('Test Radio Station'), findsOneWidget);
+      // Verify pause button is shown for TUNEIN when playing
+      expect(find.text('Pause'), findsOneWidget);
+      // Verify no Spotify button is shown for TUNEIN
+      expect(find.text('Open in Spotify'), findsNothing);
+    });
+
+    testWidgets('shows play button for TUNEIN when stopped',
+        (WidgetTester tester) async {
+      final appState = MyAppState();
+      await appState.initialize();
+
+      final mockClient = MockClient();
+      final apiService = SpeakerApiService(httpClient: mockClient);
+
+      // Mock getNowPlaying to return stopped TUNEIN playback
+      when(mockClient.get(any)).thenAnswer(
+        (_) async => http.Response('''<?xml version="1.0" encoding="UTF-8" ?>
+<nowPlaying deviceID="587A628A4073" source="TUNEIN" sourceAccount="">
+  <ContentItem source="TUNEIN" type="stationurl" location="/v1/playback/station/s80044" sourceAccount="" isPresetable="true">
+    <itemName>Radio TEDDY</itemName>
+    <containerArt>http://cdn-radiotime-logos.tunein.com/s80044q.png</containerArt>
+  </ContentItem>
+  <track>Radio TEDDY</track>
+  <artist>Macht Spaß! Macht schlau!</artist>
+  <album></album>
+  <stationName>Radio TEDDY</stationName>
+  <art artImageStatus="IMAGE_PRESENT">http://cdn-radiotime-logos.tunein.com/s80044g.png</art>
+  <playStatus>STOP_STATE</playStatus>
+  <streamType>RADIO_STREAMING</streamType>
+</nowPlaying>''', 200, headers: {'content-type': 'text/xml; charset=utf-8'}),
+      );
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: appState,
+          child: MaterialApp(
+            home: SpeakerDetailPage(
+              speaker: testSpeaker,
+              apiService: apiService,
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify the Now Playing Card is shown with content
+      expect(find.text('Now Playing'), findsOneWidget);
+      expect(find.text('Radio TEDDY'), findsOneWidget);
+      // Verify play button is shown for stopped TUNEIN
+      expect(find.text('Play'), findsOneWidget);
+      expect(find.text('Pause'), findsNothing);
     });
 
     testWidgets('includes safe space at bottom for Android gesture navigation',

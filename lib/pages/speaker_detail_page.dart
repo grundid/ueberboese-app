@@ -729,6 +729,7 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
     // Show card if we have meaningful playback state or content info
     final hasPlaybackState = _nowPlaying!.playStatus == 'PLAY_STATE' ||
         _nowPlaying!.playStatus == 'PAUSE_STATE' ||
+        _nowPlaying!.playStatus == 'STOP_STATE' ||
         _nowPlaying!.playStatus == 'BUFFERING_STATE';
 
     final hasContentInfo = _nowPlaying!.track != null ||
@@ -1156,7 +1157,9 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                                       if ((_nowPlaying!.playStatus ==
                                           'PLAY_STATE' ||
                                           _nowPlaying!.playStatus ==
-                                              'PAUSE_STATE') ||
+                                              'PAUSE_STATE' ||
+                                          _nowPlaying!.playStatus ==
+                                              'STOP_STATE') ||
                                           (_nowPlaying!.source == 'SPOTIFY' &&
                                               _nowPlaying!.location != null &&
                                               _decodeSpotifyUri(
@@ -1175,7 +1178,9 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                                                   (_nowPlaying!.playStatus ==
                                                       'PLAY_STATE' ||
                                                       _nowPlaying!.playStatus ==
-                                                          'PAUSE_STATE'))
+                                                          'PAUSE_STATE' ||
+                                                      _nowPlaying!.playStatus ==
+                                                          'STOP_STATE'))
                                                 FilledButton.icon(
                                                   onPressed: _isLoadingNowPlaying
                                                       ? null
