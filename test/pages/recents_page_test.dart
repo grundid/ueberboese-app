@@ -176,7 +176,7 @@ void main() {
       expect(find.text('Failed to load recents'), findsNothing);
     });
 
-    testWidgets('displays speaker emoji and Recent in app bar', (WidgetTester tester) async {
+    testWidgets('displays speaker emoji and name in app bar and Recent title on page', (WidgetTester tester) async {
       when(mockApiService.getRecents(any)).thenAnswer(
         (_) async => <Recent>[],
       );
@@ -193,6 +193,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('🔊'), findsOneWidget);
+      expect(find.text('Test Speaker'), findsOneWidget);
       expect(find.text('Recent'), findsOneWidget);
     });
 
