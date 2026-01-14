@@ -660,7 +660,7 @@ void main() {
       expect(find.text('Multi-Room Zone'), findsOneWidget);
     });
 
-    testWidgets('hides Now Playing Card when TV source is active',
+    testWidgets('shows Now Playing Card with TV display when TV source is active',
         (WidgetTester tester) async {
       final appState = MyAppState();
       await appState.initialize();
@@ -692,8 +692,13 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Verify the Now Playing Card is not shown
-      expect(find.text('Now Playing'), findsNothing);
+      // Verify the Now Playing Card is shown with TV content
+      expect(find.text('Now Playing'), findsOneWidget);
+      expect(find.byIcon(Icons.tv), findsOneWidget);
+      expect(find.text('Playing TV sound'), findsOneWidget);
+      // Verify pause button is not shown
+      expect(find.text('Pause'), findsNothing);
+      expect(find.text('Play'), findsNothing);
     });
 
     testWidgets('hides Now Playing Card when nothing is playing',

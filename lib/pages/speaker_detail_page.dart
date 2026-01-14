@@ -721,9 +721,9 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
     // Don't show card if nowPlaying is null or still loading without data
     if (_nowPlaying == null) return false;
 
-    // Hide card if TV source is active
+    // Show card if TV source is active
     if (_nowPlaying!.source == 'PRODUCT' && _nowPlaying!.sourceAccount == 'TV') {
-      return false;
+      return true;
     }
 
     // Show card if we have meaningful playback state or content info
@@ -736,6 +736,10 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
         _nowPlaying!.album != null;
 
     return hasPlaybackState || hasContentInfo;
+  }
+
+  bool _isTvSource() {
+    return _nowPlaying?.source == 'PRODUCT' && _nowPlaying?.sourceAccount == 'TV';
   }
 
   @override
@@ -975,11 +979,32 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                                 )
                               else
                                 if (_nowPlaying != null)
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment
-                                        .start,
-                                    children: [
-                                      if (_nowPlaying!.track != null) ...[
+                                  if (_isTvSource())
+                                    // TV source display
+                                    Center(
+                                      child: Column(
+                                        children: [
+                                          Icon(
+                                            Icons.tv,
+                                            size: 48,
+                                            color: theme.colorScheme.primary,
+                                          ),
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            'Playing TV sound',
+                                            style: theme.textTheme.bodyLarge?.copyWith(
+                                              color: theme.colorScheme.onSurfaceVariant,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  else
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment
+                                          .start,
+                                      children: [
+                                        if (_nowPlaying!.track != null) ...[
                                         Text(
                                           _nowPlaying!.track!,
                                           style: theme.textTheme.titleLarge
