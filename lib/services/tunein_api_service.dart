@@ -6,8 +6,12 @@ import 'package:ueberboese_app/models/tunein_station_detail.dart';
 
 class TuneInApiService {
   final http.Client? httpClient;
+  final Duration timeout;
 
-  TuneInApiService({this.httpClient});
+  TuneInApiService({
+    this.httpClient,
+    this.timeout = const Duration(seconds: 10),
+  });
 
   Future<List<TuneInStation>> searchStations(String query) async {
     if (query.trim().isEmpty) {
@@ -24,7 +28,7 @@ class TuneInApiService {
             url,
             headers: {'Accept': 'text/xml'},
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -75,7 +79,7 @@ class TuneInApiService {
             url,
             headers: {'Accept': 'text/xml'},
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode != 200) {
         throw Exception(

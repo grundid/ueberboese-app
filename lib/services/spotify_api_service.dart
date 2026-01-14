@@ -7,11 +7,13 @@ class SpotifyApiService {
   final http.Client? httpClient;
   final String? username;
   final String? password;
+  final Duration timeout;
 
   SpotifyApiService({
     this.httpClient,
     this.username,
     this.password,
+    this.timeout = const Duration(seconds: 10),
   });
 
   String _createAuthHeader() {
@@ -40,7 +42,7 @@ class SpotifyApiService {
             headers: headers,
             body: body,
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -79,7 +81,7 @@ class SpotifyApiService {
       };
       final response = await client
           .post(url, headers: headers)
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -109,7 +111,7 @@ class SpotifyApiService {
       };
       final response = await client
           .get(url, headers: headers)
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -153,7 +155,7 @@ class SpotifyApiService {
 
       final response = await client
           .post(url, headers: headers, body: body)
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode == 400) {
         final errorData = jsonDecode(response.body) as Map<String, dynamic>;

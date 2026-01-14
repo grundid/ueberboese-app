@@ -117,19 +117,24 @@ void main() {
       });
 
       test('should throw exception on timeout', () async {
+        final fastService = SpotifyApiService(
+          httpClient: mockClient,
+          timeout: const Duration(milliseconds: 100),
+        );
+
         when(mockClient.post(
           Uri.parse('$apiUrl/mgmt/spotify/init'),
           headers: {'Content-Type': 'application/json'},
           body: '{}',
         )).thenAnswer(
           (_) => Future.delayed(
-            const Duration(seconds: 11),
+            const Duration(milliseconds: 200),
             () => http.Response('{}', 200),
           ),
         );
 
         expect(
-          () => service.initSpotifyAuth(apiUrl),
+          () => fastService.initSpotifyAuth(apiUrl),
           throwsA(isA<Exception>()),
         );
       });
@@ -201,18 +206,23 @@ void main() {
       });
 
       test('should throw exception on timeout', () async {
+        final fastService = SpotifyApiService(
+          httpClient: mockClient,
+          timeout: const Duration(milliseconds: 100),
+        );
+
         when(mockClient.post(
           Uri.parse('$apiUrl/mgmt/spotify/confirm?code=$code'),
           headers: {},
         )).thenAnswer(
           (_) => Future.delayed(
-            const Duration(seconds: 11),
+            const Duration(milliseconds: 200),
             () => http.Response('', 200),
           ),
         );
 
         expect(
-          () => service.confirmSpotifyAuth(apiUrl, code),
+          () => fastService.confirmSpotifyAuth(apiUrl, code),
           throwsA(isA<Exception>()),
         );
       });
@@ -330,18 +340,23 @@ void main() {
       });
 
       test('should throw exception on timeout', () async {
+        final fastService = SpotifyApiService(
+          httpClient: mockClient,
+          timeout: const Duration(milliseconds: 100),
+        );
+
         when(mockClient.get(
           Uri.parse('$apiUrl/mgmt/spotify/accounts'),
           headers: {},
         )).thenAnswer(
           (_) => Future.delayed(
-            const Duration(seconds: 11),
+            const Duration(milliseconds: 200),
             () => http.Response('{"accounts": []}', 200),
           ),
         );
 
         expect(
-          () => service.listSpotifyAccounts(apiUrl),
+          () => fastService.listSpotifyAccounts(apiUrl),
           throwsA(isA<Exception>()),
         );
       });
@@ -521,19 +536,24 @@ void main() {
       });
 
       test('should throw exception on timeout', () async {
+        final fastService = SpotifyApiService(
+          httpClient: mockClient,
+          timeout: const Duration(milliseconds: 100),
+        );
+
         when(mockClient.post(
           Uri.parse('$apiUrl/mgmt/spotify/entity'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({'uri': spotifyUri}),
         )).thenAnswer(
           (_) => Future.delayed(
-            const Duration(seconds: 11),
+            const Duration(milliseconds: 200),
             () => http.Response('{}', 200),
           ),
         );
 
         expect(
-          () => service.getSpotifyEntity(apiUrl, spotifyUri),
+          () => fastService.getSpotifyEntity(apiUrl, spotifyUri),
           throwsA(isA<Exception>()),
         );
       });

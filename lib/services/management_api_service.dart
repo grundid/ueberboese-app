@@ -3,8 +3,12 @@ import 'package:http/http.dart' as http;
 
 class ManagementApiService {
   final http.Client? httpClient;
+  final Duration timeout;
 
-  ManagementApiService({this.httpClient});
+  ManagementApiService({
+    this.httpClient,
+    this.timeout = const Duration(seconds: 10),
+  });
 
   Future<List<String>> fetchAccountSpeakers(
     String apiUrl,
@@ -27,7 +31,7 @@ class ManagementApiService {
     try {
       final response = await client
           .get(url, headers: headers)
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode == 401 || response.statusCode == 403) {
         throw Exception(

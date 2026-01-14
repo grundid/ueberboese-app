@@ -713,15 +713,20 @@ void main() {
       });
 
       test('getPresets throws exception on timeout', () async {
+        final fastApiService = SpeakerApiService(
+          httpClient: mockClient,
+          timeout: const Duration(milliseconds: 100),
+        );
+
         when(mockClient.get(any)).thenAnswer(
           (_) async => Future.delayed(
-            const Duration(seconds: 11),
+            const Duration(milliseconds: 200),
             () => http.Response('', 200),
           ),
         );
 
         expect(
-          () => apiService.getPresets('192.168.1.131'),
+          () => fastApiService.getPresets('192.168.1.131'),
           throwsA(isA<Exception>()),
         );
       });
@@ -805,15 +810,20 @@ void main() {
       });
 
       test('removePreset throws exception on timeout', () async {
+        final fastApiService = SpeakerApiService(
+          httpClient: mockClient,
+          timeout: const Duration(milliseconds: 100),
+        );
+
         when(mockClient.post(any, headers: anyNamed('headers'), body: anyNamed('body'))).thenAnswer(
           (_) async => Future.delayed(
-            const Duration(seconds: 11),
+            const Duration(milliseconds: 200),
             () => http.Response('', 200),
           ),
         );
 
         expect(
-          () => apiService.removePreset('192.168.1.131', '1'),
+          () => fastApiService.removePreset('192.168.1.131', '1'),
           throwsA(isA<Exception>()),
         );
       });
@@ -860,15 +870,20 @@ void main() {
       });
 
       test('standby throws exception on timeout', () async {
+        final fastApiService = SpeakerApiService(
+          httpClient: mockClient,
+          timeout: const Duration(milliseconds: 100),
+        );
+
         when(mockClient.get(any)).thenAnswer(
           (_) async => Future.delayed(
-            const Duration(seconds: 11),
+            const Duration(milliseconds: 200),
             () => http.Response('', 200),
           ),
         );
 
         expect(
-          () => apiService.standby('192.168.1.131'),
+          () => fastApiService.standby('192.168.1.131'),
           throwsA(isA<Exception>()),
         );
       });
@@ -1048,6 +1063,10 @@ void main() {
 
       test('should throw exception on timeout', () async {
         const ipAddress = '192.168.1.131';
+        final fastApiService = SpeakerApiService(
+          httpClient: mockClient,
+          timeout: const Duration(milliseconds: 100),
+        );
 
         when(mockClient.post(
           Uri.parse('http://$ipAddress:8090/storePreset'),
@@ -1055,13 +1074,13 @@ void main() {
           body: anyNamed('body'),
         )).thenAnswer(
           (_) async => Future.delayed(
-            const Duration(seconds: 11),
+            const Duration(milliseconds: 200),
             () => http.Response('{}', 200),
           ),
         );
 
         expect(
-          () => apiService.storePreset(
+          () => fastApiService.storePreset(
             ipAddress,
             '1',
             'spotify:playlist:123',
@@ -1248,6 +1267,10 @@ void main() {
 
       test('should throw exception on timeout', () async {
         const ipAddress = '192.168.1.131';
+        final fastApiService = SpeakerApiService(
+          httpClient: mockClient,
+          timeout: const Duration(milliseconds: 100),
+        );
 
         when(mockClient.post(
           Uri.parse('http://$ipAddress:8090/storePreset'),
@@ -1255,13 +1278,13 @@ void main() {
           body: anyNamed('body'),
         )).thenAnswer(
           (_) async => Future.delayed(
-            const Duration(seconds: 11),
+            const Duration(milliseconds: 200),
             () => http.Response('{}', 200),
           ),
         );
 
         expect(
-          () => apiService.storeTuneInPreset(
+          () => fastApiService.storeTuneInPreset(
             ipAddress,
             '1',
             's12345',
@@ -1559,20 +1582,25 @@ void main() {
       });
 
       test('throws exception on timeout', () async {
+        final fastApiService = SpeakerApiService(
+          httpClient: mockClient,
+          timeout: const Duration(milliseconds: 100),
+        );
+
         when(mockClient.post(
           any,
           headers: anyNamed('headers'),
           body: anyNamed('body'),
         )).thenAnswer((_) async {
-          await Future<void>.delayed(const Duration(seconds: 35));
+          await Future<void>.delayed(const Duration(milliseconds: 400));
           return http.Response('', 200);
         });
 
         expect(
-          () => apiService.setSpeakerName(ipAddress, speakerName),
+          () => fastApiService.setSpeakerName(ipAddress, speakerName),
           throwsException,
         );
-      }, timeout: const Timeout(Duration(seconds: 40)));
+      });
 
       test('throws exception on network error', () async {
         when(mockClient.post(
@@ -1868,15 +1896,20 @@ void main() {
       });
 
       test('getRecents throws exception on timeout', () async {
+        final fastApiService = SpeakerApiService(
+          httpClient: mockClient,
+          timeout: const Duration(milliseconds: 100),
+        );
+
         when(mockClient.get(any)).thenAnswer(
           (_) async => Future.delayed(
-            const Duration(seconds: 11),
+            const Duration(milliseconds: 200),
             () => http.Response('', 200),
           ),
         );
 
         expect(
-          () => apiService.getRecents('192.168.1.131'),
+          () => fastApiService.getRecents('192.168.1.131'),
           throwsA(isA<Exception>()),
         );
       });
@@ -2079,10 +2112,15 @@ void main() {
       });
 
       test('selectContentItem throws exception on timeout', () async {
+        final fastApiService = SpeakerApiService(
+          httpClient: mockClient,
+          timeout: const Duration(milliseconds: 100),
+        );
+
         when(mockClient.post(any, headers: anyNamed('headers'), body: anyNamed('body')))
             .thenAnswer(
           (_) async => Future.delayed(
-            const Duration(seconds: 11),
+            const Duration(milliseconds: 200),
             () => http.Response('', 200),
           ),
         );
@@ -2099,7 +2137,7 @@ void main() {
         );
 
         expect(
-          () => apiService.selectContentItem('192.168.1.131', recent),
+          () => fastApiService.selectContentItem('192.168.1.131', recent),
           throwsA(isA<Exception>()),
         );
       });

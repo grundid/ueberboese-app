@@ -10,8 +10,12 @@ import 'package:ueberboese_app/models/recent.dart';
 
 class SpeakerApiService {
   final http.Client? httpClient;
+  final Duration timeout;
 
-  SpeakerApiService({this.httpClient});
+  SpeakerApiService({
+    this.httpClient,
+    this.timeout = const Duration(seconds: 10),
+  });
 
   Future<SpeakerInfo> fetchSpeakerInfo(String ipAddress) async {
     final url = Uri.parse('http://$ipAddress:8090/info');
@@ -20,7 +24,7 @@ class SpeakerApiService {
     try {
       final response = await client
           .get(url)
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -85,7 +89,7 @@ class SpeakerApiService {
     try {
       final response = await client
           .get(url)
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -150,7 +154,7 @@ class SpeakerApiService {
             headers: {'Content-Type': 'text/xml'},
             body: body,
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -215,7 +219,7 @@ class SpeakerApiService {
     try {
       final response = await client
           .get(url)
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -315,7 +319,7 @@ class SpeakerApiService {
     try {
       final response = await client
           .get(url)
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -386,7 +390,7 @@ class SpeakerApiService {
             headers: {'Content-Type': 'text/xml'},
             body: body,
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -420,7 +424,7 @@ class SpeakerApiService {
             headers: {'Content-Type': 'text/xml'},
             body: body,
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -454,7 +458,7 @@ class SpeakerApiService {
             headers: {'Content-Type': 'text/xml'},
             body: body,
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -490,7 +494,7 @@ class SpeakerApiService {
             headers: {'Content-Type': 'text/xml'},
             body: body,
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -516,7 +520,7 @@ class SpeakerApiService {
     try {
       final response = await client
           .get(url)
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -555,7 +559,7 @@ class SpeakerApiService {
     try {
       final response = await client
           .get(url)
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -602,7 +606,7 @@ class SpeakerApiService {
             headers: {'Content-Type': 'text/xml'},
             body: body,
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -641,7 +645,7 @@ class SpeakerApiService {
     try {
       final response = await client
           .get(url)
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -695,7 +699,7 @@ class SpeakerApiService {
             headers: {'Content-Type': 'text/xml'},
             body: body,
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -762,7 +766,7 @@ class SpeakerApiService {
             headers: {'Content-Type': 'text/xml'},
             body: body,
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -841,7 +845,7 @@ class SpeakerApiService {
             headers: {'Content-Type': 'text/xml'},
             body: body,
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -928,7 +932,7 @@ class SpeakerApiService {
             headers: {'Content-Type': 'text/xml'},
             body: body,
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -959,7 +963,7 @@ class SpeakerApiService {
             headers: {'Content-Type': 'text/xml'},
             body: body,
           )
-          .timeout(const Duration(seconds: 30));
+          .timeout(Duration(seconds: timeout.inSeconds * 3));
 
       if (response.statusCode != 200) {
         throw Exception(
@@ -1005,7 +1009,7 @@ class SpeakerApiService {
             headers: {'Content-Type': 'text/xml'},
             body: body,
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(timeout);
 
       if (response.statusCode != 200) {
         throw Exception(

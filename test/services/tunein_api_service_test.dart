@@ -108,19 +108,23 @@ void main() {
 
       test('should throw exception on timeout', () async {
         const query = 'test';
+        final fastService = TuneInApiService(
+          httpClient: mockClient,
+          timeout: const Duration(milliseconds: 100),
+        );
 
         when(mockClient.get(
           Uri.parse('https://opml.radiotime.com/search.ashx?query=test'),
           headers: {'Accept': 'text/xml'},
         )).thenAnswer(
           (_) async => Future.delayed(
-            const Duration(seconds: 11),
+            const Duration(milliseconds: 200),
             () => http.Response('{}', 200),
           ),
         );
 
         expect(
-          () => service.searchStations(query),
+          () => fastService.searchStations(query),
           throwsA(isA<Exception>()),
         );
       });
@@ -255,19 +259,23 @@ void main() {
 
       test('should throw exception on timeout', () async {
         const stationId = 's12345';
+        final fastService = TuneInApiService(
+          httpClient: mockClient,
+          timeout: const Duration(milliseconds: 100),
+        );
 
         when(mockClient.get(
           Uri.parse('https://opml.radiotime.com/describe.ashx?id=s12345'),
           headers: {'Accept': 'text/xml'},
         )).thenAnswer(
           (_) async => Future.delayed(
-            const Duration(seconds: 11),
+            const Duration(milliseconds: 200),
             () => http.Response('{}', 200),
           ),
         );
 
         expect(
-          () => service.getStationDetails(stationId),
+          () => fastService.getStationDetails(stationId),
           throwsA(isA<Exception>()),
         );
       });
