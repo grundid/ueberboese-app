@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/mockito.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/models/speaker.dart';
 import 'package:ueberboese_app/models/app_config.dart';
 import 'package:ueberboese_app/pages/speaker_detail_page.dart';
+import 'package:ueberboese_app/services/speaker_api_service.dart';
+import '../services/speaker_api_service_test.mocks.dart';
 
 void main() {
   setUp(() {
@@ -654,6 +658,119 @@ void main() {
       expect(find.text('Volume'), findsOneWidget);
       expect(find.text('Now Playing'), findsOneWidget);
       expect(find.text('Multi-Room Zone'), findsOneWidget);
+    });
+
+    testWidgets('hides Now Playing Card when TV source is active',
+        (WidgetTester tester) async {
+      final appState = MyAppState();
+      await appState.initialize();
+
+      final mockClient = MockClient();
+      final apiService = SpeakerApiService(httpClient: mockClient);
+
+      // Mock getNowPlaying to return TV source
+      when(mockClient.get(any)).thenAnswer(
+        (_) async => http.Response('''<?xml version="1.0" encoding="UTF-8" ?>
+<nowPlaying deviceID="C4F312DD8A8F" source="PRODUCT" sourceAccount="TV">
+  <ContentItem source="PRODUCT" sourceAccount="TV" isPresetable="false"/>
+  <art artImageStatus="SHOW_DEFAULT_IMAGE"/>
+  <playStatus>PLAY_STATE</playStatus>
+</nowPlaying>''', 200, headers: {'content-type': 'text/xml; charset=utf-8'}),
+      );
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: appState,
+          child: MaterialApp(
+            home: SpeakerDetailPage(
+              speaker: testSpeaker,
+              apiService: apiService,
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify the Now Playing Card is not shown
+      expect(find.text('Now Playing'), findsNothing);
+    });
+
+    testWidgets('hides Now Playing Card when nothing is playing',
+        (WidgetTester tester) async {
+      final appState = MyAppState();
+      await appState.initialize();
+
+      final mockClient = MockClient();
+      final apiService = SpeakerApiService(httpClient: mockClient);
+
+      // Mock getNowPlaying to return empty/null state
+      when(mockClient.get(any)).thenAnswer(
+        (_) async => http.Response('''<?xml version="1.0" encoding="UTF-8" ?>
+<nowPlaying deviceID="C4F312DD8A8F">
+  <ContentItem source="" isPresetable="false"/>
+</nowPlaying>''', 200, headers: {'content-type': 'text/xml; charset=utf-8'}),
+      );
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: appState,
+          child: MaterialApp(
+            home: SpeakerDetailPage(
+              speaker: testSpeaker,
+              apiService: apiService,
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify the Now Playing Card is not shown
+      expect(find.text('Now Playing'), findsNothing);
+    });
+
+    testWidgets('shows Now Playing Card when music is playing',
+        (WidgetTester tester) async {
+      final appState = MyAppState();
+      await appState.initialize();
+
+      final mockClient = MockClient();
+      final apiService = SpeakerApiService(httpClient: mockClient);
+
+      // Mock getNowPlaying to return Spotify playback
+      when(mockClient.get(any)).thenAnswer(
+        (_) async => http.Response('''<?xml version="1.0" encoding="UTF-8" ?>
+<nowPlaying deviceID="C4F312DD8A8F">
+  <ContentItem source="SPOTIFY" type="tracklisturl" location="/playback/container/abc123" isPresetable="true">
+    <itemName>Test Track</itemName>
+  </ContentItem>
+  <track>Test Track</track>
+  <artist>Test Artist</artist>
+  <album>Test Album</album>
+  <art>http://example.com/art.jpg</art>
+  <playStatus>PLAY_STATE</playStatus>
+</nowPlaying>''', 200, headers: {'content-type': 'text/xml; charset=utf-8'}),
+      );
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: appState,
+          child: MaterialApp(
+            home: SpeakerDetailPage(
+              speaker: testSpeaker,
+              apiService: apiService,
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify the Now Playing Card is shown with content
+      expect(find.text('Now Playing'), findsOneWidget);
+      expect(find.text('Test Track'), findsOneWidget);
+      expect(find.text('Test Artist'), findsOneWidget);
     });
 
     testWidgets('includes safe space at bottom for Android gesture navigation',

@@ -121,6 +121,45 @@ void main() {
       service.dispose();
     });
 
+    test('parses TV/PRODUCT source nowPlaying update correctly', () async {
+      final service = SpeakerWebsocketService(
+        '192.168.1.100',
+        webSocketFactory: (uri, {protocols}) => mockChannel,
+      );
+
+      final nowPlayingUpdates = <NowPlaying>[];
+      service.nowPlayingStream.listen((nowPlaying) {
+        nowPlayingUpdates.add(nowPlaying);
+      });
+
+      service.connect();
+
+      const xmlMessage = '''<?xml version="1.0" encoding="UTF-8"?>
+<updates deviceID="1004567890AA">
+  <nowPlayingUpdated>
+    <nowPlaying source="PRODUCT" sourceAccount="TV">
+      <ContentItem source="PRODUCT" sourceAccount="TV" isPresetable="false"/>
+      <art artImageStatus="SHOW_DEFAULT_IMAGE"/>
+      <playStatus>PLAY_STATE</playStatus>
+    </nowPlaying>
+  </nowPlayingUpdated>
+</updates>''';
+
+      messageController.add(xmlMessage);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(nowPlayingUpdates.length, 1);
+      expect(nowPlayingUpdates[0].source, 'PRODUCT');
+      expect(nowPlayingUpdates[0].sourceAccount, 'TV');
+      expect(nowPlayingUpdates[0].playStatus, 'PLAY_STATE');
+      expect(nowPlayingUpdates[0].artImageStatus, 'SHOW_DEFAULT_IMAGE');
+      expect(nowPlayingUpdates[0].track, isNull);
+      expect(nowPlayingUpdates[0].artist, isNull);
+      expect(nowPlayingUpdates[0].album, isNull);
+
+      service.dispose();
+    });
+
     test('parses zone update correctly', () async {
       final service = SpeakerWebsocketService(
         '192.168.1.100',

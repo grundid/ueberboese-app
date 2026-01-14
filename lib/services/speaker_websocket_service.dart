@@ -207,15 +207,18 @@ class SpeakerWebsocketService {
       // Extract location and source from ContentItem or nowPlaying attributes
       String? location;
       String? source;
+      String? sourceAccount;
 
       final contentItemElements = nowPlayingElement.findElements('ContentItem');
       if (contentItemElements.isNotEmpty) {
         final contentItem = contentItemElements.first;
         location = contentItem.getAttribute('location');
         source = contentItem.getAttribute('source');
+        sourceAccount = contentItem.getAttribute('sourceAccount');
       } else {
         // Try to get from nowPlaying attributes
         source = nowPlayingElement.getAttribute('source');
+        sourceAccount = nowPlayingElement.getAttribute('sourceAccount');
       }
 
       final nowPlaying = NowPlaying(
@@ -229,6 +232,7 @@ class SpeakerWebsocketService {
         playStatus: playStatus,
         location: location,
         source: source,
+        sourceAccount: sourceAccount,
       );
 
       debugPrint('[WebSocket] Now playing update: ${track ?? "Unknown"} - ${artist ?? "Unknown"}');

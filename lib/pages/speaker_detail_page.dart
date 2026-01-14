@@ -717,6 +717,27 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
     );
   }
 
+  bool _shouldShowNowPlayingCard() {
+    // Don't show card if nowPlaying is null or still loading without data
+    if (_nowPlaying == null) return false;
+
+    // Hide card if TV source is active
+    if (_nowPlaying!.source == 'PRODUCT' && _nowPlaying!.sourceAccount == 'TV') {
+      return false;
+    }
+
+    // Show card if we have meaningful playback state or content info
+    final hasPlaybackState = _nowPlaying!.playStatus == 'PLAY_STATE' ||
+        _nowPlaying!.playStatus == 'PAUSE_STATE' ||
+        _nowPlaying!.playStatus == 'BUFFERING_STATE';
+
+    final hasContentInfo = _nowPlaying!.track != null ||
+        _nowPlaying!.artist != null ||
+        _nowPlaying!.album != null;
+
+    return hasPlaybackState || hasContentInfo;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -903,38 +924,39 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                     ),
                     const SizedBox(height: 32),
                     // Now Playing Section
-                    Card(
-                      elevation: 1,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.music_note,
-                                  color: theme.colorScheme.primary,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Now Playing',
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
+                    if (_shouldShowNowPlayingCard() || _nowPlayingErrorMessage != null || (_isLoadingNowPlaying && _nowPlaying == null))
+                      Card(
+                        elevation: 1,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.music_note,
+                                    color: theme.colorScheme.primary,
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            if (_isLoadingNowPlaying && _nowPlaying == null)
-                              const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(16.0),
-                                  child: CircularProgressIndicator(),
-                                ),
-                              )
-                            else
-                              if (_nowPlayingErrorMessage != null)
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Now Playing',
+                                    style: theme.textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              if (_isLoadingNowPlaying && _nowPlaying == null)
+                                const Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(16.0),
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                )
+                              else
+                                if (_nowPlayingErrorMessage != null)
                                 Column(
                                   children: [
                                     Text(

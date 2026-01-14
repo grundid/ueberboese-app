@@ -1353,6 +1353,30 @@ void main() {
         expect(result.location, isNull);
       });
 
+      test('getNowPlaying parses TV/PRODUCT source correctly', () async {
+        const ipAddress = '192.168.1.100';
+        const xmlResponse = '''<?xml version="1.0" encoding="UTF-8" ?>
+<nowPlaying deviceID="C4F312DD8A8F" source="PRODUCT" sourceAccount="TV">
+  <ContentItem source="PRODUCT" sourceAccount="TV" isPresetable="false"/>
+  <art artImageStatus="SHOW_DEFAULT_IMAGE"/>
+  <playStatus>PLAY_STATE</playStatus>
+</nowPlaying>''';
+
+        when(mockClient.get(any)).thenAnswer(
+          (_) async => http.Response(xmlResponse, 200, headers: {'content-type': 'text/xml; charset=utf-8'}),
+        );
+
+        final result = await apiService.getNowPlaying(ipAddress);
+
+        expect(result.source, equals('PRODUCT'));
+        expect(result.sourceAccount, equals('TV'));
+        expect(result.playStatus, equals('PLAY_STATE'));
+        expect(result.artImageStatus, equals('SHOW_DEFAULT_IMAGE'));
+        expect(result.track, isNull);
+        expect(result.artist, isNull);
+        expect(result.album, isNull);
+      });
+
       test('getNowPlaying should throw exception on non-200 status code', () async {
         const ipAddress = '192.168.1.100';
         final mockResponse = http.Response('Internal Server Error', 500);

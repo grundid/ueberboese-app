@@ -281,11 +281,13 @@ class SpeakerApiService {
       // Extract location and source from ContentItem if present
       String? location;
       String? source;
+      String? sourceAccount;
       final contentItemElements = document.findAllElements('ContentItem');
       if (contentItemElements.isNotEmpty) {
         final contentItem = contentItemElements.first;
         location = contentItem.getAttribute('location');
         source = contentItem.getAttribute('source');
+        sourceAccount = contentItem.getAttribute('sourceAccount');
       }
 
       return NowPlaying(
@@ -299,6 +301,7 @@ class SpeakerApiService {
         playStatus: playStatus,
         location: location,
         source: source,
+        sourceAccount: sourceAccount,
       );
     } catch (e) {
       if (e is Exception) {

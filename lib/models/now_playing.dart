@@ -9,6 +9,7 @@ class NowPlaying {
   final String? playStatus;
   final String? location;
   final String? source;
+  final String? sourceAccount;
 
   const NowPlaying({
     this.track,
@@ -21,5 +22,6 @@ class NowPlaying {
     this.playStatus,
     this.location,
     this.source,
+    this.sourceAccount,
   });
 }
