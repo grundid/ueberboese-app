@@ -106,7 +106,8 @@ void main() {
       expect(find.text('Komplett Entspannt'), findsOneWidget);
       expect(find.text('TUNEIN'), findsOneWidget);
       expect(find.text('SPOTIFY'), findsOneWidget);
-      expect(find.byType(Card), findsNWidgets(2));
+      expect(find.byType(ListTile), findsNWidgets(2));
+      expect(find.byType(Divider), findsOneWidget);
     });
 
     testWidgets('displays error message and retry button on error', (WidgetTester tester) async {
@@ -247,7 +248,7 @@ void main() {
       expect(find.byType(Image), findsOneWidget);
     });
 
-    testWidgets('tapping recent item calls selectContentItem', (WidgetTester tester) async {
+    testWidgets('tapping play button calls selectContentItem', (WidgetTester tester) async {
       final testRecents = [
         const Recent(
           deviceId: '44EAD8A17CC7',
@@ -280,8 +281,8 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Tap on the recent item
-      await tester.tap(find.text('Radio TEDDY'));
+      // Tap on the play button
+      await tester.tap(find.byIcon(Icons.play_arrow));
       await tester.pump();
 
       // Verify selectContentItem was called
@@ -324,8 +325,8 @@ void main() {
       // Verify play icon is shown initially
       expect(find.byIcon(Icons.play_arrow), findsOneWidget);
 
-      // Tap on the recent item
-      await tester.tap(find.text('Radio TEDDY'));
+      // Tap on the play button
+      await tester.tap(find.byIcon(Icons.play_arrow));
       await tester.pump();
 
       // Verify loading indicator appears
@@ -373,8 +374,8 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Tap on the recent item
-      await tester.tap(find.text('Radio TEDDY'));
+      // Tap on the play button
+      await tester.tap(find.byIcon(Icons.play_arrow));
       await tester.pumpAndSettle();
 
       // Verify success SnackBar appears
@@ -414,12 +415,90 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Tap on the recent item
-      await tester.tap(find.text('Radio TEDDY'));
+      // Tap on the play button
+      await tester.tap(find.byIcon(Icons.play_arrow));
       await tester.pumpAndSettle();
 
       // Verify error SnackBar appears
       expect(find.textContaining('Failed to play:'), findsOneWidget);
+    });
+
+    testWidgets('ListTile has no onTap handler', (WidgetTester tester) async {
+      final testRecents = [
+        const Recent(
+          deviceId: '44EAD8A17CC7',
+          utcTime: 1768323670,
+          id: '1',
+          itemName: 'Radio TEDDY',
+          source: 'TUNEIN',
+          location: '/v1/playback/station/s80044',
+          type: 'stationurl',
+          isPresetable: true,
+        ),
+      ];
+
+      when(mockApiService.getRecents(any)).thenAnswer(
+        (_) async => testRecents,
+      );
+
+      when(mockApiService.selectContentItem(any, any)).thenAnswer(
+        (_) async => Future<void>.value(),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RecentsPage(
+            speaker: testSpeaker,
+            apiService: mockApiService,
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify ListTile exists
+      expect(find.byType(ListTile), findsOneWidget);
+
+      // Tap on the title text (not the button)
+      await tester.tap(find.text('Radio TEDDY'));
+      await tester.pump();
+
+      // Verify selectContentItem was NOT called (since ListTile has no onTap)
+      verifyNever(mockApiService.selectContentItem(any, any));
+    });
+
+    testWidgets('IconButton exists as trailing widget', (WidgetTester tester) async {
+      final testRecents = [
+        const Recent(
+          deviceId: '44EAD8A17CC7',
+          utcTime: 1768323670,
+          id: '1',
+          itemName: 'Radio TEDDY',
+          source: 'TUNEIN',
+          location: '/v1/playback/station/s80044',
+          type: 'stationurl',
+          isPresetable: true,
+        ),
+      ];
+
+      when(mockApiService.getRecents(any)).thenAnswer(
+        (_) async => testRecents,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RecentsPage(
+            speaker: testSpeaker,
+            apiService: mockApiService,
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify IconButton exists
+      expect(find.byType(IconButton), findsOneWidget);
+      expect(find.byIcon(Icons.play_arrow), findsOneWidget);
     });
 
     testWidgets('disables items while playing', (WidgetTester tester) async {
@@ -465,12 +544,16 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Tap on the first item
-      await tester.tap(find.text('Radio TEDDY'));
+      // Find all play buttons
+      final playButtons = find.byIcon(Icons.play_arrow);
+      expect(playButtons, findsNWidgets(2));
+
+      // Tap on the first play button
+      await tester.tap(playButtons.first);
       await tester.pump();
 
-      // Try to tap on the second item (should be disabled)
-      await tester.tap(find.text('Komplett Entspannt'));
+      // Try to tap on the second play button (should be disabled)
+      await tester.tap(playButtons.last);
       await tester.pump();
 
       // Verify only one call was made (to the first item)

@@ -183,103 +183,98 @@ class _RecentsPageState extends State<RecentsPage> {
             );
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
+          return ListView.separated(
             itemCount: recents.length,
+            separatorBuilder: (context, index) => const Divider(height: 1, indent: 88),
             itemBuilder: (context, index) {
               final recent = recents[index];
               final sourceColor = _getSourceColor(context, recent.source);
               final sourceIcon = _getSourceIcon(recent.source);
               final isPlayingThis = _playingRecentId == recent.id;
 
-              return Card(
-                elevation: 1,
-                margin: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: ListTile(
-                  enabled: !_isPlaying,
-                  onTap: () => _playRecent(recent),
-                  leading: recent.containerArt != null &&
-                          recent.containerArt!.isNotEmpty
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: Image.network(
-                            recent.containerArt!,
-                            width: 56,
-                            height: 56,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                width: 56,
-                                height: 56,
-                                color: theme.colorScheme.surfaceContainerHighest,
-                                child: Icon(
-                                  sourceIcon,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              );
-                            },
-                          ),
-                        )
-                      : Container(
+              return ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                leading: recent.containerArt != null &&
+                        recent.containerArt!.isNotEmpty
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          recent.containerArt!,
                           width: 56,
                           height: 56,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Icon(
-                            sourceIcon,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 56,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                sourceIcon,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            );
+                          },
                         ),
-                  title: Text(
-                    recent.itemName,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            sourceIcon,
-                            size: 14,
-                            color: sourceColor,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            recent.source,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: sourceColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _formatTimestamp(recent.utcTime),
-                        style: theme.textTheme.bodySmall?.copyWith(
+                      )
+                    : Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          sourceIcon,
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
-                    ],
+                title: Text(
+                  recent.itemName,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
-                  trailing: isPlayingThis
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          sourceIcon,
+                          size: 14,
+                          color: sourceColor,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          recent.source,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: sourceColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _formatTimestamp(recent.utcTime),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+                trailing: IconButton.filledTonal(
+                  onPressed: _isPlaying ? null : () => _playRecent(recent),
+                  icon: isPlayingThis
                       ? const SizedBox(
                           width: 24,
                           height: 24,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : Icon(
-                          Icons.play_arrow,
-                          color: theme.colorScheme.primary,
-                        ),
+                      : const Icon(Icons.play_arrow),
                 ),
               );
             },
