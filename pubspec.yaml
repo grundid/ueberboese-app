@@ -31,7 +31,12 @@ flutter:
 
 flutter_launcher_icons:
   android: true
+  min_sdk_android: 21
+  adaptive_icon_background: "#ffffff"
+  adaptive_icon_foreground: "assets/icon/app_icon.png"
   ios: false
+  remove_alpha_ios: true
+  background_color_ios: "#ffffff"
   linux:
     generate: true
   macos:
