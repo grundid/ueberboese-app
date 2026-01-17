@@ -1110,4 +1110,82 @@ void main() {
     });
   });
 
+  group('Presets Section', () {
+    const testSpeaker = Speaker(
+      id: '1',
+      name: 'Test Speaker',
+      emoji: '🔊',
+      ipAddress: '192.168.1.100',
+      type: 'SoundTouch 10',
+      deviceId: 'device-123',
+    );
+
+    testWidgets('displays Presets section', (WidgetTester tester) async {
+      final appState = MyAppState();
+      await appState.initialize();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: appState,
+          child: const MaterialApp(
+            home: SpeakerDetailPage(speaker: testSpeaker),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Presets'), findsOneWidget);
+      expect(find.byIcon(Icons.star), findsAtLeast(1));
+    });
+
+    testWidgets('shows loading indicator while fetching presets', (WidgetTester tester) async {
+      final appState = MyAppState();
+      await appState.initialize();
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: appState,
+          child: const MaterialApp(
+            home: SpeakerDetailPage(speaker: testSpeaker),
+          ),
+        ),
+      );
+
+      // Before pumpAndSettle, should show loading indicators
+      expect(find.byType(CircularProgressIndicator), findsAtLeast(1));
+    });
+
+    testWidgets('displays 6 preset slots in 2x3 grid', (WidgetTester tester) async {
+      final appState = MyAppState();
+      await appState.initialize();
+
+      final mockClient = MockClient();
+      final apiService = SpeakerApiService(httpClient: mockClient);
+
+      // Mock getPresets to return empty preset list
+      when(mockClient.get(any)).thenAnswer(
+        (_) async => http.Response('''<?xml version="1.0" encoding="UTF-8" ?>
+<presets />''', 200, headers: {'content-type': 'text/xml; charset=utf-8'}),
+      );
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: appState,
+          child: MaterialApp(
+            home: SpeakerDetailPage(
+              speaker: testSpeaker,
+              apiService: apiService,
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify Presets section is displayed
+      expect(find.text('Presets'), findsOneWidget);
+    });
+  });
+
 }

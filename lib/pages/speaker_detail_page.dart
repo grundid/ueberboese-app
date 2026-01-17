@@ -8,6 +8,7 @@ import 'package:ueberboese_app/models/speaker_info.dart';
 import 'package:ueberboese_app/models/volume.dart';
 import 'package:ueberboese_app/models/now_playing.dart';
 import 'package:ueberboese_app/models/zone.dart';
+import 'package:ueberboese_app/models/preset.dart';
 import 'package:ueberboese_app/services/speaker_api_service.dart';
 import 'package:ueberboese_app/services/speaker_websocket_service.dart';
 import 'package:ueberboese_app/main.dart';
@@ -40,12 +41,15 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
   Volume? _currentVolume;
   NowPlaying? _nowPlaying;
   Zone? _currentZone;
+  List<Preset>? _presets;
   bool _isLoadingVolume = true;
   bool _isLoadingNowPlaying = true;
   bool _isLoadingZone = true;
+  bool _isLoadingPresets = true;
   String? _volumeErrorMessage;
   String? _nowPlayingErrorMessage;
   String? _zoneErrorMessage;
+  String? _presetsErrorMessage;
 
   // Speaker info state
   SpeakerInfo? _speakerInfo;
@@ -64,6 +68,7 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
     _loadNowPlaying();
     _loadZone();
     _loadSpeakerInfo();
+    _loadPresets();
     _initializeWebSocket();
   }
 
@@ -198,6 +203,28 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
     }
   }
 
+  Future<void> _loadPresets() async {
+    setState(() {
+      _isLoadingPresets = true;
+      _presetsErrorMessage = null;
+    });
+
+    try {
+      final presets = await _apiService.getPresets(widget.speaker.ipAddress);
+      if (!mounted) return;
+      setState(() {
+        _presets = presets;
+        _isLoadingPresets = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _presetsErrorMessage = 'Failed to load presets: ${e.toString()}';
+        _isLoadingPresets = false;
+      });
+    }
+  }
+
   Future<void> _loadSpeakerInfo() async {
     try {
       final speakerInfo = await _apiService.fetchSpeakerInfo(
@@ -265,6 +292,25 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
           _loadingVolumes[deviceId] = false;
         });
       }
+    }
+  }
+
+  Future<void> _selectPreset(String presetId) async {
+    try {
+      await _apiService.sendKey(
+        widget.speaker.ipAddress,
+        'PRESET_$presetId',
+        'press',
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Playing preset $presetId')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to play preset: ${e.toString()}')),
+      );
     }
   }
 
@@ -741,6 +787,111 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
 
   bool _isTvSource() {
     return _nowPlaying?.source == 'PRODUCT' && _nowPlaying?.sourceAccount == 'TV';
+  }
+
+  Widget _buildPresetButton(
+    BuildContext context,
+    ThemeData theme,
+    String presetId,
+    Preset? preset,
+  ) {
+    final isEnabled = preset != null;
+
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+        child: AspectRatio(
+          aspectRatio: 1.0,
+          child: InkWell(
+            onTap: isEnabled ? () => _selectPreset(presetId) : null,
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isEnabled
+                    ? theme.colorScheme.surfaceContainerHighest
+                    : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isEnabled
+                      ? theme.colorScheme.outline.withValues(alpha: 0.2)
+                      : theme.colorScheme.outline.withValues(alpha: 0.1),
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: isEnabled && preset.containerArt != null
+                    ? Stack(
+                        children: [
+                          Image.network(
+                            preset.containerArt!,
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            height: double.infinity,
+                            errorBuilder: (context, error, stackTrace) {
+                              return _buildPresetPlaceholder(
+                                theme,
+                                presetId,
+                                isEnabled,
+                                preset,
+                              );
+                            },
+                          ),
+                          // Preset number in bottom right
+                          Positioned(
+                            bottom: 4,
+                            right: 4,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.6),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                presetId,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : _buildPresetPlaceholder(theme, presetId, isEnabled, preset),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPresetPlaceholder(
+    ThemeData theme,
+    String presetId,
+    bool isEnabled,
+    Preset? preset,
+  ) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Text(
+          preset?.itemName ?? 'Preset $presetId',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w500,
+            color: isEnabled
+                ? theme.colorScheme.onSurfaceVariant
+                : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+          ),
+          textAlign: TextAlign.center,
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
   }
 
   @override
@@ -1739,6 +1890,88 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                                         ),
                                     ],
                                   ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Presets Section
+                    Card(
+                      elevation: 1,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.star, color: theme.colorScheme.primary),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Presets',
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            if (_isLoadingPresets && _presets == null)
+                              const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16.0),
+                                  child: CircularProgressIndicator(),
+                                ),
+                              )
+                            else if (_presetsErrorMessage != null)
+                              Column(
+                                children: [
+                                  Text(
+                                    _presetsErrorMessage!,
+                                    style: TextStyle(
+                                      color: theme.colorScheme.error,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextButton(
+                                    onPressed: _loadPresets,
+                                    child: const Text('Retry'),
+                                  ),
+                                ],
+                              )
+                            else if (_presets != null)
+                              Column(
+                                children: [
+                                  // First row: Presets 1-3
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      for (var i = 1; i <= 3; i++)
+                                        _buildPresetButton(
+                                          context,
+                                          theme,
+                                          i.toString(),
+                                          _presets!.where((p) => p.id == i.toString()).firstOrNull,
+                                        ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  // Second row: Presets 4-6
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      for (var i = 4; i <= 6; i++)
+                                        _buildPresetButton(
+                                          context,
+                                          theme,
+                                          i.toString(),
+                                          _presets!.where((p) => p.id == i.toString()).firstOrNull,
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                           ],
                         ),
                       ),
