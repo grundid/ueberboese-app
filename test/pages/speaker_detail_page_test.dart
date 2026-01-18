@@ -223,7 +223,7 @@ void main() {
       expect(appState.speakers.length, 1);
     });
 
-    testWidgets('displays Now Playing section', (WidgetTester tester) async {
+    testWidgets('displays speaker header when nothing is playing', (WidgetTester tester) async {
       final appState = MyAppState();
       await appState.initialize();
 
@@ -236,8 +236,12 @@ void main() {
         ),
       );
 
-      expect(find.text('Now Playing'), findsOneWidget);
-      expect(find.byIcon(Icons.music_note), findsOneWidget);
+      // With no music playing, should show speaker header (emoji, name, type, IP)
+      // Emoji appears in both app bar and speaker header
+      expect(find.text(testSpeaker.emoji), findsAtLeastNWidgets(1));
+      expect(find.text(testSpeaker.name), findsAtLeastNWidgets(1));
+      expect(find.textContaining(testSpeaker.type), findsOneWidget);
+      expect(find.textContaining(testSpeaker.ipAddress), findsOneWidget);
     });
 
     testWidgets('displays Volume section', (WidgetTester tester) async {
@@ -656,7 +660,7 @@ void main() {
       expect(find.text('Test Speaker'), findsAtLeast(1));
       expect(find.text('🔊'), findsAtLeast(1));
       expect(find.text('Volume'), findsOneWidget);
-      expect(find.text('Now Playing'), findsOneWidget);
+      // New design: no "Now Playing" header, just speaker header when nothing is playing
       expect(find.text('Multi-Room Zone'), findsOneWidget);
     });
 
@@ -692,8 +696,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Verify the Now Playing Card is shown with TV content
-      expect(find.text('Now Playing'), findsOneWidget);
+      // Verify the hero layout is shown with TV content (no "Now Playing" header in new design)
       expect(find.byIcon(Icons.tv), findsOneWidget);
       expect(find.text('Playing TV sound'), findsOneWidget);
       // Verify pause button is not shown
@@ -772,8 +775,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Verify the Now Playing Card is shown with content
-      expect(find.text('Now Playing'), findsOneWidget);
+      // Verify the hero layout is shown with content (no "Now Playing" header in new design)
       expect(find.text('Test Track'), findsOneWidget);
       expect(find.text('Test Artist'), findsOneWidget);
       // Verify pause button is shown when playing
@@ -817,8 +819,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Verify the Now Playing Card is shown with content
-      expect(find.text('Now Playing'), findsOneWidget);
+      // Verify the hero layout is shown with content (no "Now Playing" header in new design)
       expect(find.text('Test Track'), findsOneWidget);
       expect(find.text('Test Artist'), findsOneWidget);
       // Verify play button is shown when paused
@@ -860,8 +861,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Verify the Now Playing Card is shown with content
-      expect(find.text('Now Playing'), findsOneWidget);
+      // Verify the hero layout is shown with content (no "Now Playing" header in new design)
       expect(find.text('Test Radio Station'), findsOneWidget);
       // Verify pause button is shown for TUNEIN when playing
       expect(find.text('Pause'), findsOneWidget);
@@ -909,8 +909,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Verify the Now Playing Card is shown with content
-      expect(find.text('Now Playing'), findsOneWidget);
+      // Verify the hero layout is shown with content (no "Now Playing" header in new design)
       expect(find.text('Radio TEDDY'), findsOneWidget);
       // Verify play button is shown for stopped TUNEIN
       expect(find.text('Play'), findsOneWidget);

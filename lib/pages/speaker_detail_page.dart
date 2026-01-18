@@ -788,6 +788,262 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
     return _nowPlaying?.source == 'PRODUCT' && _nowPlaying?.sourceAccount == 'TV';
   }
 
+  Widget _buildSpeakerHeader(BuildContext context, ThemeData theme) {
+    return Center(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            widget.speaker.emoji,
+            style: const TextStyle(fontSize: 48),
+          ),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.speaker.name,
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              SelectableText(
+                '${widget.speaker.type} • ${widget.speaker.ipAddress}',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeroNowPlaying(BuildContext context, ThemeData theme) {
+    if (_nowPlaying == null) {
+      return const SizedBox.shrink();
+    }
+
+    // Handle TV source
+    if (_isTvSource()) {
+      return Center(
+        child: Column(
+          children: [
+            Icon(
+              Icons.tv,
+              size: 120,
+              color: theme.colorScheme.primary,
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Playing TV sound',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Regular content (music/spotify)
+    return Center(
+      child: Column(
+        children: [
+          // Large album art
+          if (_nowPlaying!.art != null &&
+              _nowPlaying!.artImageStatus == 'IMAGE_PRESENT')
+            GestureDetector(
+              onTap: _openAlbumArtFullScreen,
+              child: Hero(
+                tag: 'album-art-${widget.speaker.id}',
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.network(
+                    _nowPlaying!.art!,
+                    width: 300,
+                    height: 300,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 300,
+                        height: 300,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Icon(
+                          Icons.music_note,
+                          size: 120,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            )
+          else
+            // Placeholder when no album art
+            Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(
+                Icons.music_note,
+                size: 120,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          const SizedBox(height: 24),
+          // Track and artist info (left-aligned)
+          if (_nowPlaying!.track != null || _nowPlaying!.artist != null)
+            SizedBox(
+              width: 300,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (_nowPlaying!.track != null) ...[
+                    Text(
+                      _nowPlaying!.track!,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (_nowPlaying!.artist != null) ...[
+                    Text(
+                      _nowPlaying!.artist!,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          const SizedBox(height: 24),
+          // Action buttons (Play/Pause and Open in Spotify in one line)
+          if ((_nowPlaying!.playStatus != null &&
+                  (_nowPlaying!.playStatus == 'PLAY_STATE' ||
+                      _nowPlaying!.playStatus == 'PAUSE_STATE' ||
+                      _nowPlaying!.playStatus == 'STOP_STATE')) ||
+              (_nowPlaying!.source == 'SPOTIFY' &&
+                  _nowPlaying!.location != null &&
+                  _decodeSpotifyUri(_nowPlaying!.location) != null))
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              alignment: WrapAlignment.center,
+              children: [
+                // Play/Pause button
+                if (_nowPlaying!.playStatus != null &&
+                    (_nowPlaying!.playStatus == 'PLAY_STATE' ||
+                        _nowPlaying!.playStatus == 'PAUSE_STATE' ||
+                        _nowPlaying!.playStatus == 'STOP_STATE'))
+                  FilledButton.icon(
+                    onPressed: _isLoadingNowPlaying ? null : _togglePlayPause,
+                    icon: Icon(
+                      _nowPlaying!.playStatus == 'PLAY_STATE'
+                          ? Icons.pause
+                          : Icons.play_arrow,
+                    ),
+                    label: Text(
+                      _nowPlaying!.playStatus == 'PLAY_STATE'
+                          ? 'Pause'
+                          : 'Play',
+                    ),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
+                    ),
+                  ),
+                // Open in Spotify button
+                if (_nowPlaying!.source == 'SPOTIFY' &&
+                    _nowPlaying!.location != null &&
+                    _decodeSpotifyUri(_nowPlaying!.location) != null)
+                  OutlinedButton.icon(
+                    onPressed: _openInSpotify,
+                    icon: const Icon(Icons.open_in_new),
+                    label: const Text('Open in Spotify'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          // Shuffle and Repeat in single row
+          if (_nowPlaying!.shuffleSetting != null ||
+              _nowPlaying!.repeatSetting != null) ...[
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (_nowPlaying!.shuffleSetting != null) ...[
+                  Icon(
+                    Icons.shuffle,
+                    size: 20,
+                    color: _nowPlaying!.shuffleSetting == 'SHUFFLE_ON'
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _nowPlaying!.shuffleSetting == 'SHUFFLE_ON'
+                        ? 'Shuffle On'
+                        : 'Shuffle Off',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                ],
+                if (_nowPlaying!.shuffleSetting != null &&
+                    _nowPlaying!.repeatSetting != null)
+                  const SizedBox(width: 24),
+                if (_nowPlaying!.repeatSetting != null) ...[
+                  Icon(
+                    _nowPlaying!.repeatSetting == 'REPEAT_ALL'
+                        ? Icons.repeat
+                        : _nowPlaying!.repeatSetting == 'REPEAT_ONE'
+                            ? Icons.repeat_one
+                            : Icons.repeat,
+                    size: 20,
+                    color: _nowPlaying!.repeatSetting != 'REPEAT_OFF'
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    _nowPlaying!.repeatSetting == 'REPEAT_ALL'
+                        ? 'Repeat All'
+                        : _nowPlaying!.repeatSetting == 'REPEAT_ONE'
+                            ? 'Repeat One'
+                            : 'Repeat Off',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildPresetButton(
     BuildContext context,
     ThemeData theme,
@@ -1041,349 +1297,43 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Center(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            widget.speaker.emoji,
-                            style: const TextStyle(fontSize: 48),
-                          ),
-                          const SizedBox(width: 16),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.speaker.name,
-                                style: theme.textTheme.headlineMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              SelectableText(
-                                '${widget.speaker.type} • ${widget.speaker
-                                    .ipAddress}',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+                    // Conditional rendering: Hero Now Playing or Speaker Header
+                    if (_shouldShowNowPlayingCard() && _nowPlaying != null)
+                      _buildHeroNowPlaying(context, theme)
+                    else
+                      _buildSpeakerHeader(context, theme),
                     const SizedBox(height: 32),
-                    // Now Playing Section
-                    if (_shouldShowNowPlayingCard() || _nowPlayingErrorMessage != null || (_isLoadingNowPlaying && _nowPlaying == null))
+                    // Loading and Error States
+                    if (_isLoadingNowPlaying && _nowPlaying == null)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: CircularProgressIndicator(),
+                        ),
+                      ),
+                    if (_nowPlayingErrorMessage != null)
                       Card(
                         elevation: 1,
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.music_note,
-                                    color: theme.colorScheme.primary,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Now Playing',
-                                    style: theme.textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
+                              Text(
+                                _nowPlayingErrorMessage!,
+                                style: TextStyle(
+                                  color: theme.colorScheme.error,
+                                  fontSize: 14,
+                                ),
                               ),
-                              const SizedBox(height: 16),
-                              if (_isLoadingNowPlaying && _nowPlaying == null)
-                                const Center(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(16.0),
-                                    child: CircularProgressIndicator(),
-                                  ),
-                                )
-                              else
-                                if (_nowPlayingErrorMessage != null)
-                                Column(
-                                  children: [
-                                    Text(
-                                      _nowPlayingErrorMessage!,
-                                      style: TextStyle(
-                                        color: theme.colorScheme.error,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    TextButton(
-                                      onPressed: _loadNowPlaying,
-                                      child: const Text('Retry'),
-                                    ),
-                                  ],
-                                )
-                              else
-                                if (_nowPlaying != null)
-                                  if (_isTvSource())
-                                    // TV source display
-                                    Center(
-                                      child: Column(
-                                        children: [
-                                          Icon(
-                                            Icons.tv,
-                                            size: 48,
-                                            color: theme.colorScheme.primary,
-                                          ),
-                                          const SizedBox(height: 16),
-                                          Text(
-                                            'Playing TV sound',
-                                            style: theme.textTheme.bodyLarge?.copyWith(
-                                              color: theme.colorScheme.onSurfaceVariant,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    )
-                                  else
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment
-                                          .start,
-                                      children: [
-                                        if (_nowPlaying!.track != null) ...[
-                                        Text(
-                                          _nowPlaying!.track!,
-                                          style: theme.textTheme.titleLarge
-                                              ?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                      ],
-                                      if (_nowPlaying!.artist != null) ...[
-                                        Text(
-                                          _nowPlaying!.artist!,
-                                          style: theme.textTheme.titleMedium
-                                              ?.copyWith(
-                                            color: theme.colorScheme
-                                                .onSurfaceVariant,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 16),
-                                      ],
-                                      // Album art and settings
-                                      Row(
-                                        crossAxisAlignment: CrossAxisAlignment
-                                            .start,
-                                        children: [
-                                          if (_nowPlaying!.art != null &&
-                                              _nowPlaying!.artImageStatus ==
-                                                  'IMAGE_PRESENT')
-                                            GestureDetector(
-                                              onTap: _openAlbumArtFullScreen,
-                                              child: Hero(
-                                                tag: 'album-art-${widget.speaker
-                                                    .id}',
-                                                child: ClipRRect(
-                                                  borderRadius: BorderRadius
-                                                      .circular(8),
-                                                  child: Image.network(
-                                                    _nowPlaying!.art!,
-                                                    width: 100,
-                                                    height: 100,
-                                                    fit: BoxFit.cover,
-                                                    errorBuilder: (context,
-                                                        error, stackTrace) {
-                                                      return Container(
-                                                        width: 100,
-                                                        height: 100,
-                                                        decoration: BoxDecoration(
-                                                          color: theme
-                                                              .colorScheme
-                                                              .surfaceContainerHighest,
-                                                          borderRadius: BorderRadius
-                                                              .circular(8),
-                                                        ),
-                                                        child: Icon(
-                                                          Icons.music_note,
-                                                          size: 48,
-                                                          color: theme
-                                                              .colorScheme
-                                                              .onSurfaceVariant,
-                                                        ),
-                                                      );
-                                                    },
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          const SizedBox(width: 16),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment
-                                                  .start,
-                                              children: [
-                                                if (_nowPlaying!
-                                                    .shuffleSetting !=
-                                                    null) ...[
-                                                  Row(
-                                                    children: [
-                                                      Icon(
-                                                        Icons.shuffle,
-                                                        size: 18,
-                                                        color: _nowPlaying!
-                                                            .shuffleSetting ==
-                                                            'SHUFFLE_ON'
-                                                            ? theme.colorScheme
-                                                            .primary
-                                                            : theme.colorScheme
-                                                            .onSurfaceVariant,
-                                                      ),
-                                                      const SizedBox(width: 8),
-                                                      Text(
-                                                        _nowPlaying!
-                                                            .shuffleSetting ==
-                                                            'SHUFFLE_ON'
-                                                            ? 'Shuffle On'
-                                                            : 'Shuffle Off',
-                                                        style: theme.textTheme
-                                                            .bodyMedium,
-                                                      ),
-                                                    ],
-                                                  ),
-                                                  const SizedBox(height: 8),
-                                                ],
-                                                if (_nowPlaying!
-                                                    .repeatSetting != null) ...[
-                                                  Row(
-                                                    children: [
-                                                      Icon(
-                                                        _nowPlaying!
-                                                            .repeatSetting ==
-                                                            'REPEAT_ALL'
-                                                            ? Icons.repeat
-                                                            : _nowPlaying!
-                                                            .repeatSetting ==
-                                                            'REPEAT_ONE'
-                                                            ? Icons.repeat_one
-                                                            : Icons.repeat,
-                                                        size: 18,
-                                                        color: _nowPlaying!
-                                                            .repeatSetting !=
-                                                            'REPEAT_OFF'
-                                                            ? theme.colorScheme
-                                                            .primary
-                                                            : theme.colorScheme
-                                                            .onSurfaceVariant,
-                                                      ),
-                                                      const SizedBox(width: 8),
-                                                      Text(
-                                                        _nowPlaying!
-                                                            .repeatSetting ==
-                                                            'REPEAT_ALL'
-                                                            ? 'Repeat All'
-                                                            : _nowPlaying!
-                                                            .repeatSetting ==
-                                                            'REPEAT_ONE'
-                                                            ? 'Repeat One'
-                                                            : 'Repeat Off',
-                                                        style: theme.textTheme
-                                                            .bodyMedium,
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ],
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      // Action buttons (Play/Pause and Open in Spotify)
-                                      if ((_nowPlaying!.playStatus ==
-                                          'PLAY_STATE' ||
-                                          _nowPlaying!.playStatus ==
-                                              'PAUSE_STATE' ||
-                                          _nowPlaying!.playStatus ==
-                                              'STOP_STATE') ||
-                                          (_nowPlaying!.source == 'SPOTIFY' &&
-                                              _nowPlaying!.location != null &&
-                                              _decodeSpotifyUri(
-                                                  _nowPlaying!.location) !=
-                                                  null)) ...[
-                                        const SizedBox(height: 16),
-                                        Center(
-                                          child: Wrap(
-                                            spacing: 12,
-                                            runSpacing: 12,
-                                            alignment: WrapAlignment.center,
-                                            children: [
-                                              // Play/Pause button
-                                              if (_nowPlaying!.playStatus !=
-                                                  null &&
-                                                  (_nowPlaying!.playStatus ==
-                                                      'PLAY_STATE' ||
-                                                      _nowPlaying!.playStatus ==
-                                                          'PAUSE_STATE' ||
-                                                      _nowPlaying!.playStatus ==
-                                                          'STOP_STATE'))
-                                                FilledButton.icon(
-                                                  onPressed: _isLoadingNowPlaying
-                                                      ? null
-                                                      : _togglePlayPause,
-                                                  icon: Icon(
-                                                    _nowPlaying!.playStatus ==
-                                                        'PLAY_STATE'
-                                                        ? Icons.pause
-                                                        : Icons.play_arrow,
-                                                  ),
-                                                  label: Text(
-                                                    _nowPlaying!.playStatus ==
-                                                        'PLAY_STATE'
-                                                        ? 'Pause'
-                                                        : 'Play',
-                                                  ),
-                                                  style: FilledButton.styleFrom(
-                                                    padding: const EdgeInsets
-                                                        .symmetric(
-                                                      horizontal: 32,
-                                                      vertical: 16,
-                                                    ),
-                                                  ),
-                                                ),
-                                              // Open in Spotify button
-                                              if (_nowPlaying!.source ==
-                                                  'SPOTIFY' &&
-                                                  _nowPlaying!.location !=
-                                                      null &&
-                                                  _decodeSpotifyUri(
-                                                      _nowPlaying!.location) !=
-                                                      null)
-                                                OutlinedButton.icon(
-                                                  onPressed: _openInSpotify,
-                                                  icon: const Icon(
-                                                      Icons.open_in_new),
-                                                  label: const Text(
-                                                      'Open in Spotify'),
-                                                  style: OutlinedButton
-                                                      .styleFrom(
-                                                    padding: const EdgeInsets
-                                                        .symmetric(
-                                                      horizontal: 24,
-                                                      vertical: 16,
-                                                    ),
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                          ],
+                              const SizedBox(height: 8),
+                              TextButton(
+                                onPressed: _loadNowPlaying,
+                                child: const Text('Retry'),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
                     const SizedBox(height: 16),
                     // Volume Control Section
                     Card(
