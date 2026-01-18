@@ -60,6 +60,10 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
   final Map<String, bool> _loadingVolumes = {};
   final Map<String, String?> _volumeErrors = {};
 
+  // Volume slider state for debouncing
+  Timer? _volumeDebounceTimer;
+  double? _pendingVolume;
+
   @override
   void initState() {
     super.initState();
@@ -127,6 +131,7 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
     _volumeSubscription?.cancel();
     _nowPlayingSubscription?.cancel();
     _zoneSubscription?.cancel();
+    _volumeDebounceTimer?.cancel();
     _websocketService?.dispose();
     super.dispose();
   }
@@ -357,6 +362,72 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
         }
       });
     }
+  }
+
+  Future<void> _setVolumeDirectly(int targetVolume) async {
+    if (_currentVolume == null) return;
+
+    final newVolume = targetVolume.clamp(0, 100);
+
+    setState(() {
+      _isLoadingVolume = true;
+      _volumeErrorMessage = null;
+      // Also update zone member volume loading state if speaker is in a zone
+      if (_currentZone != null &&
+          _currentZone!.isInZone(widget.speaker.deviceId)) {
+        _loadingVolumes[widget.speaker.deviceId] = true;
+        _volumeErrors[widget.speaker.deviceId] = null;
+      }
+    });
+
+    try {
+      final volume = await _apiService.setVolume(
+          widget.speaker.ipAddress, newVolume);
+      if (!mounted) return;
+      setState(() {
+        _currentVolume = volume;
+        _isLoadingVolume = false;
+        // Also update zone member volume if speaker is in a zone
+        if (_currentZone != null &&
+            _currentZone!.isInZone(widget.speaker.deviceId)) {
+          _zoneMemberVolumes[widget.speaker.deviceId] = volume;
+          _loadingVolumes[widget.speaker.deviceId] = false;
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _volumeErrorMessage = 'Failed to set volume: ${e.toString()}';
+        _isLoadingVolume = false;
+        // Also update zone member volume error state if speaker is in a zone
+        if (_currentZone != null &&
+            _currentZone!.isInZone(widget.speaker.deviceId)) {
+          _volumeErrors[widget.speaker.deviceId] =
+          'Failed to set volume: ${e.toString()}';
+          _loadingVolumes[widget.speaker.deviceId] = false;
+        }
+      });
+    }
+  }
+
+  void _onSliderChanged(double value) {
+    // Update local state immediately for smooth UI
+    setState(() {
+      _pendingVolume = value;
+    });
+  }
+
+  void _onSliderChangeEnd(double value) {
+    // Cancel any pending debounce timer
+    _volumeDebounceTimer?.cancel();
+
+    // Set volume immediately when user stops dragging
+    _setVolumeDirectly(value.round());
+
+    // Clear pending volume
+    setState(() {
+      _pendingVolume = null;
+    });
   }
 
   Future<void> _adjustMemberVolume(String deviceId, int delta) async {
@@ -1389,22 +1460,17 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                                   Column(
                                     children: [
                                       const SizedBox(height: 16),
-                                      // Volume bar
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: LinearProgressIndicator(
-                                          value: _currentVolume!.actualVolume /
-                                              100,
-                                          minHeight: 12,
-                                          backgroundColor: theme.colorScheme
-                                              .surfaceContainerHighest,
-                                          valueColor: AlwaysStoppedAnimation<
-                                              Color>(
-                                            theme.colorScheme.primary,
-                                          ),
-                                        ),
+                                      // Volume slider
+                                      Slider(
+                                        value: (_pendingVolume ?? _currentVolume!.actualVolume.toDouble()),
+                                        min: 0,
+                                        max: 100,
+                                        divisions: 20,
+                                        label: '${(_pendingVolume ?? _currentVolume!.actualVolume.toDouble()).round()}%',
+                                        onChanged: _isLoadingVolume ? null : _onSliderChanged,
+                                        onChangeEnd: _onSliderChangeEnd,
                                       ),
-                                      const SizedBox(height: 24),
+                                      const SizedBox(height: 8),
                                       // Volume control buttons
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment
