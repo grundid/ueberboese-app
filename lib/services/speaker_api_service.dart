@@ -1030,4 +1030,50 @@ class SpeakerApiService {
       }
     }
   }
+
+  Future<void> selectPreset(String ipAddress, Preset preset) async {
+    final url = Uri.parse('http://$ipAddress:8090/select');
+    final client = httpClient ?? http.Client();
+
+    try {
+      // Build ContentItem XML using XmlBuilder for proper escaping
+      final builder = XmlBuilder();
+      builder.element('ContentItem', nest: () {
+        builder.attribute('source', preset.source);
+        builder.attribute('type', preset.type);
+        builder.attribute('location', preset.location);
+        final sourceAccount = preset.sourceAccount;
+        if (sourceAccount != null && sourceAccount.isNotEmpty) {
+          builder.attribute('sourceAccount', sourceAccount);
+        }
+        builder.attribute('isPresetable', 'true');
+        builder.element('itemName', nest: preset.itemName);
+      });
+
+      final body = builder.buildDocument().toXmlString();
+
+      final response = await client
+          .post(
+            url,
+            headers: {'Content-Type': 'text/xml'},
+            body: body,
+          )
+          .timeout(timeout);
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to select preset: HTTP ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      if (e is Exception) {
+        rethrow;
+      }
+      throw Exception('Failed to select preset: $e');
+    } finally {
+      if (httpClient == null) {
+        client.close();
+      }
+    }
+  }
 }

@@ -295,16 +295,15 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
     }
   }
 
-  Future<void> _selectPreset(String presetId) async {
+  Future<void> _selectPreset(Preset preset) async {
     try {
-      await _apiService.sendKey(
+      await _apiService.selectPreset(
         widget.speaker.ipAddress,
-        'PRESET_$presetId',
-        'press',
+        preset,
       );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Playing preset $presetId')),
+        SnackBar(content: Text('Playing ${preset.itemName}')),
       );
     } catch (e) {
       if (!mounted) return;
@@ -795,31 +794,29 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
     String presetId,
     Preset? preset,
   ) {
-    final isEnabled = preset != null;
-
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4.0),
         child: AspectRatio(
           aspectRatio: 1.0,
           child: InkWell(
-            onTap: isEnabled ? () => _selectPreset(presetId) : null,
+            onTap: preset != null ? () => _selectPreset(preset) : null,
             borderRadius: BorderRadius.circular(8),
             child: Container(
               decoration: BoxDecoration(
-                color: isEnabled
+                color: preset != null
                     ? theme.colorScheme.surfaceContainerHighest
                     : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: isEnabled
+                  color: preset != null
                       ? theme.colorScheme.outline.withValues(alpha: 0.2)
                       : theme.colorScheme.outline.withValues(alpha: 0.1),
                 ),
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: isEnabled && preset.containerArt != null
+                child: preset != null && preset.containerArt != null
                     ? Stack(
                         children: [
                           Image.network(
@@ -831,7 +828,6 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                               return _buildPresetPlaceholder(
                                 theme,
                                 presetId,
-                                isEnabled,
                                 preset,
                               );
                             },
@@ -860,7 +856,7 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                           ),
                         ],
                       )
-                    : _buildPresetPlaceholder(theme, presetId, isEnabled, preset),
+                    : _buildPresetPlaceholder(theme, presetId, preset),
               ),
             ),
           ),
@@ -872,7 +868,6 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
   Widget _buildPresetPlaceholder(
     ThemeData theme,
     String presetId,
-    bool isEnabled,
     Preset? preset,
   ) {
     return Center(
@@ -882,7 +877,7 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
           preset?.itemName ?? 'Preset $presetId',
           style: theme.textTheme.bodyMedium?.copyWith(
             fontWeight: FontWeight.w500,
-            color: isEnabled
+            color: preset != null
                 ? theme.colorScheme.onSurfaceVariant
                 : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
           ),
