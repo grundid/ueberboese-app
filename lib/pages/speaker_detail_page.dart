@@ -1216,6 +1216,346 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
     );
   }
 
+  Widget _buildAppBarActions(BuildContext context, ThemeData theme) {
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_vert),
+      onSelected: (value) {
+        if (value == 'edit') {
+          Navigator.push(
+            context,
+            MaterialPageRoute<void>(
+              builder: (context) =>
+                  EditSpeakerPage(speaker: widget.speaker),
+            ),
+          );
+        } else if (value == 'remote') {
+          Navigator.push(
+            context,
+            MaterialPageRoute<void>(
+              builder: (context) =>
+                  RemoteControlPage(speaker: widget.speaker),
+            ),
+          );
+        } else if (value == 'recent') {
+          Navigator.push(
+            context,
+            MaterialPageRoute<void>(
+              builder: (context) => RecentsPage(speaker: widget.speaker),
+            ),
+          );
+        } else if (value == 'standby') {
+          _sendToStandby();
+        } else if (value == 'delete') {
+          _showDeleteConfirmationDialog(context);
+        }
+      },
+      itemBuilder: (BuildContext context) =>
+      [
+        const PopupMenuItem<String>(
+          value: 'edit',
+          child: Row(
+            children: [
+              Icon(Icons.edit),
+              SizedBox(width: 8),
+              Text('Edit speaker'),
+            ],
+          ),
+        ),
+        const PopupMenuItem<String>(
+          value: 'remote',
+          child: Row(
+            children: [
+              Icon(Icons.settings_remote),
+              SizedBox(width: 8),
+              Text('Remote Control'),
+            ],
+          ),
+        ),
+        const PopupMenuItem<String>(
+          value: 'recent',
+          child: Row(
+            children: [
+              Icon(Icons.history),
+              SizedBox(width: 8),
+              Text('Recent'),
+            ],
+          ),
+        ),
+        const PopupMenuItem<String>(
+          value: 'standby',
+          child: Row(
+            children: [
+              Icon(Icons.bedtime),
+              SizedBox(width: 8),
+              Text('Send to standby'),
+            ],
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'delete',
+          child: Row(
+            children: [
+              Icon(Icons.delete, color: theme.colorScheme.error),
+              const SizedBox(width: 8),
+              const Text('Delete speaker'),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWarningBanner(BuildContext context, ThemeData theme, MyAppState appState) {
+    return Container(
+      width: double.infinity,
+      color: theme.colorScheme.errorContainer,
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Icon(
+            Icons.warning,
+            color: theme.colorScheme.onErrorContainer,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Management URL Mismatch',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: theme.colorScheme.onErrorContainer,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Speaker: ${_speakerInfo!
+                      .margeUrl}\nSettings: ${appState.config.apiUrl}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onErrorContainer,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNowPlayingErrorState(BuildContext context, ThemeData theme) {
+    return Card(
+      elevation: 1,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Text(
+              _nowPlayingErrorMessage!,
+              style: TextStyle(
+                color: theme.colorScheme.error,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: _loadNowPlaying,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVolumeCard(BuildContext context, ThemeData theme) {
+    return Card(
+      elevation: 1,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.volume_up,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Volume',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (_isLoadingVolume && _currentVolume == null)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else
+              if (_volumeErrorMessage != null)
+                Column(
+                  children: [
+                    Text(
+                      _volumeErrorMessage!,
+                      style: TextStyle(
+                        color: theme.colorScheme.error,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: _loadVolume,
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                )
+              else
+                if (_currentVolume != null)
+                  Column(
+                    children: [
+                      const SizedBox(height: 16),
+                      // Volume slider
+                      Slider(
+                        value: (_pendingVolume ?? _currentVolume!.actualVolume.toDouble()),
+                        min: 0,
+                        max: 100,
+                        divisions: 20,
+                        label: '${(_pendingVolume ?? _currentVolume!.actualVolume.toDouble()).round()}%',
+                        onChanged: _isLoadingVolume ? null : _onSliderChanged,
+                        onChangeEnd: _onSliderChangeEnd,
+                      ),
+                      const SizedBox(height: 8),
+                      // Volume control buttons
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment
+                            .center,
+                        children: [
+                          // Vol up buttonn
+                          FilledButton.icon(
+                            onPressed: _isLoadingVolume
+                                ? null
+                                : () => _adjustVolume(-5),
+                            icon: const Icon(Icons.volume_down),
+                            label: const Text('Down'),
+                          ),
+                          const SizedBox(width: 16),
+                          Text(
+                            '${_currentVolume!.actualVolume} %',
+                            style: theme.textTheme.titleLarge
+                                ?.copyWith(
+                                fontWeight: FontWeight.bold
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          FilledButton.icon(
+                            onPressed: _isLoadingVolume
+                                ? null
+                                : () => _adjustVolume(5),
+                            icon: const Icon(Icons.volume_up),
+                            label: const Text('Up'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPresetsCard(BuildContext context, ThemeData theme) {
+    return Card(
+      elevation: 1,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.star, color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'Presets',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (_isLoadingPresets && _presets == null)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (_presetsErrorMessage != null)
+              Column(
+                children: [
+                  Text(
+                    _presetsErrorMessage!,
+                    style: TextStyle(
+                      color: theme.colorScheme.error,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: _loadPresets,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              )
+            else if (_presets != null)
+              Column(
+                children: [
+                  // First row: Presets 1-3
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      for (var i = 1; i <= 3; i++)
+                        _buildPresetButton(
+                          context,
+                          theme,
+                          i.toString(),
+                          _presets!.where((p) => p.id == i.toString()).firstOrNull,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Second row: Presets 4-6
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      for (var i = 4; i <= 6; i++)
+                        _buildPresetButton(
+                          context,
+                          theme,
+                          i.toString(),
+                          _presets!.where((p) => p.id == i.toString()).firstOrNull,
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -1232,134 +1572,14 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
           ],
         ),
         actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
-            onSelected: (value) {
-              if (value == 'edit') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (context) =>
-                        EditSpeakerPage(speaker: widget.speaker),
-                  ),
-                );
-              } else if (value == 'remote') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (context) =>
-                        RemoteControlPage(speaker: widget.speaker),
-                  ),
-                );
-              } else if (value == 'recent') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (context) => RecentsPage(speaker: widget.speaker),
-                  ),
-                );
-              } else if (value == 'standby') {
-                _sendToStandby();
-              } else if (value == 'delete') {
-                _showDeleteConfirmationDialog(context);
-              }
-            },
-            itemBuilder: (BuildContext context) =>
-            [
-              const PopupMenuItem<String>(
-                value: 'edit',
-                child: Row(
-                  children: [
-                    Icon(Icons.edit),
-                    SizedBox(width: 8),
-                    Text('Edit speaker'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'remote',
-                child: Row(
-                  children: [
-                    Icon(Icons.settings_remote),
-                    SizedBox(width: 8),
-                    Text('Remote Control'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'recent',
-                child: Row(
-                  children: [
-                    Icon(Icons.history),
-                    SizedBox(width: 8),
-                    Text('Recent'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'standby',
-                child: Row(
-                  children: [
-                    Icon(Icons.bedtime),
-                    SizedBox(width: 8),
-                    Text('Send to standby'),
-                  ],
-                ),
-              ),
-              PopupMenuItem<String>(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete, color: theme.colorScheme.error),
-                    const SizedBox(width: 8),
-                    const Text('Delete speaker'),
-                  ],
-                ),
-              ),
-            ],
-          ),
+          _buildAppBarActions(context, theme),
         ],
       ),
       body: Column(
         children: [
           // Warning banner (only shown when there's a mismatch)
           if (_hasMargeUrlMismatch && _speakerInfo?.margeUrl != null)
-            Container(
-              width: double.infinity,
-              color: theme.colorScheme.errorContainer,
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.warning,
-                    color: theme.colorScheme.onErrorContainer,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Management URL Mismatch',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            color: theme.colorScheme.onErrorContainer,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Speaker: ${_speakerInfo!
-                              .margeUrl}\nSettings: ${appState.config.apiUrl}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onErrorContainer,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _buildWarningBanner(context, theme, appState),
           // Existing content
           Expanded(
             child: SingleChildScrollView(
@@ -1383,134 +1603,30 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                         ),
                       ),
                     if (_nowPlayingErrorMessage != null)
-                      Card(
-                        elevation: 1,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            children: [
-                              Text(
-                                _nowPlayingErrorMessage!,
-                                style: TextStyle(
-                                  color: theme.colorScheme.error,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              TextButton(
-                                onPressed: _loadNowPlaying,
-                                child: const Text('Retry'),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                      _buildNowPlayingErrorState(context, theme),
                     const SizedBox(height: 16),
                     // Volume Control Section
-                    Card(
-                      elevation: 1,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.volume_up,
-                                  color: theme.colorScheme.primary,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Volume',
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            if (_isLoadingVolume && _currentVolume == null)
-                              const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(16.0),
-                                  child: CircularProgressIndicator(),
-                                ),
-                              )
-                            else
-                              if (_volumeErrorMessage != null)
-                                Column(
-                                  children: [
-                                    Text(
-                                      _volumeErrorMessage!,
-                                      style: TextStyle(
-                                        color: theme.colorScheme.error,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    TextButton(
-                                      onPressed: _loadVolume,
-                                      child: const Text('Retry'),
-                                    ),
-                                  ],
-                                )
-                              else
-                                if (_currentVolume != null)
-                                  Column(
-                                    children: [
-                                      const SizedBox(height: 16),
-                                      // Volume slider
-                                      Slider(
-                                        value: (_pendingVolume ?? _currentVolume!.actualVolume.toDouble()),
-                                        min: 0,
-                                        max: 100,
-                                        divisions: 20,
-                                        label: '${(_pendingVolume ?? _currentVolume!.actualVolume.toDouble()).round()}%',
-                                        onChanged: _isLoadingVolume ? null : _onSliderChanged,
-                                        onChangeEnd: _onSliderChangeEnd,
-                                      ),
-                                      const SizedBox(height: 8),
-                                      // Volume control buttons
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment
-                                            .center,
-                                        children: [
-                                          // Vol up buttonn
-                                          FilledButton.icon(
-                                            onPressed: _isLoadingVolume
-                                                ? null
-                                                : () => _adjustVolume(-5),
-                                            icon: const Icon(Icons.volume_down),
-                                            label: const Text('Down'),
-                                          ),
-                                          const SizedBox(width: 16),
-                                          Text(
-                                            '${_currentVolume!.actualVolume} %',
-                                            style: theme.textTheme.titleLarge
-                                                ?.copyWith(
-                                                fontWeight: FontWeight.bold
-                                            ),
-                                          ),
-                                          const SizedBox(width: 16),
-                                          FilledButton.icon(
-                                            onPressed: _isLoadingVolume
-                                                ? null
-                                                : () => _adjustVolume(5),
-                                            icon: const Icon(Icons.volume_up),
-                                            label: const Text('Up'),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    _buildVolumeCard(context, theme),
                     const SizedBox(height: 16),
                     // Multi-Room Zone Section
-                    Card(
+                    _buildZoneCard(context, theme),
+                    const SizedBox(height: 16),
+                    // Presets Section
+                    _buildPresetsCard(context, theme),
+                    // Safe area padding for modern Android gesture navigation
+                    const SizedBox(height: 80),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildZoneCard(BuildContext context, ThemeData theme) {
+    return Card(
                       elevation: 1,
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
@@ -1904,99 +2020,7 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                           ],
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Presets Section
-                    Card(
-                      elevation: 1,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(Icons.star, color: theme.colorScheme.primary),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Presets',
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            if (_isLoadingPresets && _presets == null)
-                              const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(16.0),
-                                  child: CircularProgressIndicator(),
-                                ),
-                              )
-                            else if (_presetsErrorMessage != null)
-                              Column(
-                                children: [
-                                  Text(
-                                    _presetsErrorMessage!,
-                                    style: TextStyle(
-                                      color: theme.colorScheme.error,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  TextButton(
-                                    onPressed: _loadPresets,
-                                    child: const Text('Retry'),
-                                  ),
-                                ],
-                              )
-                            else if (_presets != null)
-                              Column(
-                                children: [
-                                  // First row: Presets 1-3
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      for (var i = 1; i <= 3; i++)
-                                        _buildPresetButton(
-                                          context,
-                                          theme,
-                                          i.toString(),
-                                          _presets!.where((p) => p.id == i.toString()).firstOrNull,
-                                        ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  // Second row: Presets 4-6
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                    children: [
-                                      for (var i = 4; i <= 6; i++)
-                                        _buildPresetButton(
-                                          context,
-                                          theme,
-                                          i.toString(),
-                                          _presets!.where((p) => p.id == i.toString()).firstOrNull,
-                                        ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    // Safe area padding for modern Android gesture navigation
-                    const SizedBox(height: 80),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+                    );
   }
 }
 
