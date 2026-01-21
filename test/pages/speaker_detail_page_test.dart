@@ -79,10 +79,14 @@ void main() {
 
       expect(find.text('Edit speaker'), findsOneWidget);
       expect(find.text('Remote Control'), findsOneWidget);
+      expect(find.text('Recent'), findsOneWidget);
+      expect(find.text('Manage Presets'), findsOneWidget);
       expect(find.text('Send to standby'), findsOneWidget);
       expect(find.text('Delete speaker'), findsOneWidget);
       expect(find.byIcon(Icons.edit), findsOneWidget);
       expect(find.byIcon(Icons.settings_remote), findsOneWidget);
+      expect(find.byIcon(Icons.history), findsOneWidget);
+      expect(find.byIcon(Icons.star), findsAtLeast(1));
       expect(find.byIcon(Icons.bedtime), findsOneWidget);
       expect(find.byIcon(Icons.delete), findsOneWidget);
     });
@@ -1184,6 +1188,43 @@ void main() {
 
       // Verify Presets section is displayed
       expect(find.text('Presets'), findsOneWidget);
+    });
+
+    testWidgets('displays gear icon in presets card', (WidgetTester tester) async {
+      final appState = MyAppState();
+      await appState.initialize();
+
+      final mockClient = MockClient();
+      final apiService = SpeakerApiService(httpClient: mockClient);
+
+      // Mock getPresets to return empty preset list
+      when(mockClient.get(any)).thenAnswer(
+        (_) async => http.Response('''<?xml version="1.0" encoding="UTF-8" ?>
+<presets />''', 200, headers: {'content-type': 'text/xml; charset=utf-8'}),
+      );
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: appState,
+          child: MaterialApp(
+            home: SpeakerDetailPage(
+              speaker: testSpeaker,
+              apiService: apiService,
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify gear icon is displayed in presets card
+      expect(find.byIcon(Icons.settings), findsOneWidget);
+
+      // Verify the icon button has correct tooltip
+      final iconButton = tester.widget<IconButton>(
+        find.widgetWithIcon(IconButton, Icons.settings),
+      );
+      expect(iconButton.tooltip, 'Manage Presets');
     });
   });
 

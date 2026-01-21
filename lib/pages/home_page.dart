@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:ueberboese_app/pages/speaker_list_page.dart';
 import 'package:ueberboese_app/pages/spotify_accounts_page.dart';
 import 'package:ueberboese_app/pages/configuration_page.dart';
-import 'package:ueberboese_app/pages/presets_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -26,8 +25,6 @@ class _HomePageState extends State<HomePage> {
       case 1:
         page = const SpotifyAccountsPage();
       case 2:
-        page = const PresetsPage();
-      case 3:
         page = const ConfigurationPage();
       default:
         throw UnimplementedError('no widget for $selectedIndex');
@@ -70,10 +67,6 @@ class _HomePageState extends State<HomePage> {
                       label: 'Spotify',
                     ),
                     BottomNavigationBarItem(
-                      icon: Icon(Icons.settings_remote),
-                      label: 'Presets',
-                    ),
-                    BottomNavigationBarItem(
                       icon: Icon(Icons.settings),
                       label: 'Configuration',
                     ),
@@ -101,10 +94,6 @@ class _HomePageState extends State<HomePage> {
                       NavigationRailDestination(
                         icon: Icon(Icons.music_note),
                         label: Text('Spotify'),
-                      ),
-                      NavigationRailDestination(
-                        icon: Icon(Icons.settings_remote),
-                        label: Text('Presets'),
                       ),
                       NavigationRailDestination(
                         icon: Icon(Icons.settings),

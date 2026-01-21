@@ -16,6 +16,7 @@ import 'package:ueberboese_app/pages/edit_speaker_page.dart';
 import 'package:ueberboese_app/pages/remote_control_page.dart';
 import 'package:ueberboese_app/pages/album_art_viewer_page.dart';
 import 'package:ueberboese_app/pages/recents_page.dart';
+import 'package:ueberboese_app/pages/presets_page.dart';
 
 class SpeakerDetailPage extends StatefulWidget {
   final Speaker speaker;
@@ -1243,6 +1244,13 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
               builder: (context) => RecentsPage(speaker: widget.speaker),
             ),
           );
+        } else if (value == 'presets') {
+          Navigator.push(
+            context,
+            MaterialPageRoute<void>(
+              builder: (context) => PresetsPage(speakerIp: widget.speaker.ipAddress),
+            ),
+          );
         } else if (value == 'standby') {
           _sendToStandby();
         } else if (value == 'delete') {
@@ -1278,6 +1286,16 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
               Icon(Icons.history),
               SizedBox(width: 8),
               Text('Recent'),
+            ],
+          ),
+        ),
+        const PopupMenuItem<String>(
+          value: 'presets',
+          child: Row(
+            children: [
+              Icon(Icons.star),
+              SizedBox(width: 8),
+              Text('Manage Presets'),
             ],
           ),
         ),
@@ -1490,6 +1508,19 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (context) => PresetsPage(speakerIp: widget.speaker.ipAddress),
+                      ),
+                    );
+                  },
+                  tooltip: 'Manage Presets',
                 ),
               ],
             ),

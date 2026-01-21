@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/models/preset.dart';
 import 'package:ueberboese_app/services/speaker_api_service.dart';
 import 'package:ueberboese_app/pages/preset_detail_page.dart';
@@ -8,9 +6,14 @@ import 'package:ueberboese_app/pages/spotify_preset_detail_page.dart';
 import 'package:ueberboese_app/pages/tunein_stored_preset_detail_page.dart';
 
 class PresetsPage extends StatefulWidget {
+  final String speakerIp;
   final SpeakerApiService? apiService;
 
-  const PresetsPage({super.key, this.apiService});
+  const PresetsPage({
+    super.key,
+    required this.speakerIp,
+    this.apiService,
+  });
 
   @override
   State<PresetsPage> createState() => _PresetsPageState();
@@ -28,13 +31,9 @@ class _PresetsPageState extends State<PresetsPage> {
   }
 
   void _loadPresets() {
-    final appState = context.read<MyAppState>();
-    if (appState.speakers.isNotEmpty) {
-      final firstSpeaker = appState.speakers.first;
-      setState(() {
-        _presetsFuture = _speakerApiService.getPresets(firstSpeaker.ipAddress);
-      });
-    }
+    setState(() {
+      _presetsFuture = _speakerApiService.getPresets(widget.speakerIp);
+    });
   }
 
   void _retryLoad() {
@@ -43,20 +42,12 @@ class _PresetsPageState extends State<PresetsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final appState = context.watch<MyAppState>();
     final theme = Theme.of(context);
 
-    // Check if there are no speakers
-    if (appState.speakers.isEmpty) {
-      return const Scaffold(
-        body: Center(
-          child: Text('No speakers available'),
-        ),
-      );
-    }
-
-    // If we have speakers, show the presets
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Manage Presets'),
+      ),
       body: FutureBuilder<List<Preset>>(
         future: _presetsFuture,
         builder: (context, snapshot) {
