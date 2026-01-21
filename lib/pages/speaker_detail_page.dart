@@ -1347,7 +1347,7 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
+                SelectableText(
                   'Speaker: ${_speakerInfo!
                       .margeUrl}\nSettings: ${appState.config.apiUrl}',
                   style: theme.textTheme.bodySmall?.copyWith(
