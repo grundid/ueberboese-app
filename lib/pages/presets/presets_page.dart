@@ -4,6 +4,7 @@ import 'package:ueberboese_app/services/speaker_api_service.dart';
 import 'package:ueberboese_app/pages/presets/preset_detail_page.dart';
 import 'package:ueberboese_app/pages/presets/spotify_preset_detail_page.dart';
 import 'package:ueberboese_app/pages/presets/tunein_stored_preset_detail_page.dart';
+import 'package:ueberboese_app/pages/presets/empty_preset_detail_page.dart';
 
 class PresetsPage extends StatefulWidget {
   final String speakerIp;
@@ -94,17 +95,17 @@ class _PresetsPageState extends State<PresetsPage> {
 
           final presets = snapshot.data ?? [];
 
-          if (presets.isEmpty) {
-            return const Center(
-              child: Text('No presets available'),
-            );
-          }
-
+          // Always show all 6 preset slots (1-6)
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: presets.length,
+            itemCount: 6,
             itemBuilder: (context, index) {
-              final preset = presets[index];
+              final presetId = (index + 1).toString();
+              final preset = presets.cast<Preset?>().firstWhere(
+                (p) => p?.id == presetId,
+                orElse: () => null,
+              );
+
               return Card(
                 elevation: 1,
                 margin: const EdgeInsets.symmetric(
@@ -118,40 +119,54 @@ class _PresetsPageState extends State<PresetsPage> {
                     child: Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        preset.containerArt != null &&
-                                preset.containerArt!.isNotEmpty
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
-                                child: Image.network(
-                                  preset.containerArt!,
+                        if (preset != null)
+                          preset.containerArt != null &&
+                                  preset.containerArt!.isNotEmpty
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: Image.network(
+                                    preset.containerArt!,
+                                    width: 56,
+                                    height: 56,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        width: 56,
+                                        height: 56,
+                                        color: theme.colorScheme.surfaceContainerHighest,
+                                        child: Icon(
+                                          Icons.music_note,
+                                          color: theme.colorScheme.onSurfaceVariant,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                )
+                              : Container(
                                   width: 56,
                                   height: 56,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      width: 56,
-                                      height: 56,
-                                      color: theme.colorScheme.surfaceContainerHighest,
-                                      child: Icon(
-                                        Icons.music_note,
-                                        color: theme.colorScheme.onSurfaceVariant,
-                                      ),
-                                    );
-                                  },
-                                ),
-                              )
-                            : Container(
-                                width: 56,
-                                height: 56,
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.surfaceContainerHighest,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Icon(
-                                  Icons.music_note,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                              ),
+                                  decoration: BoxDecoration(
+                                    color: theme.colorScheme.surfaceContainerHighest,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Icon(
+                                    Icons.music_note,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                )
+                        else
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Icon(
+                              Icons.add,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
                         Positioned(
                           right: 0,
                           top: 8,
@@ -159,7 +174,9 @@ class _PresetsPageState extends State<PresetsPage> {
                             width: 20,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.primary,
+                              color: preset != null
+                                  ? theme.colorScheme.primary
+                                  : theme.colorScheme.surfaceContainerHighest,
                               borderRadius: const BorderRadius.only(
                                 topRight: Radius.circular(8),
                                 bottomRight: Radius.circular(8),
@@ -167,9 +184,11 @@ class _PresetsPageState extends State<PresetsPage> {
                             ),
                             child: Center(
                               child: Text(
-                                preset.id,
+                                presetId,
                                 style: theme.textTheme.titleLarge?.copyWith(
-                                  color: theme.colorScheme.onPrimary,
+                                  color: preset != null
+                                      ? theme.colorScheme.onPrimary
+                                      : theme.colorScheme.onSurfaceVariant,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -180,13 +199,16 @@ class _PresetsPageState extends State<PresetsPage> {
                     ),
                   ),
                   title: Text(
-                    preset.itemName,
+                    preset?.itemName ?? 'Empty Preset',
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
+                      color: preset == null
+                          ? theme.colorScheme.onSurfaceVariant
+                          : null,
                     ),
                   ),
                   subtitle: Text(
-                    preset.source,
+                    preset?.source ?? 'No content assigned',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.secondary,
                     ),
@@ -196,7 +218,17 @@ class _PresetsPageState extends State<PresetsPage> {
                     color: theme.colorScheme.primary,
                   ),
                   onTap: () {
-                    if (preset.source == 'SPOTIFY') {
+                    if (preset == null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (context) => EmptyPresetDetailPage(
+                            presetId: presetId,
+                            speakerIp: widget.speakerIp,
+                          ),
+                        ),
+                      );
+                    } else if (preset.source == 'SPOTIFY') {
                       Navigator.push(
                         context,
                         MaterialPageRoute<void>(
