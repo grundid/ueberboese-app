@@ -29,18 +29,23 @@ import 'package:ueberboese_app/services/speaker_api_service.dart' as _i5;
 // ignore_for_file: subtype_of_sealed_class
 // ignore_for_file: invalid_use_of_internal_member
 
-class _FakeSpeakerInfo_0 extends _i1.SmartFake implements _i2.SpeakerInfo {
-  _FakeSpeakerInfo_0(Object parent, Invocation parentInvocation)
+class _FakeDuration_0 extends _i1.SmartFake implements Duration {
+  _FakeDuration_0(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeVolume_1 extends _i1.SmartFake implements _i3.Volume {
-  _FakeVolume_1(Object parent, Invocation parentInvocation)
+class _FakeSpeakerInfo_1 extends _i1.SmartFake implements _i2.SpeakerInfo {
+  _FakeSpeakerInfo_1(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeNowPlaying_2 extends _i1.SmartFake implements _i4.NowPlaying {
-  _FakeNowPlaying_2(Object parent, Invocation parentInvocation)
+class _FakeVolume_2 extends _i1.SmartFake implements _i3.Volume {
+  _FakeVolume_2(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeNowPlaying_3 extends _i1.SmartFake implements _i4.NowPlaying {
+  _FakeNowPlaying_3(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -53,11 +58,19 @@ class MockSpeakerApiService extends _i1.Mock implements _i5.SpeakerApiService {
   }
 
   @override
+  Duration get timeout =>
+      (super.noSuchMethod(
+            Invocation.getter(#timeout),
+            returnValue: _FakeDuration_0(this, Invocation.getter(#timeout)),
+          )
+          as Duration);
+
+  @override
   _i6.Future<_i2.SpeakerInfo> fetchSpeakerInfo(String? ipAddress) =>
       (super.noSuchMethod(
             Invocation.method(#fetchSpeakerInfo, [ipAddress]),
             returnValue: _i6.Future<_i2.SpeakerInfo>.value(
-              _FakeSpeakerInfo_0(
+              _FakeSpeakerInfo_1(
                 this,
                 Invocation.method(#fetchSpeakerInfo, [ipAddress]),
               ),
@@ -70,7 +83,7 @@ class MockSpeakerApiService extends _i1.Mock implements _i5.SpeakerApiService {
       (super.noSuchMethod(
             Invocation.method(#getVolume, [ipAddress]),
             returnValue: _i6.Future<_i3.Volume>.value(
-              _FakeVolume_1(this, Invocation.method(#getVolume, [ipAddress])),
+              _FakeVolume_2(this, Invocation.method(#getVolume, [ipAddress])),
             ),
           )
           as _i6.Future<_i3.Volume>);
@@ -80,7 +93,7 @@ class MockSpeakerApiService extends _i1.Mock implements _i5.SpeakerApiService {
       (super.noSuchMethod(
             Invocation.method(#setVolume, [ipAddress, volume]),
             returnValue: _i6.Future<_i3.Volume>.value(
-              _FakeVolume_1(
+              _FakeVolume_2(
                 this,
                 Invocation.method(#setVolume, [ipAddress, volume]),
               ),
@@ -93,7 +106,7 @@ class MockSpeakerApiService extends _i1.Mock implements _i5.SpeakerApiService {
       (super.noSuchMethod(
             Invocation.method(#getNowPlaying, [ipAddress]),
             returnValue: _i6.Future<_i4.NowPlaying>.value(
-              _FakeNowPlaying_2(
+              _FakeNowPlaying_3(
                 this,
                 Invocation.method(#getNowPlaying, [ipAddress]),
               ),
@@ -287,6 +300,15 @@ class MockSpeakerApiService extends _i1.Mock implements _i5.SpeakerApiService {
   _i6.Future<void> selectContentItem(String? ipAddress, _i9.Recent? recent) =>
       (super.noSuchMethod(
             Invocation.method(#selectContentItem, [ipAddress, recent]),
+            returnValue: _i6.Future<void>.value(),
+            returnValueForMissingStub: _i6.Future<void>.value(),
+          )
+          as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> selectPreset(String? ipAddress, _i8.Preset? preset) =>
+      (super.noSuchMethod(
+            Invocation.method(#selectPreset, [ipAddress, preset]),
             returnValue: _i6.Future<void>.value(),
             returnValueForMissingStub: _i6.Future<void>.value(),
           )

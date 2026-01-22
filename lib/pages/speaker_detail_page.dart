@@ -16,7 +16,7 @@ import 'package:ueberboese_app/pages/edit_speaker_page.dart';
 import 'package:ueberboese_app/pages/remote_control_page.dart';
 import 'package:ueberboese_app/pages/album_art_viewer_page.dart';
 import 'package:ueberboese_app/pages/recents_page.dart';
-import 'package:ueberboese_app/pages/presets_page.dart';
+import 'package:ueberboese_app/pages/presets/presets_page.dart';
 
 class SpeakerDetailPage extends StatefulWidget {
   final Speaker speaker;

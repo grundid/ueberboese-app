@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ueberboese_app/pages/presets_page.dart';
+import 'package:ueberboese_app/pages/presets/presets_page.dart';
 
 void main() {
   group('PresetsPage', () {

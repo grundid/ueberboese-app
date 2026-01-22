@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ueberboese_app/models/preset.dart';
 import 'package:ueberboese_app/models/tunein_station.dart';
-import 'package:ueberboese_app/pages/tunein_preset_detail_page.dart';
+import 'package:ueberboese_app/pages/presets/tunein_preset_detail_page.dart';
 import 'package:ueberboese_app/services/tunein_api_service.dart';
 
 class EditTuneInPresetPage extends StatefulWidget {

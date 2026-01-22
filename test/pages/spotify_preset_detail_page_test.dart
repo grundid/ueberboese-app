@@ -7,7 +7,7 @@ import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/models/app_config.dart';
 import 'package:ueberboese_app/models/preset.dart';
 import 'package:ueberboese_app/models/spotify_account.dart';
-import 'package:ueberboese_app/pages/spotify_preset_detail_page.dart';
+import 'package:ueberboese_app/pages/presets/spotify_preset_detail_page.dart';
 import 'package:ueberboese_app/services/spotify_api_service.dart';
 
 @GenerateMocks([SpotifyApiService])

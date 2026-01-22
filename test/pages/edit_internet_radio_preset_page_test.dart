@@ -7,7 +7,7 @@ import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/models/app_config.dart';
 import 'package:ueberboese_app/models/preset.dart';
 import 'package:ueberboese_app/models/speaker.dart';
-import 'package:ueberboese_app/pages/edit_internet_radio_preset_page.dart';
+import 'package:ueberboese_app/pages/presets/edit_internet_radio_preset_page.dart';
 import 'package:ueberboese_app/services/speaker_api_service.dart';
 
 @GenerateMocks([SpeakerApiService])

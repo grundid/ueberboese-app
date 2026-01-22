@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/models/app_config.dart';
 import 'package:ueberboese_app/models/preset.dart';
-import 'package:ueberboese_app/pages/preset_detail_page.dart';
+import 'package:ueberboese_app/pages/presets/preset_detail_page.dart';
 
 void main() {
   group('PresetDetailPage', () {

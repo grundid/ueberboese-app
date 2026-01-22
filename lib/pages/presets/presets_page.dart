@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:ueberboese_app/models/preset.dart';
 import 'package:ueberboese_app/services/speaker_api_service.dart';
-import 'package:ueberboese_app/pages/preset_detail_page.dart';
-import 'package:ueberboese_app/pages/spotify_preset_detail_page.dart';
-import 'package:ueberboese_app/pages/tunein_stored_preset_detail_page.dart';
+import 'package:ueberboese_app/pages/presets/preset_detail_page.dart';
+import 'package:ueberboese_app/pages/presets/spotify_preset_detail_page.dart';
+import 'package:ueberboese_app/pages/presets/tunein_stored_preset_detail_page.dart';
 
 class PresetsPage extends StatefulWidget {
   final String speakerIp;

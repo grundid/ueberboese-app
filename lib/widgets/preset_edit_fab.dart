@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:ueberboese_app/models/preset.dart';
-import 'package:ueberboese_app/pages/edit_spotify_preset_page.dart';
-import 'package:ueberboese_app/pages/edit_tunein_preset_page.dart';
-import 'package:ueberboese_app/pages/edit_internet_radio_preset_page.dart';
+import 'package:ueberboese_app/pages/presets/edit_spotify_preset_page.dart';
+import 'package:ueberboese_app/pages/presets/edit_tunein_preset_page.dart';
+import 'package:ueberboese_app/pages/presets/edit_internet_radio_preset_page.dart';
 
 /// A reusable floating action button widget that provides options to edit
 /// a preset as Spotify, TuneIn, or Internet Radio.

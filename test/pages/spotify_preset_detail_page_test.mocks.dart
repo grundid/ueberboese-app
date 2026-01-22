@@ -26,8 +26,13 @@ import 'package:ueberboese_app/services/spotify_api_service.dart' as _i3;
 // ignore_for_file: subtype_of_sealed_class
 // ignore_for_file: invalid_use_of_internal_member
 
-class _FakeSpotifyEntity_0 extends _i1.SmartFake implements _i2.SpotifyEntity {
-  _FakeSpotifyEntity_0(Object parent, Invocation parentInvocation)
+class _FakeDuration_0 extends _i1.SmartFake implements Duration {
+  _FakeDuration_0(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeSpotifyEntity_1 extends _i1.SmartFake implements _i2.SpotifyEntity {
+  _FakeSpotifyEntity_1(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -38,6 +43,14 @@ class MockSpotifyApiService extends _i1.Mock implements _i3.SpotifyApiService {
   MockSpotifyApiService() {
     _i1.throwOnMissingStub(this);
   }
+
+  @override
+  Duration get timeout =>
+      (super.noSuchMethod(
+            Invocation.getter(#timeout),
+            returnValue: _FakeDuration_0(this, Invocation.getter(#timeout)),
+          )
+          as Duration);
 
   @override
   _i4.Future<String> initSpotifyAuth(String? apiUrl) =>
@@ -79,7 +92,7 @@ class MockSpotifyApiService extends _i1.Mock implements _i3.SpotifyApiService {
       (super.noSuchMethod(
             Invocation.method(#getSpotifyEntity, [apiUrl, spotifyUri]),
             returnValue: _i4.Future<_i2.SpotifyEntity>.value(
-              _FakeSpotifyEntity_0(
+              _FakeSpotifyEntity_1(
                 this,
                 Invocation.method(#getSpotifyEntity, [apiUrl, spotifyUri]),
               ),
