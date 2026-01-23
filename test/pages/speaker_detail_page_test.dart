@@ -941,6 +941,18 @@ void main() {
 </nowPlaying>''', 200, headers: {'content-type': 'text/xml; charset=utf-8'}),
       );
 
+      // Populate cache with stopped TUNEIN playback data
+      const nowPlaying = NowPlaying(
+        track: 'Radio TEDDY',
+        artist: 'Macht Spaß! Macht schlau!',
+        art: 'http://cdn-radiotime-logos.tunein.com/s80044g.png',
+        artImageStatus: 'IMAGE_PRESENT',
+        playStatus: 'STOP_STATE',
+        source: 'TUNEIN',
+        location: '/v1/playback/station/s80044',
+      );
+      appState.updateNowPlayingForSpeaker(testSpeaker.ipAddress, nowPlaying, true);
+
       await tester.pumpWidget(
         ChangeNotifierProvider.value(
           value: appState,

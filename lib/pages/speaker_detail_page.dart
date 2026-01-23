@@ -789,17 +789,17 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
       return true;
     }
 
-    // Show card if we have meaningful playback state or content info
-    final hasPlaybackState = nowPlaying.playStatus == 'PLAY_STATE' ||
-        nowPlaying.playStatus == 'PAUSE_STATE' ||
-        nowPlaying.playStatus == 'STOP_STATE' ||
-        nowPlaying.playStatus == 'BUFFERING_STATE';
-
+    // Check if we have actual content to display
     final hasContentInfo = nowPlaying.track != null ||
         nowPlaying.artist != null ||
         nowPlaying.album != null;
 
-    return hasPlaybackState || hasContentInfo;
+    final hasArtwork = nowPlaying.art != null &&
+        nowPlaying.artImageStatus == 'IMAGE_PRESENT';
+
+    // Only show the now playing card if we have content info OR artwork
+    // Don't show placeholder when we have playback state but no actual content
+    return hasContentInfo || hasArtwork;
   }
 
   bool _isTvSource(NowPlaying? nowPlaying) {
