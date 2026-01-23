@@ -807,35 +807,41 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
   }
 
   Widget _buildSpeakerHeader(BuildContext context, ThemeData theme) {
-    return Center(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(
-            widget.speaker.emoji,
-            style: const TextStyle(fontSize: 48),
-          ),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Hero(
+      tag: 'speaker-info-${widget.speaker.id}',
+      child: Material(
+        color: Colors.transparent,
+        child: Center(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                widget.speaker.name,
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+                widget.speaker.emoji,
+                style: const TextStyle(fontSize: 48),
               ),
-              const SizedBox(height: 4),
-              SelectableText(
-                '${widget.speaker.type} • ${widget.speaker.ipAddress}',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+              const SizedBox(width: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.speaker.name,
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  SelectableText(
+                    '${widget.speaker.type} • ${widget.speaker.ipAddress}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

@@ -573,6 +573,7 @@ void main() {
           artist: 'Test Artist',
           album: 'Test Album',
           art: 'https://example.com/art.jpg',
+          artImageStatus: 'IMAGE_PRESENT',
           playStatus: 'PLAY_STATE',
         ),
         true, // isConnected
@@ -670,6 +671,7 @@ void main() {
           artist: 'Test Artist',
           album: 'Test Album',
           art: 'https://example.com/art.jpg',
+          artImageStatus: 'IMAGE_PRESENT',
           playStatus: 'PLAY_STATE',
         ),
         true, // isConnected
@@ -686,6 +688,147 @@ void main() {
 
       final heroWidget = tester.widget<Hero>(albumArtHeroFinder);
       expect(heroWidget.tag, equals('album-art-speaker-a'));
+    });
+
+    testWidgets('displays speaker info Hero widget when no artwork',
+        (WidgetTester tester) async {
+      final appState = MyAppState();
+      await appState.initializeSpeakers();
+
+      // Add a speaker without any now playing state (no artwork)
+      const testSpeaker = Speaker(
+        id: '1',
+        name: 'Test Speaker',
+        emoji: '🔊',
+        ipAddress: '192.168.1.100',
+        type: 'SoundTouch 10',
+        deviceId: 'device-123',
+      );
+      appState.addSpeaker(testSpeaker);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: appState,
+          child: const MaterialApp(
+            home: Scaffold(body: SpeakerListPage()),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify speaker info Hero widget is present
+      final speakerInfoHeroFinder = find.byWidgetPredicate(
+        (widget) => widget is Hero && widget.tag == 'speaker-info-1',
+      );
+      expect(speakerInfoHeroFinder, findsOneWidget);
+
+      // Verify the Hero tag is correct
+      final heroWidget = tester.widget<Hero>(speakerInfoHeroFinder);
+      expect(heroWidget.tag, equals('speaker-info-1'));
+    });
+
+    testWidgets('speaker info Hero is not present when artwork is showing',
+        (WidgetTester tester) async {
+      final appState = MyAppState();
+      await appState.initializeSpeakers();
+
+      const testSpeaker = Speaker(
+        id: '1',
+        name: 'Test Speaker',
+        emoji: '🔊',
+        ipAddress: '192.168.1.100',
+        type: 'SoundTouch 10',
+        deviceId: 'device-123',
+      );
+      appState.addSpeaker(testSpeaker);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: appState,
+          child: const MaterialApp(
+            home: Scaffold(body: SpeakerListPage()),
+          ),
+        ),
+      );
+
+      // Set the speaker as playing with artwork
+      appState.updateNowPlayingForSpeaker(
+        testSpeaker.ipAddress,
+        const NowPlaying(
+          source: 'SPOTIFY',
+          track: 'Test Track',
+          artist: 'Test Artist',
+          album: 'Test Album',
+          art: 'https://example.com/art.jpg',
+          artImageStatus: 'IMAGE_PRESENT',
+          playStatus: 'PLAY_STATE',
+        ),
+        true, // isConnected
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify speaker info Hero widget is NOT present when artwork is showing
+      // (because album art hero takes precedence)
+      final speakerInfoHeroFinder = find.byWidgetPredicate(
+        (widget) => widget is Hero && widget.tag == 'speaker-info-1',
+      );
+      expect(speakerInfoHeroFinder, findsNothing);
+    });
+
+    testWidgets('displays album art Hero even when paused',
+        (WidgetTester tester) async {
+      final appState = MyAppState();
+      await appState.initializeSpeakers();
+
+      const testSpeaker = Speaker(
+        id: '1',
+        name: 'Test Speaker',
+        emoji: '🔊',
+        ipAddress: '192.168.1.100',
+        type: 'SoundTouch 10',
+        deviceId: 'device-123',
+      );
+      appState.addSpeaker(testSpeaker);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: appState,
+          child: const MaterialApp(
+            home: Scaffold(body: SpeakerListPage()),
+          ),
+        ),
+      );
+
+      // Set the speaker as PAUSED with artwork (not playing)
+      appState.updateNowPlayingForSpeaker(
+        testSpeaker.ipAddress,
+        const NowPlaying(
+          source: 'SPOTIFY',
+          track: 'Test Track',
+          artist: 'Test Artist',
+          album: 'Test Album',
+          art: 'https://example.com/art.jpg',
+          artImageStatus: 'IMAGE_PRESENT',
+          playStatus: 'PAUSE_STATE', // Paused, not playing
+        ),
+        true, // isConnected
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify album art Hero widget is present even when paused
+      final albumArtHeroFinder = find.byWidgetPredicate(
+        (widget) => widget is Hero && widget.tag == 'album-art-1',
+      );
+      expect(albumArtHeroFinder, findsOneWidget);
+
+      // Verify speaker info Hero is NOT present (album art takes precedence)
+      final speakerInfoHeroFinder = find.byWidgetPredicate(
+        (widget) => widget is Hero && widget.tag == 'speaker-info-1',
+      );
+      expect(speakerInfoHeroFinder, findsNothing);
     });
   });
 }

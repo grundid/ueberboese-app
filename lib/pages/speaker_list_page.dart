@@ -117,6 +117,86 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
     return 'http://${speaker.ipAddress}:8090$art';
   }
 
+  Widget _buildSpeakerListTile(
+    BuildContext context,
+    Speaker speaker,
+    ThemeData cardTheme,
+    bool isConnected,
+    bool isPlaying,
+    bool hasArtwork,
+  ) {
+    final listTile = ListTile(
+      leading: Text(
+        speaker.emoji,
+        style: Theme.of(context).textTheme.headlineMedium,
+      ),
+      title: Text(
+        speaker.name,
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.bold,
+          color: hasArtwork
+            ? cardTheme.colorScheme.surface
+            : !isConnected
+              ? cardTheme.colorScheme.onErrorContainer
+              : null,
+        ),
+      ),
+      subtitle: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              speaker.type,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: hasArtwork
+                    ? cardTheme.colorScheme.surface
+                    : !isConnected
+                      ? cardTheme.colorScheme.onErrorContainer
+                      : Theme.of(context).colorScheme.secondary,
+              ),
+            ),
+          ),
+          if (!isConnected) ...[
+            const SizedBox(width: 8),
+            Icon(
+              Icons.wifi_off,
+              size: 16,
+              color: cardTheme.colorScheme.onErrorContainer,
+            ),
+          ],
+        ],
+      ),
+      trailing: Icon(
+        Icons.chevron_right,
+        color: hasArtwork
+            ? cardTheme.colorScheme.surface
+            : Theme.of(context).colorScheme.primary,
+      ),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+            builder: (context) => SpeakerDetailPage(speaker: speaker),
+          ),
+        );
+      },
+    );
+
+    // Only wrap in Hero when there's no artwork
+    // (to avoid conflict with album art hero)
+    if (hasArtwork) {
+      return listTile;
+    }
+
+    return Hero(
+      tag: 'speaker-info-${speaker.id}',
+      child: Material(
+        color: Colors.transparent,
+        child: listTile,
+      ),
+    );
+  }
+
   Future<void> _addAllSpeakersFromAccount() async {
     _closeFab();
 
@@ -374,7 +454,10 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
           final isConnected = appState.getSpeakerConnectionStatus(speaker.ipAddress);
           final isPlaying = nowPlaying?.playStatus == 'PLAY_STATE';
           final artworkUrl = _getFullArtworkUrl(speaker, nowPlaying);
-          final hasArtwork = artworkUrl != null && artworkUrl.isNotEmpty;
+          // Show artwork if present, regardless of play status (consistent with detail page)
+          final hasArtwork = artworkUrl != null &&
+                            artworkUrl.isNotEmpty &&
+                            nowPlaying?.artImageStatus == 'IMAGE_PRESENT';
           final cardTheme = Theme.of(context);
 
           return Card(
@@ -387,8 +470,8 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
             clipBehavior: Clip.antiAlias,
             child: Stack(
               children: [
-                // Background image with overlay (if playing and has art)
-                if (isPlaying && hasArtwork)
+                // Background image with overlay (if has artwork)
+                if (hasArtwork)
                   Positioned.fill(
                     child: Hero(
                       tag: 'album-art-${speaker.id}',
@@ -420,62 +503,15 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
                     ),
                   ),
                 // Actual content
-                ListTile(
-                    leading: Text(
-                      speaker.emoji,
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                    title: Text(
-                      speaker.name,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: isPlaying && hasArtwork
-                          ? cardTheme.colorScheme.surface
-                          : !isConnected
-                            ? cardTheme.colorScheme.onErrorContainer
-                            : null,
-                      ),
-                    ),
-                    subtitle: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            speaker.type,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: isPlaying && hasArtwork
-                                  ? cardTheme.colorScheme.surface
-                                  : !isConnected
-                                    ? cardTheme.colorScheme.onErrorContainer
-                                    : Theme.of(context).colorScheme.secondary,
-                            ),
-                          ),
-                        ),
-                        if (!isConnected) ...[
-                          const SizedBox(width: 8),
-                          Icon(
-                            Icons.wifi_off,
-                            size: 16,
-                            color: cardTheme.colorScheme.onErrorContainer,
-                          ),
-                        ],
-                      ],
-                    ),
-                    trailing: Icon(
-                      Icons.chevron_right,
-                      color: isPlaying && hasArtwork
-                          ? cardTheme.colorScheme.surface
-                          : Theme.of(context).colorScheme.primary,
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute<void>(
-                          builder: (context) => SpeakerDetailPage(speaker: speaker),
-                        ),
-                      );
-                    },
-                  ),
+                // Wrap in Hero when there's no artwork to animate speaker info
+                _buildSpeakerListTile(
+                  context,
+                  speaker,
+                  cardTheme,
+                  isConnected,
+                  isPlaying,
+                  hasArtwork,
+                ),
               ],
             ),
           );
