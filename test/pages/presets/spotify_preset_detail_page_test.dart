@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
+import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/models/app_config.dart';
 import 'package:ueberboese_app/models/preset.dart';
 import 'package:ueberboese_app/models/spotify_account.dart';
@@ -30,7 +31,7 @@ void main() {
     });
 
     Widget createWidgetWithProvider(Widget child) {
-      return ChangeNotifierProvider<TestMyAppState>.value(
+      return ChangeNotifierProvider<MyAppState>.value(
         value: appState,
         child: MaterialApp(
           home: child,
@@ -63,6 +64,7 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
 
       expect(find.text('Spotify Preset 1'), findsOneWidget);
     });
@@ -93,6 +95,7 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
 
       expect(find.text('My Awesome Playlist'), findsOneWidget);
       expect(find.byType(Image), findsOneWidget);
@@ -122,6 +125,7 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
 
       expect(find.text('Preset Number'), findsOneWidget);
       expect(find.text('3'), findsOneWidget);
@@ -151,6 +155,7 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
 
       expect(find.text('Spotify URI'), findsOneWidget);
       expect(find.text('spotify:playlist:test'), findsOneWidget);
@@ -283,6 +288,7 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
 
       expect(find.text('Open in Spotify'), findsOneWidget);
       expect(find.byIcon(Icons.open_in_new), findsOneWidget);
@@ -312,6 +318,7 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
 
       expect(find.text('Invalid location format'), findsOneWidget);
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
@@ -341,6 +348,7 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
 
       // There are now 4 FABs (main + 3 sub-FABs)
       expect(find.byType(FloatingActionButton), findsNWidgets(4));
@@ -372,6 +380,7 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
 
       // Tap the main FAB to open sub-menu
       await tester.tap(find.widgetWithIcon(FloatingActionButton, Icons.edit));
@@ -408,6 +417,7 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
 
       // Open the popup menu
       await tester.tap(find.byIcon(Icons.more_vert));

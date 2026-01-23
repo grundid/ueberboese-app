@@ -1,15 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
+import 'package:ueberboese_app/main.dart';
+import 'package:ueberboese_app/models/app_config.dart';
 import 'package:ueberboese_app/pages/presets/empty_preset_detail_page.dart';
 
 void main() {
   group('EmptyPresetDetailPage', () {
+    late TestMyAppState appState;
+
+    setUp(() {
+      appState = TestMyAppState();
+      appState.config = const AppConfig();
+    });
     testWidgets('displays correct title with preset number', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: EmptyPresetDetailPage(
-            presetId: '1',
-            speakerIp: '192.168.1.100',
+        ChangeNotifierProvider<MyAppState>.value(
+          value: appState,
+          child: const MaterialApp(
+            home: EmptyPresetDetailPage(
+              presetId: '1',
+              speakerIp: '192.168.1.100',
+            ),
           ),
         ),
       );
@@ -19,10 +31,13 @@ void main() {
 
     testWidgets('displays correct title for preset 6', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: EmptyPresetDetailPage(
-            presetId: '6',
-            speakerIp: '192.168.1.100',
+        ChangeNotifierProvider<MyAppState>.value(
+          value: appState,
+          child: const MaterialApp(
+            home: EmptyPresetDetailPage(
+              presetId: '6',
+              speakerIp: '192.168.1.100',
+            ),
           ),
         ),
       );
@@ -32,10 +47,13 @@ void main() {
 
     testWidgets('displays empty state message', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: EmptyPresetDetailPage(
-            presetId: '1',
-            speakerIp: '192.168.1.100',
+        ChangeNotifierProvider<MyAppState>.value(
+          value: appState,
+          child: const MaterialApp(
+            home: EmptyPresetDetailPage(
+              presetId: '1',
+              speakerIp: '192.168.1.100',
+            ),
           ),
         ),
       );
@@ -46,10 +64,13 @@ void main() {
 
     testWidgets('displays add icon', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: EmptyPresetDetailPage(
-            presetId: '1',
-            speakerIp: '192.168.1.100',
+        ChangeNotifierProvider<MyAppState>.value(
+          value: appState,
+          child: const MaterialApp(
+            home: EmptyPresetDetailPage(
+              presetId: '1',
+              speakerIp: '192.168.1.100',
+            ),
           ),
         ),
       );
@@ -59,10 +80,13 @@ void main() {
 
     testWidgets('displays FAB with edit icon', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: EmptyPresetDetailPage(
-            presetId: '1',
-            speakerIp: '192.168.1.100',
+        ChangeNotifierProvider<MyAppState>.value(
+          value: appState,
+          child: const MaterialApp(
+            home: EmptyPresetDetailPage(
+              presetId: '1',
+              speakerIp: '192.168.1.100',
+            ),
           ),
         ),
       );
@@ -75,10 +99,13 @@ void main() {
 
     testWidgets('FAB expands to show edit options', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: EmptyPresetDetailPage(
-            presetId: '1',
-            speakerIp: '192.168.1.100',
+        ChangeNotifierProvider<MyAppState>.value(
+          value: appState,
+          child: const MaterialApp(
+            home: EmptyPresetDetailPage(
+              presetId: '1',
+              speakerIp: '192.168.1.100',
+            ),
           ),
         ),
       );
@@ -98,10 +125,13 @@ void main() {
 
     testWidgets('page builds without error', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: EmptyPresetDetailPage(
-            presetId: '1',
-            speakerIp: '192.168.1.100',
+        ChangeNotifierProvider<MyAppState>.value(
+          value: appState,
+          child: const MaterialApp(
+            home: EmptyPresetDetailPage(
+              presetId: '1',
+              speakerIp: '192.168.1.100',
+            ),
           ),
         ),
       );
@@ -112,27 +142,30 @@ void main() {
 
     testWidgets('has back button in app bar', (WidgetTester tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Builder(
-              builder: (context) {
-                return Center(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute<void>(
-                          builder: (context) => const EmptyPresetDetailPage(
-                            presetId: '1',
-                            speakerIp: '192.168.1.100',
+        ChangeNotifierProvider<MyAppState>.value(
+          value: appState,
+          child: MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) {
+                  return Center(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (context) => const EmptyPresetDetailPage(
+                              presetId: '1',
+                              speakerIp: '192.168.1.100',
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                    child: const Text('Navigate'),
-                  ),
-                );
-              },
+                        );
+                      },
+                      child: const Text('Navigate'),
+                    ),
+                  );
+                },
+              ),
             ),
           ),
         ),
@@ -148,10 +181,13 @@ void main() {
 
     testWidgets('displays scrim overlay when FAB is expanded', (WidgetTester tester) async {
       await tester.pumpWidget(
-        const MaterialApp(
-          home: EmptyPresetDetailPage(
-            presetId: '1',
-            speakerIp: '192.168.1.100',
+        ChangeNotifierProvider<MyAppState>.value(
+          value: appState,
+          child: const MaterialApp(
+            home: EmptyPresetDetailPage(
+              presetId: '1',
+              speakerIp: '192.168.1.100',
+            ),
           ),
         ),
       );
@@ -169,4 +205,9 @@ void main() {
       expect(find.text('Internet Radio'), findsOneWidget);
     });
   });
+}
+
+/// Test version of MyAppState that doesn't require API calls
+class TestMyAppState extends MyAppState {
+  // Empty implementation - no presets in cache by default
 }

@@ -32,13 +32,21 @@ class _TuneInStoredPresetDetailPageState extends State<TuneInStoredPresetDetailP
     _speakerApiService = widget.apiService ?? SpeakerApiService();
   }
 
-  Preset? _getPreset() {
-    return context.read<MyAppState>().getPresetById(widget.speakerIp, widget.presetId);
+  Future<Preset?> _getPreset() async {
+    final appState = context.read<MyAppState>();
+    // First check cache
+    final cachedPreset = appState.getPresetById(widget.speakerIp, widget.presetId);
+    if (cachedPreset != null) {
+      return cachedPreset;
+    }
+    // If not in cache, fetch from API
+    final presets = await appState.getPresets(widget.speakerIp);
+    return presets.where((p) => p.id == widget.presetId).firstOrNull;
   }
 
   Future<void> _showDeleteConfirmationDialog() async {
-    final preset = _getPreset();
-    if (preset == null) return;
+    final preset = await _getPreset();
+    if (preset == null || !mounted) return;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -139,24 +147,37 @@ class _TuneInStoredPresetDetailPageState extends State<TuneInStoredPresetDetailP
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     context.watch<MyAppState>(); // Listen for preset changes
-    final preset = _getPreset();
 
-    // If preset is null, show loading UI
-    if (preset == null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text('TuneIn Preset ${widget.presetId}'),
-        ),
-        body: const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
+    return FutureBuilder<Preset?>(
+      future: _getPreset(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            appBar: AppBar(
+              title: Text('TuneIn Preset ${widget.presetId}'),
+            ),
+            body: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
 
-    final stationId = _extractStationId(preset.location);
+        final preset = snapshot.data;
+        if (preset == null) {
+          return Scaffold(
+            appBar: AppBar(
+              title: Text('TuneIn Preset ${widget.presetId}'),
+            ),
+            body: const Center(
+              child: Text('Preset not found'),
+            ),
+          );
+        }
 
-    return Scaffold(
-      appBar: AppBar(
+        final stationId = _extractStationId(preset.location);
+
+        return Scaffold(
+          appBar: AppBar(
         title: Text('TuneIn Preset ${preset.id}'),
         actions: [
           if (_isDeleting)
@@ -290,6 +311,8 @@ class _TuneInStoredPresetDetailPageState extends State<TuneInStoredPresetDetailP
         preset: preset,
         isExpandedNotifier: _fabExpandedNotifier,
       ),
+    );
+      },
     );
   }
 

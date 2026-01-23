@@ -52,16 +52,24 @@ class _SpotifyPresetDetailPageState extends State<SpotifyPresetDetailPage> {
     _initializePresetData();
   }
 
-  void _initializePresetData() {
-    final preset = _getPreset();
+  Future<void> _initializePresetData() async {
+    final preset = await _getPreset();
     if (preset != null) {
       _decodeSpotifyUri(preset);
       _fetchSpotifyAccount(preset);
     }
   }
 
-  Preset? _getPreset() {
-    return context.read<MyAppState>().getPresetById(widget.speakerIp, widget.presetId);
+  Future<Preset?> _getPreset() async {
+    final appState = context.read<MyAppState>();
+    // First check cache
+    final cachedPreset = appState.getPresetById(widget.speakerIp, widget.presetId);
+    if (cachedPreset != null) {
+      return cachedPreset;
+    }
+    // If not in cache, fetch from API
+    final presets = await appState.getPresets(widget.speakerIp);
+    return presets.where((p) => p.id == widget.presetId).firstOrNull;
   }
 
   void _decodeSpotifyUri(Preset preset) {
@@ -174,8 +182,8 @@ class _SpotifyPresetDetailPageState extends State<SpotifyPresetDetailPage> {
   }
 
   Future<void> _showDeleteConfirmationDialog() async {
-    final preset = _getPreset();
-    if (preset == null) return;
+    final preset = await _getPreset();
+    if (preset == null || !mounted) return;
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -265,21 +273,34 @@ class _SpotifyPresetDetailPageState extends State<SpotifyPresetDetailPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     context.watch<MyAppState>(); // Listen for preset changes
-    final preset = _getPreset();
 
-    // If preset is null, show loading or error
-    if (preset == null) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Text('Spotify Preset ${widget.presetId}'),
-        ),
-        body: const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
+    return FutureBuilder<Preset?>(
+      future: _getPreset(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            appBar: AppBar(
+              title: Text('Spotify Preset ${widget.presetId}'),
+            ),
+            body: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+        }
 
-    return Scaffold(
+        final preset = snapshot.data;
+        if (preset == null) {
+          return Scaffold(
+            appBar: AppBar(
+              title: Text('Spotify Preset ${widget.presetId}'),
+            ),
+            body: const Center(
+              child: Text('Preset not found'),
+            ),
+          );
+        }
+
+        return Scaffold(
       appBar: AppBar(
         title: Text('Spotify Preset ${preset.id}'),
         actions: [
@@ -464,6 +485,8 @@ class _SpotifyPresetDetailPageState extends State<SpotifyPresetDetailPage> {
         preset: preset,
         isExpandedNotifier: _fabExpandedNotifier,
       ),
+    );
+      },
     );
   }
 

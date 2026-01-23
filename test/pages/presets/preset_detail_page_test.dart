@@ -50,6 +50,7 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
 
       // Check that the preset information is displayed
       expect(find.text('Preset 1'), findsOneWidget);
@@ -83,6 +84,7 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
 
       // Check that the basic information is displayed
       expect(find.text('Preset 2'), findsOneWidget);
@@ -121,6 +123,7 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
 
       // Check that timestamp fields are present
       expect(find.text('Created On'), findsOneWidget);
@@ -151,6 +154,7 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
 
       // Check that AppBar exists
       expect(find.byType(AppBar), findsOneWidget);
@@ -181,6 +185,7 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
 
       // Check all sections are present
       expect(find.text('Preset Number'), findsOneWidget);
@@ -213,6 +218,7 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
 
       // There are now 4 FABs (main + 3 sub-FABs)
       expect(find.byType(FloatingActionButton), findsNWidgets(4));
@@ -244,6 +250,7 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
 
       // Tap the main FAB to open sub-menu
       await tester.tap(find.widgetWithIcon(FloatingActionButton, Icons.edit));
@@ -280,6 +287,7 @@ void main() {
           ),
         ),
       );
+      await tester.pumpAndSettle();
 
       // Tap the main FAB to open sub-menu
       await tester.tap(find.widgetWithIcon(FloatingActionButton, Icons.edit));
