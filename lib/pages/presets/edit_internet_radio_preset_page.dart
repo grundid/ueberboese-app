@@ -3,15 +3,19 @@ import 'package:provider/provider.dart';
 import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/models/preset.dart';
 import 'package:ueberboese_app/services/speaker_api_service.dart';
+import 'package:ueberboese_app/services/tunein_api_service.dart';
+import 'package:ueberboese_app/models/tunein_station.dart';
 
 class EditInternetRadioPresetPage extends StatefulWidget {
   final Preset preset;
   final SpeakerApiService? speakerApiService;
+  final TuneInApiService? tuneInApiService;
 
   const EditInternetRadioPresetPage({
     super.key,
     required this.preset,
     this.speakerApiService,
+    this.tuneInApiService,
   });
 
   @override
@@ -20,22 +24,35 @@ class EditInternetRadioPresetPage extends StatefulWidget {
 
 class _EditInternetRadioPresetPageState extends State<EditInternetRadioPresetPage> {
   late final SpeakerApiService _speakerApiService;
+  late final TuneInApiService _tuneInApiService;
   late TextEditingController _nameController;
   late TextEditingController _urlController;
   late TextEditingController _containerArtController;
   bool _isSaving = false;
+  bool _isSearchingImage = false;
   String? _urlError;
 
   @override
   void initState() {
     super.initState();
     _speakerApiService = widget.speakerApiService ?? SpeakerApiService();
+    _tuneInApiService = widget.tuneInApiService ?? TuneInApiService();
     _nameController = TextEditingController();
     _urlController = TextEditingController();
     _containerArtController = TextEditingController();
 
     // Add listener to URL field for validation
     _urlController.addListener(_validateUrl);
+
+    // Add listener to name field to update search button state
+    _nameController.addListener(() {
+      setState(() {});
+    });
+
+    // Add listener to containerArt field to trigger rebuild for preview
+    _containerArtController.addListener(() {
+      setState(() {});
+    });
   }
 
   @override
@@ -90,6 +107,60 @@ class _EditInternetRadioPresetPageState extends State<EditInternetRadioPresetPag
         ],
       ),
     );
+  }
+
+  Future<void> _searchStationImage() async {
+    final stationName = _nameController.text.trim();
+
+    if (stationName.isEmpty) {
+      _showErrorDialog('Please enter a station name first');
+      return;
+    }
+
+    setState(() {
+      _isSearchingImage = true;
+    });
+
+    try {
+      final results = await _tuneInApiService.searchStations(stationName);
+
+      if (results.isEmpty) {
+        if (!mounted) return;
+        _showErrorDialog('No stations found for "$stationName"');
+        return;
+      }
+
+      // Try to find exact match (case-insensitive)
+      TuneInStation? selectedStation;
+      try {
+        selectedStation = results.firstWhere(
+          (s) => s.text.toLowerCase() == stationName.toLowerCase(),
+        );
+      } catch (e) {
+        // No exact match found, use first result
+        selectedStation = results.first;
+      }
+
+      // Extract image URL
+      final imageUrl = selectedStation.image;
+      if (imageUrl == null || imageUrl.isEmpty) {
+        if (!mounted) return;
+        _showErrorDialog('No image found for the station');
+        return;
+      }
+
+      // Update containerArt field
+      _containerArtController.text = imageUrl;
+    } catch (e) {
+      if (!mounted) return;
+      _showErrorDialog('Failed to search stations: ${e.toString()}');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSearchingImage = false;
+        });
+      }
+    }
   }
 
   Future<void> _onSavePressed() async {
@@ -196,15 +267,82 @@ class _EditInternetRadioPresetPageState extends State<EditInternetRadioPresetPag
                 keyboardType: TextInputType.url,
               ),
               const SizedBox(height: 16),
-              TextField(
-                controller: _containerArtController,
-                decoration: const InputDecoration(
-                  labelText: 'Cover Art URL',
-                  border: OutlineInputBorder(),
-                  helperText: 'Optional (e.g., https://example.com/cover.png)',
-                ),
-                keyboardType: TextInputType.url,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _containerArtController,
+                      decoration: const InputDecoration(
+                        labelText: 'Cover Art URL',
+                        border: OutlineInputBorder(),
+                        helperText: 'Optional (e.g., https://example.com/cover.png)',
+                      ),
+                      keyboardType: TextInputType.url,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: IconButton(
+                      onPressed: _nameController.text.trim().isEmpty || _isSearchingImage
+                          ? null
+                          : _searchStationImage,
+                      icon: _isSearchingImage
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.search),
+                      tooltip: 'Search for station image',
+                    ),
+                  ),
+                ],
               ),
+              if (_containerArtController.text.trim().isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Card(
+                  elevation: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        _containerArtController.text.trim(),
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          width: 120,
+                          height: 120,
+                          color: Colors.grey[300],
+                          child: const Icon(
+                            Icons.broken_image,
+                            size: 48,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return SizedBox(
+                            width: 120,
+                            height: 120,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
               Card(
                 elevation: 1,

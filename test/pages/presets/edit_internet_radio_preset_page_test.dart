@@ -7,20 +7,24 @@ import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/models/app_config.dart';
 import 'package:ueberboese_app/models/preset.dart';
 import 'package:ueberboese_app/models/speaker.dart';
+import 'package:ueberboese_app/models/tunein_station.dart';
 import 'package:ueberboese_app/pages/presets/edit_internet_radio_preset_page.dart';
 import 'package:ueberboese_app/services/speaker_api_service.dart';
+import 'package:ueberboese_app/services/tunein_api_service.dart';
 
-@GenerateMocks([SpeakerApiService])
+@GenerateMocks([SpeakerApiService, TuneInApiService])
 import 'edit_internet_radio_preset_page_test.mocks.dart';
 
 void main() {
   group('EditInternetRadioPresetPage', () {
     late MyAppState appState;
     late MockSpeakerApiService mockSpeakerApiService;
+    late MockTuneInApiService mockTuneInApiService;
 
     setUp(() {
       appState = MyAppState();
       mockSpeakerApiService = MockSpeakerApiService();
+      mockTuneInApiService = MockTuneInApiService();
 
       // Add a test speaker
       appState.addSpeaker(
@@ -459,6 +463,266 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('No speakers available'), findsOneWidget);
+    });
+
+    testWidgets('search button is visible', (WidgetTester tester) async {
+      const testPreset = Preset(
+        id: '1',
+        itemName: 'Test Station',
+        source: 'LOCAL_INTERNET_RADIO',
+        location: 'https://stream.example.com/radio',
+        type: 'stationurl',
+        isPresetable: false,
+      );
+
+      await tester.pumpWidget(
+        createWidgetWithProvider(
+          EditInternetRadioPresetPage(
+            preset: testPreset,
+            speakerApiService: mockSpeakerApiService,
+            tuneInApiService: mockTuneInApiService,
+          ),
+        ),
+      );
+
+      expect(find.byIcon(Icons.search), findsOneWidget);
+      expect(find.byType(IconButton), findsOneWidget);
+    });
+
+    testWidgets('search button disabled when name is empty', (WidgetTester tester) async {
+      const testPreset = Preset(
+        id: '1',
+        itemName: 'Test Station',
+        source: 'LOCAL_INTERNET_RADIO',
+        location: 'https://stream.example.com/radio',
+        type: 'stationurl',
+        isPresetable: false,
+      );
+
+      await tester.pumpWidget(
+        createWidgetWithProvider(
+          EditInternetRadioPresetPage(
+            preset: testPreset,
+            speakerApiService: mockSpeakerApiService,
+            tuneInApiService: mockTuneInApiService,
+          ),
+        ),
+      );
+
+      final iconButton = tester.widget<IconButton>(find.byType(IconButton));
+      expect(iconButton.onPressed, isNull);
+    });
+
+    testWidgets('successful search populates containerArt field', (WidgetTester tester) async {
+      const testPreset = Preset(
+        id: '1',
+        itemName: 'Test Station',
+        source: 'LOCAL_INTERNET_RADIO',
+        location: 'https://stream.example.com/radio',
+        type: 'stationurl',
+        isPresetable: false,
+      );
+
+      const testStation = TuneInStation(
+        guideId: 's123',
+        text: 'BBC Radio 1',
+        image: 'https://example.com/image.png',
+      );
+
+      when(mockTuneInApiService.searchStations(any))
+          .thenAnswer((_) async => [testStation]);
+
+      await tester.pumpWidget(
+        createWidgetWithProvider(
+          EditInternetRadioPresetPage(
+            preset: testPreset,
+            speakerApiService: mockSpeakerApiService,
+            tuneInApiService: mockTuneInApiService,
+          ),
+        ),
+      );
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Station Name *'),
+        'BBC Radio 1',
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.search));
+      await tester.pumpAndSettle();
+
+      final containerArtField = tester.widget<TextField>(
+        find.widgetWithText(TextField, 'Cover Art URL'),
+      );
+      expect(containerArtField.controller?.text, 'https://example.com/image.png');
+    });
+
+    testWidgets('search shows error when no results found', (WidgetTester tester) async {
+      const testPreset = Preset(
+        id: '1',
+        itemName: 'Test Station',
+        source: 'LOCAL_INTERNET_RADIO',
+        location: 'https://stream.example.com/radio',
+        type: 'stationurl',
+        isPresetable: false,
+      );
+
+      when(mockTuneInApiService.searchStations(any))
+          .thenAnswer((_) async => []);
+
+      await tester.pumpWidget(
+        createWidgetWithProvider(
+          EditInternetRadioPresetPage(
+            preset: testPreset,
+            speakerApiService: mockSpeakerApiService,
+            tuneInApiService: mockTuneInApiService,
+          ),
+        ),
+      );
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Station Name *'),
+        'Unknown Station',
+      );
+      await tester.pump();
+
+      await tester.tap(find.byIcon(Icons.search));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No stations found for "Unknown Station"'), findsOneWidget);
+    });
+
+    testWidgets('image preview shown when containerArt has value', (WidgetTester tester) async {
+      const testPreset = Preset(
+        id: '1',
+        itemName: 'Test Station',
+        source: 'LOCAL_INTERNET_RADIO',
+        location: 'https://stream.example.com/radio',
+        type: 'stationurl',
+        isPresetable: false,
+      );
+
+      await tester.pumpWidget(
+        createWidgetWithProvider(
+          EditInternetRadioPresetPage(
+            preset: testPreset,
+            speakerApiService: mockSpeakerApiService,
+            tuneInApiService: mockTuneInApiService,
+          ),
+        ),
+      );
+
+      expect(find.byType(Image), findsNothing);
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Cover Art URL'),
+        'https://example.com/image.png',
+      );
+      await tester.pump();
+
+      expect(find.byType(Image), findsOneWidget);
+    });
+
+    testWidgets('search uses case-insensitive matching', (WidgetTester tester) async {
+      const testPreset = Preset(
+        id: '1',
+        itemName: 'Test Station',
+        source: 'LOCAL_INTERNET_RADIO',
+        location: 'https://stream.example.com/radio',
+        type: 'stationurl',
+        isPresetable: false,
+      );
+
+      const testStations = [
+        TuneInStation(
+          guideId: 's123',
+          text: 'BBC Radio 1',
+          image: 'https://example.com/bbc.png',
+        ),
+        TuneInStation(
+          guideId: 's124',
+          text: 'BBC Radio 2',
+          image: 'https://example.com/bbc2.png',
+        ),
+      ];
+
+      when(mockTuneInApiService.searchStations(any))
+          .thenAnswer((_) async => testStations);
+
+      await tester.pumpWidget(
+        createWidgetWithProvider(
+          EditInternetRadioPresetPage(
+            preset: testPreset,
+            speakerApiService: mockSpeakerApiService,
+            tuneInApiService: mockTuneInApiService,
+          ),
+        ),
+      );
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Station Name *'),
+        'bbc radio 1',
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.search));
+      await tester.pumpAndSettle();
+
+      final containerArtField = tester.widget<TextField>(
+        find.widgetWithText(TextField, 'Cover Art URL'),
+      );
+      expect(containerArtField.controller?.text, 'https://example.com/bbc.png');
+    });
+
+    testWidgets('search falls back to first result if no exact match', (WidgetTester tester) async {
+      const testPreset = Preset(
+        id: '1',
+        itemName: 'Test Station',
+        source: 'LOCAL_INTERNET_RADIO',
+        location: 'https://stream.example.com/radio',
+        type: 'stationurl',
+        isPresetable: false,
+      );
+
+      const testStations = [
+        TuneInStation(
+          guideId: 's123',
+          text: 'BBC Radio 1 Extra',
+          image: 'https://example.com/bbc-extra.png',
+        ),
+        TuneInStation(
+          guideId: 's124',
+          text: 'BBC Radio 2',
+          image: 'https://example.com/bbc2.png',
+        ),
+      ];
+
+      when(mockTuneInApiService.searchStations(any))
+          .thenAnswer((_) async => testStations);
+
+      await tester.pumpWidget(
+        createWidgetWithProvider(
+          EditInternetRadioPresetPage(
+            preset: testPreset,
+            speakerApiService: mockSpeakerApiService,
+            tuneInApiService: mockTuneInApiService,
+          ),
+        ),
+      );
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Station Name *'),
+        'BBC Radio 1',
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.search));
+      await tester.pumpAndSettle();
+
+      final containerArtField = tester.widget<TextField>(
+        find.widgetWithText(TextField, 'Cover Art URL'),
+      );
+      expect(containerArtField.controller?.text, 'https://example.com/bbc-extra.png');
     });
   });
 }
