@@ -59,9 +59,13 @@ class Preset {
         : '';
 
     final containerArtElements = contentItem.findElements('containerArt');
-    final containerArt = containerArtElements.isNotEmpty
+    final containerArtText = containerArtElements.isNotEmpty
         ? containerArtElements.first.innerText
         : null;
+    // Convert empty string to null to prevent Image.network errors
+    final containerArt = (containerArtText == null || containerArtText.isEmpty)
+        ? null
+        : containerArtText;
 
     return Preset(
       id: id,

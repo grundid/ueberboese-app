@@ -192,6 +192,30 @@ void main() {
       expect(preset.sourceAccount, isNull);
     });
 
+    test('fromXml converts empty containerArt to null', () {
+      const xmlString = '''
+      <preset id="2">
+        <ContentItem source="SPOTIFY" type="playlist" location="/v1/spotify/playlist/789" isPresetable="true">
+          <itemName>Empty Art Preset</itemName>
+          <containerArt></containerArt>
+        </ContentItem>
+      </preset>
+      ''';
+
+      final document = XmlDocument.parse(xmlString);
+      final presetElement = document.findAllElements('preset').first;
+
+      final preset = Preset.fromXml(presetElement);
+
+      expect(preset.id, '2');
+      expect(preset.itemName, 'Empty Art Preset');
+      expect(preset.containerArt, isNull); // Empty string should be converted to null
+      expect(preset.source, 'SPOTIFY');
+      expect(preset.location, '/v1/spotify/playlist/789');
+      expect(preset.type, 'playlist');
+      expect(preset.isPresetable, true);
+    });
+
     test('toJson and fromJson work correctly with sourceAccount', () {
       const preset = Preset(
         id: '3',
