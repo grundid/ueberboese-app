@@ -40,13 +40,10 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
   StreamSubscription<void>? _zoneSubscription;
 
   Volume? _currentVolume;
-  NowPlaying? _nowPlaying;
   Zone? _currentZone;
   bool _isLoadingVolume = true;
-  bool _isLoadingNowPlaying = true;
   bool _isLoadingZone = true;
   String? _volumeErrorMessage;
-  String? _nowPlayingErrorMessage;
   String? _zoneErrorMessage;
 
   // Speaker info state
@@ -67,7 +64,6 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
     super.initState();
     _apiService = widget.apiService ?? SpeakerApiService();
     _loadVolume();
-    _loadNowPlaying();
     _loadZone();
     _loadSpeakerInfo();
     _initializeWebSocket();
@@ -98,9 +94,13 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
     _nowPlayingSubscription = _websocketService!.nowPlayingStream.listen(
           (nowPlaying) {
         if (!mounted) return;
-        setState(() {
-          _nowPlaying = nowPlaying;
-        });
+        // Update shared state instead of local state
+        final appState = context.read<MyAppState>();
+        appState.updateNowPlayingForSpeaker(
+          widget.speaker.ipAddress,
+          nowPlaying,
+          true,
+        );
       },
       onError: (error) {
         // Errors are logged in the service
@@ -155,28 +155,6 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
     }
   }
 
-  Future<void> _loadNowPlaying() async {
-    setState(() {
-      _isLoadingNowPlaying = true;
-      _nowPlayingErrorMessage = null;
-    });
-
-    try {
-      final nowPlaying = await _apiService.getNowPlaying(
-          widget.speaker.ipAddress);
-      if (!mounted) return;
-      setState(() {
-        _nowPlaying = nowPlaying;
-        _isLoadingNowPlaying = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _nowPlayingErrorMessage = 'Failed to load now playing: ${e.toString()}';
-        _isLoadingNowPlaying = false;
-      });
-    }
-  }
 
   Future<void> _loadZone() async {
     setState(() {
@@ -582,33 +560,20 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
   }
 
   Future<void> _togglePlayPause() async {
-    setState(() {
-      _isLoadingNowPlaying = true;
-      _nowPlayingErrorMessage = null;
-    });
-
     try {
       await _apiService.userPlayControl(
         widget.speaker.ipAddress,
         'PLAY_PAUSE_CONTROL',
       );
 
-      // Wait a bit for the state to update on the speaker
-      await Future<void>.delayed(const Duration(milliseconds: 500));
-
-      // Reload the now playing info to get the updated play status
-      await _loadNowPlaying();
-
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Playback toggled')),
       );
+
+      // The WebSocket will update the state automatically
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _nowPlayingErrorMessage = 'Failed to toggle playback: ${e.toString()}';
-        _isLoadingNowPlaying = false;
-      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to toggle playback: ${e.toString()}')),
       );
@@ -741,12 +706,15 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
   }
 
   Future<void> _openInSpotify() async {
-    if (_nowPlaying?.source != 'SPOTIFY' || _nowPlaying?.location == null) {
+    final appState = context.read<MyAppState>();
+    final nowPlaying = appState.getCachedNowPlaying(widget.speaker.ipAddress);
+
+    if (nowPlaying?.source != 'SPOTIFY' || nowPlaying?.location == null) {
       return;
     }
 
     try {
-      final spotifyUri = _decodeSpotifyUri(_nowPlaying!.location);
+      final spotifyUri = _decodeSpotifyUri(nowPlaying!.location);
       if (spotifyUri == null) {
         _showErrorDialog('Failed to decode Spotify URI');
         return;
@@ -792,47 +760,50 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
   }
 
   void _openAlbumArtFullScreen() {
-    if (_nowPlaying?.art == null) return;
+    final appState = context.read<MyAppState>();
+    final nowPlaying = appState.getCachedNowPlaying(widget.speaker.ipAddress);
+
+    if (nowPlaying?.art == null) return;
 
     Navigator.push(
       context,
       MaterialPageRoute<void>(
         builder: (context) =>
             AlbumArtViewerPage(
-              imageUrl: _nowPlaying!.art!,
+              imageUrl: nowPlaying!.art!,
               heroTag: 'album-art-${widget.speaker.id}',
-              track: _nowPlaying!.track,
-              artist: _nowPlaying!.artist,
-              album: _nowPlaying!.album,
+              track: nowPlaying.track,
+              artist: nowPlaying.artist,
+              album: nowPlaying.album,
             ),
       ),
     );
   }
 
-  bool _shouldShowNowPlayingCard() {
+  bool _shouldShowNowPlayingCard(NowPlaying? nowPlaying) {
     // Don't show card if nowPlaying is null or still loading without data
-    if (_nowPlaying == null) return false;
+    if (nowPlaying == null) return false;
 
     // Show card if TV source is active
-    if (_nowPlaying!.source == 'PRODUCT' && _nowPlaying!.sourceAccount == 'TV') {
+    if (nowPlaying.source == 'PRODUCT' && nowPlaying.sourceAccount == 'TV') {
       return true;
     }
 
     // Show card if we have meaningful playback state or content info
-    final hasPlaybackState = _nowPlaying!.playStatus == 'PLAY_STATE' ||
-        _nowPlaying!.playStatus == 'PAUSE_STATE' ||
-        _nowPlaying!.playStatus == 'STOP_STATE' ||
-        _nowPlaying!.playStatus == 'BUFFERING_STATE';
+    final hasPlaybackState = nowPlaying.playStatus == 'PLAY_STATE' ||
+        nowPlaying.playStatus == 'PAUSE_STATE' ||
+        nowPlaying.playStatus == 'STOP_STATE' ||
+        nowPlaying.playStatus == 'BUFFERING_STATE';
 
-    final hasContentInfo = _nowPlaying!.track != null ||
-        _nowPlaying!.artist != null ||
-        _nowPlaying!.album != null;
+    final hasContentInfo = nowPlaying.track != null ||
+        nowPlaying.artist != null ||
+        nowPlaying.album != null;
 
     return hasPlaybackState || hasContentInfo;
   }
 
-  bool _isTvSource() {
-    return _nowPlaying?.source == 'PRODUCT' && _nowPlaying?.sourceAccount == 'TV';
+  bool _isTvSource(NowPlaying? nowPlaying) {
+    return nowPlaying?.source == 'PRODUCT' && nowPlaying?.sourceAccount == 'TV';
   }
 
   Widget _buildSpeakerHeader(BuildContext context, ThemeData theme) {
@@ -869,13 +840,9 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
     );
   }
 
-  Widget _buildHeroNowPlaying(BuildContext context, ThemeData theme) {
-    if (_nowPlaying == null) {
-      return const SizedBox.shrink();
-    }
-
+  Widget _buildHeroNowPlaying(BuildContext context, ThemeData theme, NowPlaying nowPlaying) {
     // Handle TV source
-    if (_isTvSource()) {
+    if (_isTvSource(nowPlaying)) {
       return Center(
         child: Column(
           children: [
@@ -901,8 +868,8 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
       child: Column(
         children: [
           // Large album art
-          if (_nowPlaying!.art != null &&
-              _nowPlaying!.artImageStatus == 'IMAGE_PRESENT')
+          if (nowPlaying.art != null &&
+              nowPlaying.artImageStatus == 'IMAGE_PRESENT')
             GestureDetector(
               onTap: _openAlbumArtFullScreen,
               child: Hero(
@@ -910,7 +877,7 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: Image.network(
-                    _nowPlaying!.art!,
+                    nowPlaying.art!,
                     width: 300,
                     height: 300,
                     fit: BoxFit.cover,
@@ -950,15 +917,15 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
             ),
           const SizedBox(height: 24),
           // Track and artist info (left-aligned)
-          if (_nowPlaying!.track != null || _nowPlaying!.artist != null)
+          if (nowPlaying.track != null || nowPlaying.artist != null)
             SizedBox(
               width: 300,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (_nowPlaying!.track != null) ...[
+                  if (nowPlaying.track != null) ...[
                     Text(
-                      _nowPlaying!.track!,
+                      nowPlaying.track!,
                       style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -967,9 +934,9 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                     ),
                     const SizedBox(height: 8),
                   ],
-                  if (_nowPlaying!.artist != null) ...[
+                  if (nowPlaying.artist != null) ...[
                     Text(
-                      _nowPlaying!.artist!,
+                      nowPlaying.artist!,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -982,32 +949,32 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
             ),
           const SizedBox(height: 24),
           // Action buttons (Play/Pause and Open in Spotify in one line)
-          if ((_nowPlaying!.playStatus != null &&
-                  (_nowPlaying!.playStatus == 'PLAY_STATE' ||
-                      _nowPlaying!.playStatus == 'PAUSE_STATE' ||
-                      _nowPlaying!.playStatus == 'STOP_STATE')) ||
-              (_nowPlaying!.source == 'SPOTIFY' &&
-                  _nowPlaying!.location != null &&
-                  _decodeSpotifyUri(_nowPlaying!.location) != null))
+          if ((nowPlaying.playStatus != null &&
+                  (nowPlaying.playStatus == 'PLAY_STATE' ||
+                      nowPlaying.playStatus == 'PAUSE_STATE' ||
+                      nowPlaying.playStatus == 'STOP_STATE')) ||
+              (nowPlaying.source == 'SPOTIFY' &&
+                  nowPlaying.location != null &&
+                  _decodeSpotifyUri(nowPlaying.location) != null))
             Wrap(
               spacing: 12,
               runSpacing: 12,
               alignment: WrapAlignment.center,
               children: [
                 // Play/Pause button
-                if (_nowPlaying!.playStatus != null &&
-                    (_nowPlaying!.playStatus == 'PLAY_STATE' ||
-                        _nowPlaying!.playStatus == 'PAUSE_STATE' ||
-                        _nowPlaying!.playStatus == 'STOP_STATE'))
+                if (nowPlaying.playStatus != null &&
+                    (nowPlaying.playStatus == 'PLAY_STATE' ||
+                        nowPlaying.playStatus == 'PAUSE_STATE' ||
+                        nowPlaying.playStatus == 'STOP_STATE'))
                   FilledButton.icon(
-                    onPressed: _isLoadingNowPlaying ? null : _togglePlayPause,
+                    onPressed: _togglePlayPause,
                     icon: Icon(
-                      _nowPlaying!.playStatus == 'PLAY_STATE'
+                      nowPlaying.playStatus == 'PLAY_STATE'
                           ? Icons.pause
                           : Icons.play_arrow,
                     ),
                     label: Text(
-                      _nowPlaying!.playStatus == 'PLAY_STATE'
+                      nowPlaying.playStatus == 'PLAY_STATE'
                           ? 'Pause'
                           : 'Play',
                     ),
@@ -1019,9 +986,9 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                     ),
                   ),
                 // Open in Spotify button
-                if (_nowPlaying!.source == 'SPOTIFY' &&
-                    _nowPlaying!.location != null &&
-                    _decodeSpotifyUri(_nowPlaying!.location) != null)
+                if (nowPlaying.source == 'SPOTIFY' &&
+                    nowPlaying.location != null &&
+                    _decodeSpotifyUri(nowPlaying.location) != null)
                   OutlinedButton.icon(
                     onPressed: _openInSpotify,
                     icon: const Icon(Icons.open_in_new),
@@ -1036,48 +1003,48 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
               ],
             ),
           // Shuffle and Repeat in single row
-          if (_nowPlaying!.shuffleSetting != null ||
-              _nowPlaying!.repeatSetting != null) ...[
+          if (nowPlaying.shuffleSetting != null ||
+              nowPlaying.repeatSetting != null) ...[
             const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (_nowPlaying!.shuffleSetting != null) ...[
+                if (nowPlaying.shuffleSetting != null) ...[
                   Icon(
                     Icons.shuffle,
                     size: 20,
-                    color: _nowPlaying!.shuffleSetting == 'SHUFFLE_ON'
+                    color: nowPlaying.shuffleSetting == 'SHUFFLE_ON'
                         ? theme.colorScheme.primary
                         : theme.colorScheme.onSurfaceVariant,
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    _nowPlaying!.shuffleSetting == 'SHUFFLE_ON'
+                    nowPlaying.shuffleSetting == 'SHUFFLE_ON'
                         ? 'Shuffle On'
                         : 'Shuffle Off',
                     style: theme.textTheme.bodyMedium,
                   ),
                 ],
-                if (_nowPlaying!.shuffleSetting != null &&
-                    _nowPlaying!.repeatSetting != null)
+                if (nowPlaying.shuffleSetting != null &&
+                    nowPlaying.repeatSetting != null)
                   const SizedBox(width: 24),
-                if (_nowPlaying!.repeatSetting != null) ...[
+                if (nowPlaying.repeatSetting != null) ...[
                   Icon(
-                    _nowPlaying!.repeatSetting == 'REPEAT_ALL'
+                    nowPlaying.repeatSetting == 'REPEAT_ALL'
                         ? Icons.repeat
-                        : _nowPlaying!.repeatSetting == 'REPEAT_ONE'
+                        : nowPlaying.repeatSetting == 'REPEAT_ONE'
                             ? Icons.repeat_one
                             : Icons.repeat,
                     size: 20,
-                    color: _nowPlaying!.repeatSetting != 'REPEAT_OFF'
+                    color: nowPlaying.repeatSetting != 'REPEAT_OFF'
                         ? theme.colorScheme.primary
                         : theme.colorScheme.onSurfaceVariant,
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    _nowPlaying!.repeatSetting == 'REPEAT_ALL'
+                    nowPlaying.repeatSetting == 'REPEAT_ALL'
                         ? 'Repeat All'
-                        : _nowPlaying!.repeatSetting == 'REPEAT_ONE'
+                        : nowPlaying.repeatSetting == 'REPEAT_ONE'
                             ? 'Repeat One'
                             : 'Repeat Off',
                     style: theme.textTheme.bodyMedium,
@@ -1337,30 +1304,6 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
     );
   }
 
-  Widget _buildNowPlayingErrorState(BuildContext context, ThemeData theme) {
-    return Card(
-      elevation: 1,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Text(
-              _nowPlayingErrorMessage!,
-              style: TextStyle(
-                color: theme.colorScheme.error,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: _loadNowPlaying,
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildVolumeCard(BuildContext context, ThemeData theme) {
     return Card(
@@ -1578,7 +1521,8 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final appState = context.read<MyAppState>();
+    final appState = context.watch<MyAppState>();
+    final nowPlaying = appState.getCachedNowPlaying(widget.speaker.ipAddress);
 
     return Scaffold(
       appBar: AppBar(
@@ -1608,22 +1552,11 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Conditional rendering: Hero Now Playing or Speaker Header
-                    if (_shouldShowNowPlayingCard() && _nowPlaying != null)
-                      _buildHeroNowPlaying(context, theme)
+                    if (_shouldShowNowPlayingCard(nowPlaying) && nowPlaying != null)
+                      _buildHeroNowPlaying(context, theme, nowPlaying)
                     else
                       _buildSpeakerHeader(context, theme),
                     const SizedBox(height: 32),
-                    // Loading and Error States
-                    if (_isLoadingNowPlaying && _nowPlaying == null)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: CircularProgressIndicator(),
-                        ),
-                      ),
-                    if (_nowPlayingErrorMessage != null)
-                      _buildNowPlayingErrorState(context, theme),
-                    const SizedBox(height: 16),
                     // Volume Control Section
                     _buildVolumeCard(context, theme),
                     const SizedBox(height: 16),

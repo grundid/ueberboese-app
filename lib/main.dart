@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:ueberboese_app/models/speaker.dart';
 import 'package:ueberboese_app/models/app_config.dart';
 import 'package:ueberboese_app/models/preset.dart';
+import 'package:ueberboese_app/models/now_playing.dart';
 import 'package:ueberboese_app/pages/home_page.dart';
 import 'package:ueberboese_app/services/speaker_storage_service.dart';
 import 'package:ueberboese_app/services/config_storage_service.dart';
@@ -78,6 +79,22 @@ class _PresetCacheEntry {
   }
 }
 
+class _NowPlayingCacheEntry {
+  final NowPlaying? nowPlaying;
+  final bool isConnected;
+  final DateTime timestamp;
+
+  _NowPlayingCacheEntry({
+    required this.nowPlaying,
+    required this.isConnected,
+    required this.timestamp,
+  });
+
+  bool get isStale {
+    return DateTime.now().difference(timestamp) > const Duration(seconds: 8);
+  }
+}
+
 class MyAppState extends ChangeNotifier {
   final SpeakerStorageService _storageService = SpeakerStorageService();
   final ConfigStorageService _configStorageService = ConfigStorageService();
@@ -88,6 +105,9 @@ class MyAppState extends ChangeNotifier {
 
   // Preset cache - maps speaker IP to cached preset list
   final Map<String, _PresetCacheEntry> _presetCache = {};
+
+  // Now Playing cache - maps speaker IP to cached now playing data
+  final Map<String, _NowPlayingCacheEntry> _nowPlayingCache = {};
 
   Future<void> initialize() async {
     await Future.wait([
@@ -172,5 +192,93 @@ class MyAppState extends ChangeNotifier {
     } catch (e) {
       return null;
     }
+  }
+
+  /// Get now playing for a speaker (uses cache if fresh)
+  Future<NowPlaying?> getNowPlayingForSpeaker(String speakerIp) async {
+    // Check if we have a fresh cache entry
+    final cacheEntry = _nowPlayingCache[speakerIp];
+    if (cacheEntry != null && !cacheEntry.isStale) {
+      return cacheEntry.nowPlaying;
+    }
+
+    // Fetch fresh data from API
+    try {
+      final nowPlaying = await _speakerApiService.getNowPlaying(speakerIp);
+
+      // Update cache with successful result
+      _nowPlayingCache[speakerIp] = _NowPlayingCacheEntry(
+        nowPlaying: nowPlaying,
+        isConnected: true,
+        timestamp: DateTime.now(),
+      );
+
+      return nowPlaying;
+    } catch (e) {
+      // Update cache with connection failure
+      _nowPlayingCache[speakerIp] = _NowPlayingCacheEntry(
+        nowPlaying: null,
+        isConnected: false,
+        timestamp: DateTime.now(),
+      );
+
+      return null;
+    }
+  }
+
+  /// Get cached now playing for a speaker (synchronous, returns null if not cached)
+  NowPlaying? getCachedNowPlaying(String speakerIp) {
+    final cacheEntry = _nowPlayingCache[speakerIp];
+    return cacheEntry?.nowPlaying;
+  }
+
+  /// Check connection status for a speaker
+  /// Returns true by default (optimistic) when no cache entry exists yet
+  bool getSpeakerConnectionStatus(String speakerIp) {
+    final cacheEntry = _nowPlayingCache[speakerIp];
+    if (cacheEntry == null) {
+      return true; // Optimistic default - assume connected until proven otherwise
+    }
+    return cacheEntry.isConnected;
+  }
+
+  /// Update now playing for a speaker (called by polling or WebSocket)
+  void updateNowPlayingForSpeaker(
+      String speakerIp, NowPlaying? nowPlaying, bool isConnected) {
+    _nowPlayingCache[speakerIp] = _NowPlayingCacheEntry(
+      nowPlaying: nowPlaying,
+      isConnected: isConnected,
+      timestamp: DateTime.now(),
+    );
+    notifyListeners();
+  }
+
+  /// Invalidate cache for a specific speaker
+  void invalidateNowPlayingCache(String speakerIp) {
+    _nowPlayingCache.remove(speakerIp);
+    notifyListeners();
+  }
+
+  /// Poll all speakers' now playing status (called by list page)
+  Future<void> pollAllSpeakersNowPlaying() async {
+    for (final speaker in speakers) {
+      try {
+        final nowPlaying =
+            await _speakerApiService.getNowPlaying(speaker.ipAddress);
+
+        _nowPlayingCache[speaker.ipAddress] = _NowPlayingCacheEntry(
+          nowPlaying: nowPlaying,
+          isConnected: true,
+          timestamp: DateTime.now(),
+        );
+      } catch (e) {
+        _nowPlayingCache[speaker.ipAddress] = _NowPlayingCacheEntry(
+          nowPlaying: null,
+          isConnected: false,
+          timestamp: DateTime.now(),
+        );
+      }
+    }
+    notifyListeners();
   }
 }

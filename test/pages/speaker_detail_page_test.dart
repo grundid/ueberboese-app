@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/models/speaker.dart';
 import 'package:ueberboese_app/models/app_config.dart';
+import 'package:ueberboese_app/models/now_playing.dart';
 import 'package:ueberboese_app/pages/speaker_detail_page.dart';
 import 'package:ueberboese_app/services/speaker_api_service.dart';
 import '../services/speaker_api_service_test.mocks.dart';
@@ -686,6 +687,14 @@ void main() {
 </nowPlaying>''', 200, headers: {'content-type': 'text/xml; charset=utf-8'}),
       );
 
+      // Populate cache with TV source now playing data
+      const tvNowPlaying = NowPlaying(
+        source: 'PRODUCT',
+        sourceAccount: 'TV',
+        playStatus: 'PLAY_STATE',
+      );
+      appState.updateNowPlayingForSpeaker(testSpeaker.ipAddress, tvNowPlaying, true);
+
       await tester.pumpWidget(
         ChangeNotifierProvider.value(
           value: appState,
@@ -765,6 +774,18 @@ void main() {
 </nowPlaying>''', 200, headers: {'content-type': 'text/xml; charset=utf-8'}),
       );
 
+      // Populate cache with Spotify playback data
+      const nowPlaying = NowPlaying(
+        track: 'Test Track',
+        artist: 'Test Artist',
+        album: 'Test Album',
+        art: 'http://example.com/art.jpg',
+        playStatus: 'PLAY_STATE',
+        source: 'SPOTIFY',
+        location: '/playback/container/abc123',
+      );
+      appState.updateNowPlayingForSpeaker(testSpeaker.ipAddress, nowPlaying, true);
+
       await tester.pumpWidget(
         ChangeNotifierProvider.value(
           value: appState,
@@ -809,6 +830,18 @@ void main() {
 </nowPlaying>''', 200, headers: {'content-type': 'text/xml; charset=utf-8'}),
       );
 
+      // Populate cache with paused Spotify playback data
+      const nowPlaying = NowPlaying(
+        track: 'Test Track',
+        artist: 'Test Artist',
+        album: 'Test Album',
+        art: 'http://example.com/art.jpg',
+        playStatus: 'PAUSE_STATE',
+        source: 'SPOTIFY',
+        location: '/playback/container/abc123',
+      );
+      appState.updateNowPlayingForSpeaker(testSpeaker.ipAddress, nowPlaying, true);
+
       await tester.pumpWidget(
         ChangeNotifierProvider.value(
           value: appState,
@@ -850,6 +883,15 @@ void main() {
   <playStatus>PLAY_STATE</playStatus>
 </nowPlaying>''', 200, headers: {'content-type': 'text/xml; charset=utf-8'}),
       );
+
+      // Populate cache with TUNEIN playback data
+      const nowPlaying = NowPlaying(
+        track: 'Test Radio Station',
+        playStatus: 'PLAY_STATE',
+        source: 'TUNEIN',
+        location: 's1234',
+      );
+      appState.updateNowPlayingForSpeaker(testSpeaker.ipAddress, nowPlaying, true);
 
       await tester.pumpWidget(
         ChangeNotifierProvider.value(

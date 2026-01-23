@@ -30,9 +30,6 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
   late final SpeakerApiService _speakerApiService;
   final _managementApiService = ManagementApiService();
 
-  // Speaker status tracking
-  final Map<String, NowPlaying?> _speakerNowPlaying = {};
-  final Map<String, bool> _speakerConnectionStatus = {};
   Timer? _pollingTimer;
 
   @override
@@ -50,7 +47,6 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
       parent: _animationController,
       curve: Curves.easeInOut,
     );
-    _loadAllSpeakerStatuses();
     _startPolling();
   }
 
@@ -93,33 +89,19 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
     return EmojiSelector.availableEmojis.first;
   }
 
-  Future<void> _loadSpeakerStatus(Speaker speaker) async {
-    try {
-      final nowPlaying = await _speakerApiService.getNowPlaying(speaker.ipAddress);
-      if (!mounted) return;
-      setState(() {
-        _speakerNowPlaying[speaker.id] = nowPlaying;
-        _speakerConnectionStatus[speaker.id] = true;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _speakerNowPlaying[speaker.id] = null;
-        _speakerConnectionStatus[speaker.id] = false;
-      });
-    }
-  }
-
-  Future<void> _loadAllSpeakerStatuses() async {
-    final appState = context.read<MyAppState>();
-    for (final speaker in appState.speakers) {
-      _loadSpeakerStatus(speaker);
-    }
-  }
-
   void _startPolling() {
+    // Initial poll - use addPostFrameCallback to avoid notifying during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final appState = context.read<MyAppState>();
+      appState.pollAllSpeakersNowPlaying();
+    });
+
+    // Set up periodic polling
     _pollingTimer = Timer.periodic(const Duration(seconds: 8), (timer) {
-      _loadAllSpeakerStatuses();
+      if (!mounted) return;
+      final appState = context.read<MyAppState>();
+      appState.pollAllSpeakersNowPlaying();
     });
   }
 
@@ -388,8 +370,8 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
         itemCount: appState.speakers.length,
         itemBuilder: (context, index) {
           final speaker = appState.speakers[index];
-          final nowPlaying = _speakerNowPlaying[speaker.id];
-          final isConnected = _speakerConnectionStatus[speaker.id] ?? false;
+          final nowPlaying = appState.getCachedNowPlaying(speaker.ipAddress);
+          final isConnected = appState.getSpeakerConnectionStatus(speaker.ipAddress);
           final isPlaying = nowPlaying?.playStatus == 'PLAY_STATE';
           final artworkUrl = _getFullArtworkUrl(speaker, nowPlaying);
           final hasArtwork = artworkUrl != null && artworkUrl.isNotEmpty;
