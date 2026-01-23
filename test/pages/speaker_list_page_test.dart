@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/models/speaker.dart';
 import 'package:ueberboese_app/models/app_config.dart';
+import 'package:ueberboese_app/models/now_playing.dart';
 import 'package:ueberboese_app/pages/speaker_list_page.dart';
 import 'package:ueberboese_app/pages/speaker_detail_page.dart';
 
@@ -536,6 +537,155 @@ void main() {
       );
 
       expect(stackInCard, findsAtLeastNWidgets(1));
+    });
+
+    testWidgets('displays Hero widget when speaker is playing with artwork',
+        (WidgetTester tester) async {
+      final appState = MyAppState();
+      await appState.initializeSpeakers();
+
+      // Add a speaker and set it as playing with artwork
+      const testSpeaker = Speaker(
+        id: '1',
+        name: 'Test Speaker',
+        emoji: '🔊',
+        ipAddress: '192.168.1.100',
+        type: 'SoundTouch 10',
+        deviceId: 'device-123',
+      );
+      appState.addSpeaker(testSpeaker);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: appState,
+          child: const MaterialApp(
+            home: Scaffold(body: SpeakerListPage()),
+          ),
+        ),
+      );
+
+      // Set the speaker state to playing with artwork after widget is built
+      appState.updateNowPlayingForSpeaker(
+        testSpeaker.ipAddress,
+        const NowPlaying(
+          source: 'SPOTIFY',
+          track: 'Test Track',
+          artist: 'Test Artist',
+          album: 'Test Album',
+          art: 'https://example.com/art.jpg',
+          playStatus: 'PLAY_STATE',
+        ),
+        true, // isConnected
+      );
+
+      // Pump to rebuild with the new state
+      await tester.pumpAndSettle();
+
+      // Verify Hero widget with album art tag is present in the widget tree
+      final albumArtHeroFinder = find.byWidgetPredicate(
+        (widget) => widget is Hero && widget.tag == 'album-art-1',
+      );
+      expect(albumArtHeroFinder, findsOneWidget);
+
+      // Verify the Hero tag matches the expected format
+      final heroWidget = tester.widget<Hero>(albumArtHeroFinder);
+      expect(heroWidget.tag, equals('album-art-1'));
+    });
+
+    testWidgets('does not display Hero widget when speaker is not playing',
+        (WidgetTester tester) async {
+      final appState = MyAppState();
+      await appState.initializeSpeakers();
+
+      appState.addSpeaker(const Speaker(
+        id: '1',
+        name: 'Test Speaker',
+        emoji: '🔊',
+        ipAddress: '192.168.1.100',
+        type: 'SoundTouch 10',
+        deviceId: 'device-123',
+      ));
+
+      // Don't set any now playing state (speaker is not playing)
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: appState,
+          child: const MaterialApp(
+            home: Scaffold(body: SpeakerListPage()),
+          ),
+        ),
+      );
+
+      await tester.pump();
+
+      // Verify no Hero widget with album art tag is present when speaker is not playing
+      final albumArtHeroFinder = find.byWidgetPredicate(
+        (widget) => widget is Hero && widget.tag.toString().startsWith('album-art-'),
+      );
+      expect(albumArtHeroFinder, findsNothing);
+    });
+
+    testWidgets('Hero tag format matches speaker ID',
+        (WidgetTester tester) async {
+      final appState = MyAppState();
+      await appState.initializeSpeakers();
+
+      // Add multiple speakers with different IDs
+      const speakerA = Speaker(
+        id: 'speaker-a',
+        name: 'Speaker A',
+        emoji: '🔊',
+        ipAddress: '192.168.1.100',
+        type: 'SoundTouch 10',
+        deviceId: 'device-123',
+      );
+      const speakerB = Speaker(
+        id: 'speaker-b',
+        name: 'Speaker B',
+        emoji: '🎵',
+        ipAddress: '192.168.1.101',
+        type: 'SoundTouch 20',
+        deviceId: 'device-456',
+      );
+
+      appState.addSpeaker(speakerA);
+      appState.addSpeaker(speakerB);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider.value(
+          value: appState,
+          child: const MaterialApp(
+            home: Scaffold(body: SpeakerListPage()),
+          ),
+        ),
+      );
+
+      // Set first speaker as playing with artwork after widget is built
+      appState.updateNowPlayingForSpeaker(
+        speakerA.ipAddress,
+        const NowPlaying(
+          source: 'SPOTIFY',
+          track: 'Test Track',
+          artist: 'Test Artist',
+          album: 'Test Album',
+          art: 'https://example.com/art.jpg',
+          playStatus: 'PLAY_STATE',
+        ),
+        true, // isConnected
+      );
+
+      // Pump to rebuild with the new state
+      await tester.pumpAndSettle();
+
+      // Verify Hero widget exists with correct tag for speaker-a
+      final albumArtHeroFinder = find.byWidgetPredicate(
+        (widget) => widget is Hero && widget.tag == 'album-art-speaker-a',
+      );
+      expect(albumArtHeroFinder, findsOneWidget);
+
+      final heroWidget = tester.widget<Hero>(albumArtHeroFinder);
+      expect(heroWidget.tag, equals('album-art-speaker-a'));
     });
   });
 }

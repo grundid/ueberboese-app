@@ -390,30 +390,33 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
                 // Background image with overlay (if playing and has art)
                 if (isPlaying && hasArtwork)
                   Positioned.fill(
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Image.network(
-                          artworkUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => const SizedBox(),
-                          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                            // Only show the image with overlay if it loaded successfully
-                            if (frame == null) {
-                              return const SizedBox();
-                            }
-                            return Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                child,
-                                Container(
-                                  color: cardTheme.colorScheme.scrim.withValues(alpha: 0.4),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                      ],
+                    child: Hero(
+                      tag: 'album-art-${speaker.id}',
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.network(
+                            artworkUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => const SizedBox(),
+                            frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                              // Only show the image with overlay if it loaded successfully
+                              if (frame == null) {
+                                return const SizedBox();
+                              }
+                              return Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  child,
+                                  Container(
+                                    color: cardTheme.colorScheme.scrim.withValues(alpha: 0.4),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 // Actual content
