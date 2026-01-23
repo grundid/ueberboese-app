@@ -6,7 +6,7 @@ import 'package:ueberboese_app/models/preset.dart';
 import 'package:ueberboese_app/services/speaker_api_service.dart';
 import 'package:ueberboese_app/services/spotify_api_service.dart';
 import 'package:ueberboese_app/main.dart';
-import 'package:ueberboese_app/widgets/preset_edit_fab.dart';
+import 'package:ueberboese_app/widgets/preset_action_fabs.dart';
 
 class SpotifyPresetDetailPage extends StatefulWidget {
   final String presetId;
@@ -36,6 +36,7 @@ class _SpotifyPresetDetailPageState extends State<SpotifyPresetDetailPage> {
   bool _isLoadingAccount = false;
   String? _accountFetchError;
   final _fabExpandedNotifier = ValueNotifier<bool>(false);
+  late final Future<Preset?> _presetFuture;
 
   @override
   void initState() {
@@ -49,11 +50,12 @@ class _SpotifyPresetDetailPageState extends State<SpotifyPresetDetailPage> {
           password: config.mgmtPassword,
         );
 
+    _presetFuture = _getPreset();
     _initializePresetData();
   }
 
   Future<void> _initializePresetData() async {
-    final preset = await _getPreset();
+    final preset = await _presetFuture;
     if (preset != null) {
       _decodeSpotifyUri(preset);
       _fetchSpotifyAccount(preset);
@@ -182,7 +184,7 @@ class _SpotifyPresetDetailPageState extends State<SpotifyPresetDetailPage> {
   }
 
   Future<void> _showDeleteConfirmationDialog() async {
-    final preset = await _getPreset();
+    final preset = await _presetFuture;
     if (preset == null || !mounted) return;
 
     final confirmed = await showDialog<bool>(
@@ -275,7 +277,7 @@ class _SpotifyPresetDetailPageState extends State<SpotifyPresetDetailPage> {
     context.watch<MyAppState>(); // Listen for preset changes
 
     return FutureBuilder<Preset?>(
-      future: _getPreset(),
+      future: _presetFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
@@ -373,7 +375,7 @@ class _SpotifyPresetDetailPageState extends State<SpotifyPresetDetailPage> {
                 ),
               ),
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 88.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -481,9 +483,11 @@ class _SpotifyPresetDetailPageState extends State<SpotifyPresetDetailPage> {
           ),
         ],
       ),
-      floatingActionButton: PresetEditFab(
+      floatingActionButton: PresetActionFabs(
         preset: preset,
+        speakerIp: widget.speakerIp,
         isExpandedNotifier: _fabExpandedNotifier,
+        speakerApiService: _speakerApiService,
       ),
     );
       },

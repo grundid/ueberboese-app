@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:ueberboese_app/models/preset.dart';
 import 'package:ueberboese_app/services/speaker_api_service.dart';
 import 'package:ueberboese_app/main.dart';
-import 'package:ueberboese_app/widgets/preset_edit_fab.dart';
+import 'package:ueberboese_app/widgets/preset_action_fabs.dart';
 
 class PresetDetailPage extends StatefulWidget {
   final String presetId;
@@ -243,7 +243,7 @@ class _PresetDetailPageState extends State<PresetDetailPage> {
                 ),
               ),
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 88.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -321,9 +321,11 @@ class _PresetDetailPageState extends State<PresetDetailPage> {
           ),
         ],
       ),
-      floatingActionButton: PresetEditFab(
+      floatingActionButton: PresetActionFabs(
         preset: preset,
+        speakerIp: widget.speakerIp,
         isExpandedNotifier: _fabExpandedNotifier,
+        speakerApiService: _speakerApiService,
       ),
     );
       },

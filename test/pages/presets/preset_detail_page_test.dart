@@ -194,7 +194,7 @@ void main() {
       expect(find.text('Location'), findsOneWidget);
     });
 
-    testWidgets('displays FABs with edit icon', (WidgetTester tester) async {
+    testWidgets('displays FABs with play and edit icons', (WidgetTester tester) async {
       const testPreset = Preset(
         id: '1',
         itemName: 'Test',
@@ -220,9 +220,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // There are now 4 FABs (main + 3 sub-FABs)
-      expect(find.byType(FloatingActionButton), findsNWidgets(4));
-      // Main FAB should have edit icon
+      // There are now 5 FABs (play + main edit + 3 sub-FABs)
+      expect(find.byType(FloatingActionButton), findsNWidgets(5));
+      // Should have play icon
+      expect(find.byIcon(Icons.play_arrow), findsOneWidget);
+      // Should have edit icon
       expect(find.byIcon(Icons.edit), findsOneWidget);
     });
 

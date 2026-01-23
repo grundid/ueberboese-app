@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/models/preset.dart';
 import 'package:ueberboese_app/services/speaker_api_service.dart';
-import 'package:ueberboese_app/widgets/preset_edit_fab.dart';
+import 'package:ueberboese_app/widgets/preset_action_fabs.dart';
 
 class TuneInStoredPresetDetailPage extends StatefulWidget {
   final String presetId;
@@ -307,9 +307,11 @@ class _TuneInStoredPresetDetailPageState extends State<TuneInStoredPresetDetailP
           ),
         ],
       ),
-      floatingActionButton: PresetEditFab(
+      floatingActionButton: PresetActionFabs(
         preset: preset,
+        speakerIp: widget.speakerIp,
         isExpandedNotifier: _fabExpandedNotifier,
+        speakerApiService: _speakerApiService,
       ),
     );
       },
