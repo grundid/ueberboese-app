@@ -42,15 +42,12 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
   Volume? _currentVolume;
   NowPlaying? _nowPlaying;
   Zone? _currentZone;
-  List<Preset>? _presets;
   bool _isLoadingVolume = true;
   bool _isLoadingNowPlaying = true;
   bool _isLoadingZone = true;
-  bool _isLoadingPresets = true;
   String? _volumeErrorMessage;
   String? _nowPlayingErrorMessage;
   String? _zoneErrorMessage;
-  String? _presetsErrorMessage;
 
   // Speaker info state
   SpeakerInfo? _speakerInfo;
@@ -73,7 +70,6 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
     _loadNowPlaying();
     _loadZone();
     _loadSpeakerInfo();
-    _loadPresets();
     _initializeWebSocket();
   }
 
@@ -209,27 +205,6 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
     }
   }
 
-  Future<void> _loadPresets() async {
-    setState(() {
-      _isLoadingPresets = true;
-      _presetsErrorMessage = null;
-    });
-
-    try {
-      final presets = await _apiService.getPresets(widget.speaker.ipAddress);
-      if (!mounted) return;
-      setState(() {
-        _presets = presets;
-        _isLoadingPresets = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _presetsErrorMessage = 'Failed to load presets: ${e.toString()}';
-        _isLoadingPresets = false;
-      });
-    }
-  }
 
   Future<void> _loadSpeakerInfo() async {
     try {
@@ -1492,6 +1467,8 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
   }
 
   Widget _buildPresetsCard(BuildContext context, ThemeData theme) {
+    final appState = context.watch<MyAppState>();
+
     return Card(
       elevation: 1,
       child: Padding(
@@ -1525,62 +1502,73 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
               ],
             ),
             const SizedBox(height: 16),
-            if (_isLoadingPresets && _presets == null)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: CircularProgressIndicator(),
-                ),
-              )
-            else if (_presetsErrorMessage != null)
-              Column(
-                children: [
-                  Text(
-                    _presetsErrorMessage!,
-                    style: TextStyle(
-                      color: theme.colorScheme.error,
-                      fontSize: 14,
+            FutureBuilder<List<Preset>>(
+              future: appState.getPresets(widget.speaker.ipAddress),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: CircularProgressIndicator(),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: _loadPresets,
-                    child: const Text('Retry'),
-                  ),
-                ],
-              )
-            else if (_presets != null)
-              Column(
-                children: [
-                  // First row: Presets 1-3
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return Column(
                     children: [
-                      for (var i = 1; i <= 3; i++)
-                        _buildPresetButton(
-                          context,
-                          theme,
-                          i.toString(),
-                          _presets!.where((p) => p.id == i.toString()).firstOrNull,
+                      Text(
+                        'Failed to load presets: ${snapshot.error}',
+                        style: TextStyle(
+                          color: theme.colorScheme.error,
+                          fontSize: 14,
                         ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: () {
+                          appState.invalidatePresetsCache(widget.speaker.ipAddress);
+                        },
+                        child: const Text('Retry'),
+                      ),
                     ],
-                  ),
-                  const SizedBox(height: 12),
-                  // Second row: Presets 4-6
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      for (var i = 4; i <= 6; i++)
-                        _buildPresetButton(
-                          context,
-                          theme,
-                          i.toString(),
-                          _presets!.where((p) => p.id == i.toString()).firstOrNull,
-                        ),
-                    ],
-                  ),
-                ],
-              ),
+                  );
+                }
+
+                final presets = snapshot.data ?? [];
+                return Column(
+                  children: [
+                    // First row: Presets 1-3
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        for (var i = 1; i <= 3; i++)
+                          _buildPresetButton(
+                            context,
+                            theme,
+                            i.toString(),
+                            presets.where((p) => p.id == i.toString()).firstOrNull,
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    // Second row: Presets 4-6
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        for (var i = 4; i <= 6; i++)
+                          _buildPresetButton(
+                            context,
+                            theme,
+                            i.toString(),
+                            presets.where((p) => p.id == i.toString()).firstOrNull,
+                          ),
+                      ],
+                    ),
+                  ],
+                );
+              },
+            ),
           ],
         ),
       ),

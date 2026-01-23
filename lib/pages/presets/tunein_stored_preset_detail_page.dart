@@ -6,12 +6,14 @@ import 'package:ueberboese_app/services/speaker_api_service.dart';
 import 'package:ueberboese_app/widgets/preset_edit_fab.dart';
 
 class TuneInStoredPresetDetailPage extends StatefulWidget {
-  final Preset preset;
+  final String presetId;
+  final String speakerIp;
   final SpeakerApiService? apiService;
 
   const TuneInStoredPresetDetailPage({
     super.key,
-    required this.preset,
+    required this.presetId,
+    required this.speakerIp,
     this.apiService,
   });
 
@@ -30,13 +32,20 @@ class _TuneInStoredPresetDetailPageState extends State<TuneInStoredPresetDetailP
     _speakerApiService = widget.apiService ?? SpeakerApiService();
   }
 
+  Preset? _getPreset() {
+    return context.read<MyAppState>().getPresetById(widget.speakerIp, widget.presetId);
+  }
+
   Future<void> _showDeleteConfirmationDialog() async {
+    final preset = _getPreset();
+    if (preset == null) return;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Preset'),
         content: Text(
-          'Are you sure you want to delete preset ${widget.preset.id} "${widget.preset.itemName}"?',
+          'Are you sure you want to delete preset ${preset.id} "${preset.itemName}"?',
         ),
         actions: [
           TextButton(
@@ -62,25 +71,20 @@ class _TuneInStoredPresetDetailPageState extends State<TuneInStoredPresetDetailP
   Future<void> _deletePreset() async {
     final appState = context.read<MyAppState>();
 
-    if (appState.speakers.isEmpty) {
-      if (!mounted) return;
-      _showErrorDialog('No speakers available to delete preset');
-      return;
-    }
-
-    final firstSpeaker = appState.speakers.first;
-
     setState(() {
       _isDeleting = true;
     });
 
     try {
       await _speakerApiService.removePreset(
-        firstSpeaker.ipAddress,
-        widget.preset.id,
+        widget.speakerIp,
+        widget.presetId,
       );
 
       if (!mounted) return;
+
+      // Invalidate cache to trigger refresh
+      appState.invalidatePresetsCache(widget.speakerIp);
 
       // Navigate back to presets list
       Navigator.pop(context);
@@ -88,7 +92,7 @@ class _TuneInStoredPresetDetailPageState extends State<TuneInStoredPresetDetailP
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Preset ${widget.preset.id} deleted successfully'),
+          content: Text('Preset ${widget.presetId} deleted successfully'),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -120,9 +124,8 @@ class _TuneInStoredPresetDetailPageState extends State<TuneInStoredPresetDetailP
   }
 
 
-  String? _extractStationId() {
+  String? _extractStationId(String location) {
     // Extract station ID from location format: /v1/playback/station/s288368
-    final location = widget.preset.location;
     const prefix = '/v1/playback/station/';
 
     if (location.startsWith(prefix)) {
@@ -135,11 +138,26 @@ class _TuneInStoredPresetDetailPageState extends State<TuneInStoredPresetDetailP
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final stationId = _extractStationId();
+    context.watch<MyAppState>(); // Listen for preset changes
+    final preset = _getPreset();
+
+    // If preset is null, show loading UI
+    if (preset == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('TuneIn Preset ${widget.presetId}'),
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    final stationId = _extractStationId(preset.location);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('TuneIn Preset ${widget.preset.id}'),
+        title: Text('TuneIn Preset ${preset.id}'),
         actions: [
           if (_isDeleting)
             const Center(
@@ -182,14 +200,14 @@ class _TuneInStoredPresetDetailPageState extends State<TuneInStoredPresetDetailP
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (widget.preset.containerArt != null && widget.preset.containerArt!.isNotEmpty)
+            if (preset.containerArt != null && preset.containerArt!.isNotEmpty)
               Center(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: Image.network(
-                      widget.preset.containerArt!,
+                      preset.containerArt!,
                       width: 200,
                       height: 200,
                       fit: BoxFit.cover,
@@ -216,7 +234,7 @@ class _TuneInStoredPresetDetailPageState extends State<TuneInStoredPresetDetailP
                 children: [
                   Center(
                     child: SelectableText(
-                      widget.preset.itemName,
+                      preset.itemName,
                       style: theme.textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -227,14 +245,14 @@ class _TuneInStoredPresetDetailPageState extends State<TuneInStoredPresetDetailP
                   _buildDetailRow(
                     context,
                     'Preset Number',
-                    widget.preset.id,
+                    preset.id,
                     Icons.numbers,
                   ),
                   const Divider(),
                   _buildDetailRow(
                     context,
                     'Source',
-                    widget.preset.source,
+                    preset.source,
                     Icons.source,
                   ),
                   if (stationId != null) ...[
@@ -269,7 +287,7 @@ class _TuneInStoredPresetDetailPageState extends State<TuneInStoredPresetDetailP
         ],
       ),
       floatingActionButton: PresetEditFab(
-        preset: widget.preset,
+        preset: preset,
         isExpandedNotifier: _fabExpandedNotifier,
       ),
     );

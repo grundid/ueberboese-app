@@ -7,12 +7,14 @@ import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/widgets/preset_edit_fab.dart';
 
 class PresetDetailPage extends StatefulWidget {
-  final Preset preset;
+  final String presetId;
+  final String speakerIp;
   final SpeakerApiService? apiService;
 
   const PresetDetailPage({
     super.key,
-    required this.preset,
+    required this.presetId,
+    required this.speakerIp,
     this.apiService,
   });
 
@@ -31,6 +33,10 @@ class _PresetDetailPageState extends State<PresetDetailPage> {
     _speakerApiService = widget.apiService ?? SpeakerApiService();
   }
 
+  Preset? _getPreset() {
+    return context.read<MyAppState>().getPresetById(widget.speakerIp, widget.presetId);
+  }
+
   String _formatTimestamp(int? timestamp) {
     if (timestamp == null) return 'N/A';
     final date = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
@@ -38,12 +44,15 @@ class _PresetDetailPageState extends State<PresetDetailPage> {
   }
 
   Future<void> _showDeleteConfirmationDialog() async {
+    final preset = _getPreset();
+    if (preset == null) return;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Preset'),
         content: Text(
-          'Are you sure you want to delete preset ${widget.preset.id} "${widget.preset.itemName}"?',
+          'Are you sure you want to delete preset ${preset.id} "${preset.itemName}"?',
         ),
         actions: [
           TextButton(
@@ -69,25 +78,20 @@ class _PresetDetailPageState extends State<PresetDetailPage> {
   Future<void> _deletePreset() async {
     final appState = context.read<MyAppState>();
 
-    if (appState.speakers.isEmpty) {
-      if (!mounted) return;
-      _showErrorDialog('No speakers available to delete preset');
-      return;
-    }
-
-    final firstSpeaker = appState.speakers.first;
-
     setState(() {
       _isDeleting = true;
     });
 
     try {
       await _speakerApiService.removePreset(
-        firstSpeaker.ipAddress,
-        widget.preset.id,
+        widget.speakerIp,
+        widget.presetId,
       );
 
       if (!mounted) return;
+
+      // Invalidate cache to trigger refresh
+      appState.invalidatePresetsCache(widget.speakerIp);
 
       // Navigate back to presets list
       Navigator.pop(context);
@@ -95,7 +99,7 @@ class _PresetDetailPageState extends State<PresetDetailPage> {
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Preset ${widget.preset.id} deleted successfully'),
+          content: Text('Preset ${widget.presetId} deleted successfully'),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -130,10 +134,24 @@ class _PresetDetailPageState extends State<PresetDetailPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    context.watch<MyAppState>(); // Listen for preset changes
+    final preset = _getPreset();
+
+    // If preset is null, show loading UI
+    if (preset == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Preset ${widget.presetId}'),
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Preset ${widget.preset.id}'),
+        title: Text('Preset ${preset.id}'),
         actions: [
           if (_isDeleting)
             const Center(
@@ -176,14 +194,14 @@ class _PresetDetailPageState extends State<PresetDetailPage> {
             child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (widget.preset.containerArt != null && widget.preset.containerArt!.isNotEmpty)
+            if (preset.containerArt != null && preset.containerArt!.isNotEmpty)
               Center(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.network(
-                      widget.preset.containerArt!,
+                      preset.containerArt!,
                       width: 200,
                       height: 200,
                       fit: BoxFit.cover,
@@ -209,7 +227,7 @@ class _PresetDetailPageState extends State<PresetDetailPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.preset.itemName,
+                    preset.itemName,
                     style: theme.textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -218,45 +236,45 @@ class _PresetDetailPageState extends State<PresetDetailPage> {
                   _buildDetailRow(
                     context,
                     'Preset Number',
-                    widget.preset.id,
+                    preset.id,
                     Icons.numbers,
                   ),
                   const Divider(),
                   _buildDetailRow(
                     context,
                     'Source',
-                    widget.preset.source,
+                    preset.source,
                     Icons.source,
                   ),
                   const Divider(),
                   _buildDetailRow(
                     context,
                     'Type',
-                    widget.preset.type,
+                    preset.type,
                     Icons.category,
                   ),
                   const Divider(),
                   _buildDetailRow(
                     context,
                     'Location',
-                    widget.preset.location,
+                    preset.location,
                     Icons.location_on,
                   ),
-                  if (widget.preset.createdOn != null) ...[
+                  if (preset.createdOn != null) ...[
                     const Divider(),
                     _buildDetailRow(
                       context,
                       'Created On',
-                      _formatTimestamp(widget.preset.createdOn),
+                      _formatTimestamp(preset.createdOn),
                       Icons.access_time,
                     ),
                   ],
-                  if (widget.preset.updatedOn != null) ...[
+                  if (preset.updatedOn != null) ...[
                     const Divider(),
                     _buildDetailRow(
                       context,
                       'Updated On',
-                      _formatTimestamp(widget.preset.updatedOn),
+                      _formatTimestamp(preset.updatedOn),
                       Icons.update,
                     ),
                   ],
@@ -283,7 +301,7 @@ class _PresetDetailPageState extends State<PresetDetailPage> {
         ],
       ),
       floatingActionButton: PresetEditFab(
-        preset: widget.preset,
+        preset: preset,
         isExpandedNotifier: _fabExpandedNotifier,
       ),
     );

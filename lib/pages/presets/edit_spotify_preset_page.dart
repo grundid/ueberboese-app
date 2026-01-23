@@ -376,6 +376,9 @@ class _EditSpotifyPresetPageState extends State<EditSpotifyPresetPage> {
 
       if (!mounted) return;
 
+      // Invalidate preset cache to trigger UI refresh
+      appState.invalidatePresetsCache(speaker.ipAddress);
+
       // Show success snackbar
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

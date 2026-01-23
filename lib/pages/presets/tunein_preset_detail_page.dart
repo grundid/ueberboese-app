@@ -112,6 +112,9 @@ class _TuneInPresetDetailPageState extends State<TuneInPresetDetailPage> {
 
       if (!mounted) return;
 
+      // Invalidate preset cache to trigger UI refresh
+      appState.invalidatePresetsCache(speaker.ipAddress);
+
       // Show success snackbar
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

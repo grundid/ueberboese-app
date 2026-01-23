@@ -1,13 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/annotations.dart';
 import 'package:provider/provider.dart';
 import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/models/app_config.dart';
 import 'package:ueberboese_app/models/preset.dart';
 import 'package:ueberboese_app/pages/presets/preset_detail_page.dart';
+import 'package:ueberboese_app/services/speaker_api_service.dart';
 
+import 'preset_detail_page_test.mocks.dart';
+
+@GenerateMocks([SpeakerApiService])
 void main() {
   group('PresetDetailPage', () {
+    const testSpeakerIp = '192.168.1.100';
+    late MockSpeakerApiService mockSpeakerApiService;
+    late TestMyAppState appState;
+
+    setUp(() {
+      mockSpeakerApiService = MockSpeakerApiService();
+      appState = TestMyAppState();
+      appState.config = const AppConfig();
+    });
+
     testWidgets('displays preset information correctly', (WidgetTester tester) async {
       const testPreset = Preset(
         id: '1',
@@ -21,14 +36,17 @@ void main() {
         updatedOn: 1701220600,
       );
 
-      final appState = MyAppState();
-      appState.config = const AppConfig();
+      appState.setTestPresets(testSpeakerIp, [testPreset]);
 
       await tester.pumpWidget(
         ChangeNotifierProvider<MyAppState>.value(
           value: appState,
-          child: const MaterialApp(
-            home: PresetDetailPage(preset: testPreset),
+          child: MaterialApp(
+            home: PresetDetailPage(
+              presetId: '1',
+              speakerIp: testSpeakerIp,
+              apiService: mockSpeakerApiService,
+            ),
           ),
         ),
       );
@@ -51,14 +69,17 @@ void main() {
         isPresetable: false,
       );
 
-      final appState = MyAppState();
-      appState.config = const AppConfig();
+      appState.setTestPresets(testSpeakerIp, [testPreset]);
 
       await tester.pumpWidget(
         ChangeNotifierProvider<MyAppState>.value(
           value: appState,
-          child: const MaterialApp(
-            home: PresetDetailPage(preset: testPreset),
+          child: MaterialApp(
+            home: PresetDetailPage(
+              presetId: '2',
+              speakerIp: testSpeakerIp,
+              apiService: mockSpeakerApiService,
+            ),
           ),
         ),
       );
@@ -86,14 +107,17 @@ void main() {
         updatedOn: 1701220600,
       );
 
-      final appState = MyAppState();
-      appState.config = const AppConfig();
+      appState.setTestPresets(testSpeakerIp, [testPreset]);
 
       await tester.pumpWidget(
         ChangeNotifierProvider<MyAppState>.value(
           value: appState,
-          child: const MaterialApp(
-            home: PresetDetailPage(preset: testPreset),
+          child: MaterialApp(
+            home: PresetDetailPage(
+              presetId: '3',
+              speakerIp: testSpeakerIp,
+              apiService: mockSpeakerApiService,
+            ),
           ),
         ),
       );
@@ -113,14 +137,17 @@ void main() {
         isPresetable: true,
       );
 
-      final appState = MyAppState();
-      appState.config = const AppConfig();
+      appState.setTestPresets(testSpeakerIp, [testPreset]);
 
       await tester.pumpWidget(
         ChangeNotifierProvider<MyAppState>.value(
           value: appState,
-          child: const MaterialApp(
-            home: PresetDetailPage(preset: testPreset),
+          child: MaterialApp(
+            home: PresetDetailPage(
+              presetId: '1',
+              speakerIp: testSpeakerIp,
+              apiService: mockSpeakerApiService,
+            ),
           ),
         ),
       );
@@ -140,14 +167,17 @@ void main() {
         isPresetable: true,
       );
 
-      final appState = MyAppState();
-      appState.config = const AppConfig();
+      appState.setTestPresets(testSpeakerIp, [testPreset]);
 
       await tester.pumpWidget(
         ChangeNotifierProvider<MyAppState>.value(
           value: appState,
-          child: const MaterialApp(
-            home: PresetDetailPage(preset: testPreset),
+          child: MaterialApp(
+            home: PresetDetailPage(
+              presetId: '5',
+              speakerIp: testSpeakerIp,
+              apiService: mockSpeakerApiService,
+            ),
           ),
         ),
       );
@@ -169,14 +199,17 @@ void main() {
         isPresetable: true,
       );
 
-      final appState = MyAppState();
-      appState.config = const AppConfig();
+      appState.setTestPresets(testSpeakerIp, [testPreset]);
 
       await tester.pumpWidget(
         ChangeNotifierProvider<MyAppState>.value(
           value: appState,
-          child: const MaterialApp(
-            home: PresetDetailPage(preset: testPreset),
+          child: MaterialApp(
+            home: PresetDetailPage(
+              presetId: '1',
+              speakerIp: testSpeakerIp,
+              apiService: mockSpeakerApiService,
+            ),
           ),
         ),
       );
@@ -197,14 +230,17 @@ void main() {
         isPresetable: true,
       );
 
-      final appState = MyAppState();
-      appState.config = const AppConfig();
+      appState.setTestPresets(testSpeakerIp, [testPreset]);
 
       await tester.pumpWidget(
         ChangeNotifierProvider<MyAppState>.value(
           value: appState,
-          child: const MaterialApp(
-            home: PresetDetailPage(preset: testPreset),
+          child: MaterialApp(
+            home: PresetDetailPage(
+              presetId: '1',
+              speakerIp: testSpeakerIp,
+              apiService: mockSpeakerApiService,
+            ),
           ),
         ),
       );
@@ -230,14 +266,17 @@ void main() {
         isPresetable: true,
       );
 
-      final appState = MyAppState();
-      appState.config = const AppConfig();
+      appState.setTestPresets(testSpeakerIp, [testPreset]);
 
       await tester.pumpWidget(
         ChangeNotifierProvider<MyAppState>.value(
           value: appState,
-          child: const MaterialApp(
-            home: PresetDetailPage(preset: testPreset),
+          child: MaterialApp(
+            home: PresetDetailPage(
+              presetId: '1',
+              speakerIp: testSpeakerIp,
+              apiService: mockSpeakerApiService,
+            ),
           ),
         ),
       );
@@ -252,5 +291,56 @@ void main() {
       expect(find.text('Spotify'), findsOneWidget);
       expect(find.text('TuneIn'), findsOneWidget);
     });
+
+    testWidgets('shows loading indicator when preset not in cache', (WidgetTester tester) async {
+      final emptyAppState = TestMyAppState();
+      emptyAppState.config = const AppConfig();
+      // Don't populate cache, so preset will be null
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider<MyAppState>.value(
+          value: emptyAppState,
+          child: MaterialApp(
+            home: PresetDetailPage(
+              presetId: '999',
+              speakerIp: testSpeakerIp,
+              apiService: mockSpeakerApiService,
+            ),
+          ),
+        ),
+      );
+
+      // Should show loading indicator
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.text('Preset 999'), findsOneWidget);
+    });
   });
+}
+
+/// Test version of MyAppState that allows setting presets directly
+class TestMyAppState extends MyAppState {
+  void setTestPresets(String speakerIp, List<Preset> presets) {
+    // Directly set the cache for testing
+    // ignore: invalid_use_of_protected_member
+    super.getPresets(speakerIp).then((_) {}).catchError((_) {});
+
+    // Access private field through a workaround
+    // We'll use the fact that we can override getPresetById
+    _testPresetsCache[speakerIp] = presets;
+  }
+
+  final Map<String, List<Preset>> _testPresetsCache = {};
+
+  @override
+  Preset? getPresetById(String speakerIp, String presetId) {
+    final testPresets = _testPresetsCache[speakerIp];
+    if (testPresets != null) {
+      try {
+        return testPresets.firstWhere((p) => p.id == presetId);
+      } catch (e) {
+        return null;
+      }
+    }
+    return super.getPresetById(speakerIp, presetId);
+  }
 }

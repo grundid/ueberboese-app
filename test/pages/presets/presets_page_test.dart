@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/annotations.dart';
-import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
 import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/models/app_config.dart';
@@ -9,19 +7,15 @@ import 'package:ueberboese_app/models/preset.dart';
 import 'package:ueberboese_app/pages/presets/empty_preset_detail_page.dart';
 import 'package:ueberboese_app/pages/presets/presets_page.dart';
 import 'package:ueberboese_app/pages/presets/spotify_preset_detail_page.dart';
-import 'package:ueberboese_app/services/speaker_api_service.dart';
-
-@GenerateMocks([SpeakerApiService])
-import 'presets_page_test.mocks.dart';
+import '../../helpers/test_my_app_state.dart';
 
 void main() {
   group('PresetsPage', () {
-    late MockSpeakerApiService mockApiService;
-    late MyAppState appState;
+    late TestMyAppState appState;
+    const testSpeakerIp = '192.168.1.100';
 
     setUp(() {
-      mockApiService = MockSpeakerApiService();
-      appState = MyAppState();
+      appState = TestMyAppState();
       appState.config = const AppConfig(
         apiUrl: 'https://api.example.com',
         mgmtUsername: 'admin',
@@ -39,13 +33,12 @@ void main() {
     }
 
     testWidgets('shows loading indicator initially', (WidgetTester tester) async {
-      when(mockApiService.getPresets(any)).thenAnswer((_) async => []);
+      appState.setTestPresets(testSpeakerIp, []);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: PresetsPage(
-            speakerIp: '192.168.1.100',
-            apiService: mockApiService,
+        createWidgetWithProvider(
+          const PresetsPage(
+            speakerIp: testSpeakerIp,
           ),
         ),
       );
@@ -58,13 +51,12 @@ void main() {
     });
 
     testWidgets('displays correct app bar title', (WidgetTester tester) async {
-      when(mockApiService.getPresets(any)).thenAnswer((_) async => []);
+      appState.setTestPresets(testSpeakerIp, []);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: PresetsPage(
-            speakerIp: '192.168.1.100',
-            apiService: mockApiService,
+        createWidgetWithProvider(
+          const PresetsPage(
+            speakerIp: testSpeakerIp,
           ),
         ),
       );
@@ -74,13 +66,12 @@ void main() {
     });
 
     testWidgets('page builds without error', (WidgetTester tester) async {
-      when(mockApiService.getPresets(any)).thenAnswer((_) async => []);
+      appState.setTestPresets(testSpeakerIp, []);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: PresetsPage(
-            speakerIp: '192.168.1.100',
-            apiService: mockApiService,
+        createWidgetWithProvider(
+          const PresetsPage(
+            speakerIp: testSpeakerIp,
           ),
         ),
       );
@@ -110,13 +101,12 @@ void main() {
         ),
       ];
 
-      when(mockApiService.getPresets(any)).thenAnswer((_) async => presets);
+      appState.setTestPresets(testSpeakerIp, presets);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: PresetsPage(
-            speakerIp: '192.168.1.100',
-            apiService: mockApiService,
+        createWidgetWithProvider(
+          const PresetsPage(
+            speakerIp: testSpeakerIp,
           ),
         ),
       );
@@ -148,13 +138,12 @@ void main() {
         ),
       ];
 
-      when(mockApiService.getPresets(any)).thenAnswer((_) async => presets);
+      appState.setTestPresets(testSpeakerIp, presets);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: PresetsPage(
-            speakerIp: '192.168.1.100',
-            apiService: mockApiService,
+        createWidgetWithProvider(
+          const PresetsPage(
+            speakerIp: testSpeakerIp,
           ),
         ),
       );
@@ -173,13 +162,12 @@ void main() {
 
     testWidgets('navigates to EmptyPresetDetailPage when tapping empty card', (WidgetTester tester) async {
       // All presets empty
-      when(mockApiService.getPresets(any)).thenAnswer((_) async => []);
+      appState.setTestPresets(testSpeakerIp, []);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: PresetsPage(
-            speakerIp: '192.168.1.100',
-            apiService: mockApiService,
+        createWidgetWithProvider(
+          const PresetsPage(
+            speakerIp: testSpeakerIp,
           ),
         ),
       );
@@ -207,13 +195,12 @@ void main() {
         ),
       ];
 
-      when(mockApiService.getPresets(any)).thenAnswer((_) async => presets);
+      appState.setTestPresets(testSpeakerIp, presets);
 
       await tester.pumpWidget(
         createWidgetWithProvider(
-          PresetsPage(
-            speakerIp: '192.168.1.100',
-            apiService: mockApiService,
+          const PresetsPage(
+            speakerIp: testSpeakerIp,
           ),
         ),
       );
@@ -241,13 +228,12 @@ void main() {
         ),
       );
 
-      when(mockApiService.getPresets(any)).thenAnswer((_) async => presets);
+      appState.setTestPresets(testSpeakerIp, presets);
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: PresetsPage(
-            speakerIp: '192.168.1.100',
-            apiService: mockApiService,
+        createWidgetWithProvider(
+          const PresetsPage(
+            speakerIp: testSpeakerIp,
           ),
         ),
       );

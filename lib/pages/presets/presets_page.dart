@@ -1,56 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:ueberboese_app/models/preset.dart';
-import 'package:ueberboese_app/services/speaker_api_service.dart';
+import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/pages/presets/preset_detail_page.dart';
 import 'package:ueberboese_app/pages/presets/spotify_preset_detail_page.dart';
 import 'package:ueberboese_app/pages/presets/tunein_stored_preset_detail_page.dart';
 import 'package:ueberboese_app/pages/presets/empty_preset_detail_page.dart';
 
-class PresetsPage extends StatefulWidget {
+class PresetsPage extends StatelessWidget {
   final String speakerIp;
-  final SpeakerApiService? apiService;
 
   const PresetsPage({
     super.key,
     required this.speakerIp,
-    this.apiService,
   });
-
-  @override
-  State<PresetsPage> createState() => _PresetsPageState();
-}
-
-class _PresetsPageState extends State<PresetsPage> {
-  late final SpeakerApiService _speakerApiService;
-  Future<List<Preset>>? _presetsFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _speakerApiService = widget.apiService ?? SpeakerApiService();
-    _loadPresets();
-  }
-
-  void _loadPresets() {
-    setState(() {
-      _presetsFuture = _speakerApiService.getPresets(widget.speakerIp);
-    });
-  }
-
-  void _retryLoad() {
-    _loadPresets();
-  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final appState = context.watch<MyAppState>();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Manage Presets'),
       ),
       body: FutureBuilder<List<Preset>>(
-        future: _presetsFuture,
+        future: appState.getPresets(speakerIp),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -84,7 +59,10 @@ class _PresetsPageState extends State<PresetsPage> {
                   ),
                   const SizedBox(height: 16),
                   FilledButton.icon(
-                    onPressed: _retryLoad,
+                    onPressed: () {
+                      // Invalidate cache to force refresh
+                      appState.invalidatePresetsCache(speakerIp);
+                    },
                     icon: const Icon(Icons.refresh),
                     label: const Text('Retry'),
                   ),
@@ -224,7 +202,7 @@ class _PresetsPageState extends State<PresetsPage> {
                         MaterialPageRoute<void>(
                           builder: (context) => EmptyPresetDetailPage(
                             presetId: presetId,
-                            speakerIp: widget.speakerIp,
+                            speakerIp: speakerIp,
                           ),
                         ),
                       );
@@ -232,21 +210,30 @@ class _PresetsPageState extends State<PresetsPage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute<void>(
-                          builder: (context) => SpotifyPresetDetailPage(preset: preset),
+                          builder: (context) => SpotifyPresetDetailPage(
+                            presetId: presetId,
+                            speakerIp: speakerIp,
+                          ),
                         ),
                       );
                     } else if (preset.source == 'TUNEIN') {
                       Navigator.push(
                         context,
                         MaterialPageRoute<void>(
-                          builder: (context) => TuneInStoredPresetDetailPage(preset: preset),
+                          builder: (context) => TuneInStoredPresetDetailPage(
+                            presetId: presetId,
+                            speakerIp: speakerIp,
+                          ),
                         ),
                       );
                     } else {
                       Navigator.push(
                         context,
                         MaterialPageRoute<void>(
-                          builder: (context) => PresetDetailPage(preset: preset),
+                          builder: (context) => PresetDetailPage(
+                            presetId: presetId,
+                            speakerIp: speakerIp,
+                          ),
                         ),
                       );
                     }

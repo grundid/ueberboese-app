@@ -3,23 +3,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
-import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/models/app_config.dart';
 import 'package:ueberboese_app/models/preset.dart';
 import 'package:ueberboese_app/models/spotify_account.dart';
 import 'package:ueberboese_app/pages/presets/spotify_preset_detail_page.dart';
 import 'package:ueberboese_app/services/spotify_api_service.dart';
+import '../../helpers/test_my_app_state.dart';
 
 @GenerateMocks([SpotifyApiService])
 import 'spotify_preset_detail_page_test.mocks.dart';
 
 void main() {
   group('SpotifyPresetDetailPage', () {
-    late MyAppState appState;
+    late TestMyAppState appState;
     late MockSpotifyApiService mockSpotifyApiService;
+    const testSpeakerIp = '192.168.1.100';
 
     setUp(() {
-      appState = MyAppState();
+      appState = TestMyAppState();
       appState.config = const AppConfig(
         apiUrl: 'https://api.example.com',
         mgmtUsername: 'admin',
@@ -29,7 +30,7 @@ void main() {
     });
 
     Widget createWidgetWithProvider(Widget child) {
-      return ChangeNotifierProvider<MyAppState>.value(
+      return ChangeNotifierProvider<TestMyAppState>.value(
         value: appState,
         child: MaterialApp(
           home: child,
@@ -48,13 +49,16 @@ void main() {
         sourceAccount: 'user123',
       );
 
+      appState.setTestPresets(testSpeakerIp, [testPreset]);
+
       when(mockSpotifyApiService.listSpotifyAccounts(any))
           .thenAnswer((_) async => []);
 
       await tester.pumpWidget(
         createWidgetWithProvider(
           SpotifyPresetDetailPage(
-            preset: testPreset,
+            presetId: '1',
+            speakerIp: testSpeakerIp,
             spotifyApiService: mockSpotifyApiService,
           ),
         ),
@@ -75,13 +79,16 @@ void main() {
         sourceAccount: 'user123',
       );
 
+      appState.setTestPresets(testSpeakerIp, [testPreset]);
+
       when(mockSpotifyApiService.listSpotifyAccounts(any))
           .thenAnswer((_) async => []);
 
       await tester.pumpWidget(
         createWidgetWithProvider(
           SpotifyPresetDetailPage(
-            preset: testPreset,
+            presetId: '1',
+            speakerIp: testSpeakerIp,
             spotifyApiService: mockSpotifyApiService,
           ),
         ),
@@ -101,13 +108,16 @@ void main() {
         isPresetable: true,
       );
 
+      appState.setTestPresets(testSpeakerIp, [testPreset]);
+
       when(mockSpotifyApiService.listSpotifyAccounts(any))
           .thenAnswer((_) async => []);
 
       await tester.pumpWidget(
         createWidgetWithProvider(
           SpotifyPresetDetailPage(
-            preset: testPreset,
+            presetId: '3',
+            speakerIp: testSpeakerIp,
             spotifyApiService: mockSpotifyApiService,
           ),
         ),
@@ -127,13 +137,16 @@ void main() {
         isPresetable: true,
       );
 
+      appState.setTestPresets(testSpeakerIp, [testPreset]);
+
       when(mockSpotifyApiService.listSpotifyAccounts(any))
           .thenAnswer((_) async => []);
 
       await tester.pumpWidget(
         createWidgetWithProvider(
           SpotifyPresetDetailPage(
-            preset: testPreset,
+            presetId: '1',
+            speakerIp: testSpeakerIp,
             spotifyApiService: mockSpotifyApiService,
           ),
         ),
@@ -154,6 +167,8 @@ void main() {
         sourceAccount: 'user123',
       );
 
+      appState.setTestPresets(testSpeakerIp, [testPreset]);
+
       final accounts = [
         SpotifyAccount(
           displayName: 'John Doe',
@@ -168,7 +183,8 @@ void main() {
       await tester.pumpWidget(
         createWidgetWithProvider(
           SpotifyPresetDetailPage(
-            preset: testPreset,
+            presetId: '1',
+            speakerIp: testSpeakerIp,
             spotifyApiService: mockSpotifyApiService,
           ),
         ),
@@ -191,13 +207,16 @@ void main() {
         sourceAccount: 'user123',
       );
 
+      appState.setTestPresets(testSpeakerIp, [testPreset]);
+
       when(mockSpotifyApiService.listSpotifyAccounts(any))
           .thenThrow(Exception('Failed to fetch accounts'));
 
       await tester.pumpWidget(
         createWidgetWithProvider(
           SpotifyPresetDetailPage(
-            preset: testPreset,
+            presetId: '1',
+            speakerIp: testSpeakerIp,
             spotifyApiService: mockSpotifyApiService,
           ),
         ),
@@ -220,13 +239,16 @@ void main() {
         sourceAccount: null,
       );
 
+      appState.setTestPresets(testSpeakerIp, [testPreset]);
+
       when(mockSpotifyApiService.listSpotifyAccounts(any))
           .thenAnswer((_) async => []);
 
       await tester.pumpWidget(
         createWidgetWithProvider(
           SpotifyPresetDetailPage(
-            preset: testPreset,
+            presetId: '1',
+            speakerIp: testSpeakerIp,
             spotifyApiService: mockSpotifyApiService,
           ),
         ),
@@ -247,13 +269,16 @@ void main() {
         isPresetable: true,
       );
 
+      appState.setTestPresets(testSpeakerIp, [testPreset]);
+
       when(mockSpotifyApiService.listSpotifyAccounts(any))
           .thenAnswer((_) async => []);
 
       await tester.pumpWidget(
         createWidgetWithProvider(
           SpotifyPresetDetailPage(
-            preset: testPreset,
+            presetId: '1',
+            speakerIp: testSpeakerIp,
             spotifyApiService: mockSpotifyApiService,
           ),
         ),
@@ -273,13 +298,16 @@ void main() {
         isPresetable: true,
       );
 
+      appState.setTestPresets(testSpeakerIp, [testPreset]);
+
       when(mockSpotifyApiService.listSpotifyAccounts(any))
           .thenAnswer((_) async => []);
 
       await tester.pumpWidget(
         createWidgetWithProvider(
           SpotifyPresetDetailPage(
-            preset: testPreset,
+            presetId: '1',
+            speakerIp: testSpeakerIp,
             spotifyApiService: mockSpotifyApiService,
           ),
         ),
@@ -299,13 +327,16 @@ void main() {
         isPresetable: true,
       );
 
+      appState.setTestPresets(testSpeakerIp, [testPreset]);
+
       when(mockSpotifyApiService.listSpotifyAccounts(any))
           .thenAnswer((_) async => []);
 
       await tester.pumpWidget(
         createWidgetWithProvider(
           SpotifyPresetDetailPage(
-            preset: testPreset,
+            presetId: '1',
+            speakerIp: testSpeakerIp,
             spotifyApiService: mockSpotifyApiService,
           ),
         ),
@@ -327,13 +358,16 @@ void main() {
         isPresetable: true,
       );
 
+      appState.setTestPresets(testSpeakerIp, [testPreset]);
+
       when(mockSpotifyApiService.listSpotifyAccounts(any))
           .thenAnswer((_) async => []);
 
       await tester.pumpWidget(
         createWidgetWithProvider(
           SpotifyPresetDetailPage(
-            preset: testPreset,
+            presetId: '1',
+            speakerIp: testSpeakerIp,
             spotifyApiService: mockSpotifyApiService,
           ),
         ),
@@ -360,13 +394,16 @@ void main() {
         isPresetable: true,
       );
 
+      appState.setTestPresets(testSpeakerIp, [testPreset]);
+
       when(mockSpotifyApiService.listSpotifyAccounts(any))
           .thenAnswer((_) async => []);
 
       await tester.pumpWidget(
         createWidgetWithProvider(
           SpotifyPresetDetailPage(
-            preset: testPreset,
+            presetId: '1',
+            speakerIp: testSpeakerIp,
             spotifyApiService: mockSpotifyApiService,
           ),
         ),

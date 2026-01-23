@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:ueberboese_app/models/preset.dart';
+import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/widgets/preset_edit_fab.dart';
 
 class EmptyPresetDetailPage extends StatefulWidget {
@@ -28,6 +30,22 @@ class _EmptyPresetDetailPageState extends State<EmptyPresetDetailPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    // Listen for changes to detect when this slot gets filled
+    context.watch<MyAppState>();
+
+    // Check if this slot is now filled
+    final appState = context.read<MyAppState>();
+    final actualPreset = appState.getPresetById(widget.speakerIp, widget.presetId);
+
+    // If the preset now exists, navigate back so the list can show the updated state
+    if (actualPreset != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.pop(context);
+        }
+      });
+    }
 
     // Create a temporary preset object for the edit FAB
     // This preset represents an empty slot that can be edited
