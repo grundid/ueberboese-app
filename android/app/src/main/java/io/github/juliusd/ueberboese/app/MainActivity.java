@@ -1,4 +1,4 @@
-package io.github.juliusd.ueberboese.app.ueberboese_app;
+package io.github.juliusd.ueberboese.app;
 
 import io.flutter.embedding.android.FlutterActivity;
 
