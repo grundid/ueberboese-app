@@ -35,6 +35,7 @@ void main() {
 
       expect(speakerInfo.name, 'Living Room');
       expect(speakerInfo.type, 'SoundTouch 10');
+      expect(speakerInfo.deviceId, '587A628A4073');
       expect(speakerInfo.margeUrl, isNull);
       expect(speakerInfo.accountId, isNull);
     });
@@ -71,6 +72,7 @@ void main() {
 
       expect(speakerInfo.name, 'Küche');
       expect(speakerInfo.type, 'SoundTouch 10');
+      expect(speakerInfo.deviceId, '587A628A4073');
       expect(speakerInfo.margeUrl, 'https://ueberboese.familie-dannert.de');
       expect(speakerInfo.accountId, '6921073');
     });
@@ -95,6 +97,7 @@ void main() {
 
       expect(speakerInfo.name, 'Bedroom');
       expect(speakerInfo.type, 'SoundTouch 20');
+      expect(speakerInfo.deviceId, '123456789ABC');
       expect(speakerInfo.margeUrl, 'https://worldwide.bose.com/updates/soundtouch');
       expect(speakerInfo.accountId, isNull);
     });
@@ -122,6 +125,7 @@ void main() {
 
       final speakerInfo = await apiService.fetchSpeakerInfo('192.168.1.2');
 
+      expect(speakerInfo.deviceId, 'TEST123');
       expect(speakerInfo.accountId, 'ACCOUNT789');
     });
 
@@ -143,6 +147,7 @@ void main() {
 
       final speakerInfo = await apiService.fetchSpeakerInfo('192.168.1.5');
 
+      expect(speakerInfo.deviceId, 'TEST456');
       expect(speakerInfo.accountId, isNull);
     });
 
@@ -166,6 +171,40 @@ void main() {
       const xmlResponse = '''<?xml version="1.0" encoding="UTF-8" ?>
 <info deviceID="TEST123">
   <name>Test Speaker</name>
+</info>''';
+
+      when(mockClient.get(any)).thenAnswer(
+        (_) async => http.Response(xmlResponse, 200, headers: {'content-type': 'text/xml; charset=utf-8'}),
+      );
+
+      expect(
+        () => apiService.fetchSpeakerInfo('192.168.1.100'),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('fetchSpeakerInfo throws exception when deviceID is missing', () async {
+      const xmlResponse = '''<?xml version="1.0" encoding="UTF-8" ?>
+<info>
+  <name>Test Speaker</name>
+  <type>SoundTouch 10</type>
+</info>''';
+
+      when(mockClient.get(any)).thenAnswer(
+        (_) async => http.Response(xmlResponse, 200, headers: {'content-type': 'text/xml; charset=utf-8'}),
+      );
+
+      expect(
+        () => apiService.fetchSpeakerInfo('192.168.1.100'),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('fetchSpeakerInfo throws exception when deviceID is empty', () async {
+      const xmlResponse = '''<?xml version="1.0" encoding="UTF-8" ?>
+<info deviceID="">
+  <name>Test Speaker</name>
+  <type>SoundTouch 10</type>
 </info>''';
 
       when(mockClient.get(any)).thenAnswer(

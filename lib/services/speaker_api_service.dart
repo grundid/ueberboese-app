@@ -36,6 +36,16 @@ class SpeakerApiService {
       final bodyText = utf8.decode(response.bodyBytes);
       final document = XmlDocument.parse(bodyText);
 
+      // Find info element and extract deviceID attribute
+      final infoElements = document.findAllElements('info');
+      if (infoElements.isEmpty) {
+        throw Exception('Info element not found in response');
+      }
+      final deviceId = infoElements.first.getAttribute('deviceID');
+      if (deviceId == null || deviceId.isEmpty) {
+        throw Exception('Device ID not found in response');
+      }
+
       // Find name element
       final nameElements = document.findAllElements('name');
       if (nameElements.isEmpty) {
@@ -67,6 +77,7 @@ class SpeakerApiService {
       return SpeakerInfo(
         name: name,
         type: type,
+        deviceId: deviceId,
         margeUrl: margeUrl,
         accountId: accountId,
       );

@@ -173,7 +173,7 @@ class _AddSpeakerPageState extends State<AddSpeakerPage> {
         emoji: _selectedEmoji,
         ipAddress: ipAddress,
         type: speakerInfo.type,
-        deviceId: speakerInfo.accountId ?? '',
+        deviceId: speakerInfo.deviceId,
       );
 
       appState.addSpeaker(newSpeaker);
