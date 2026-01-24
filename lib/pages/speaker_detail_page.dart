@@ -822,6 +822,7 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
               ),
               const SizedBox(width: 16),
               Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
