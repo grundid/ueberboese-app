@@ -14,6 +14,7 @@ jobs:
       new_version: ${{ steps.semver.outputs.new_tag }}
       previous_version: ${{ steps.semver.outputs.tag }}
       changelog: ${{ steps.semver.outputs.changelog }}
+      new_build_number: ${{ steps.version_bump.outputs.new_build_number }}
 
     steps:
       - name: Checkout code
@@ -34,11 +35,33 @@ jobs:
           fetch_all_tags: true
           tag_prefix: ''
 
-      - name: Display version info
+      - name: Calculate new build number
+        id: version_bump
         run: |
-          echo "Previous version: ${{ steps.semver.outputs.tag }}"
-          echo "New version: ${{ steps.semver.outputs.new_tag }}"
-          echo "Version bump: ${{ steps.semver.outputs.part }}"
+          VERSION="${{ steps.semver.outputs.new_tag }}"
+          VERSION="${VERSION#v}"
+          # Extract build number from current pubspec.yaml
+          CURRENT_BUILD=$(grep "^version:" pubspec.yaml | sed 's/.*+//')
+          # Increment build number
+          NEW_BUILD=$((CURRENT_BUILD + 1))
+          echo "new_build_number=$NEW_BUILD" >> $GITHUB_OUTPUT
+          echo "Previous build: $CURRENT_BUILD"
+          echo "New version: $VERSION+$NEW_BUILD"
+
+      - name: Update pubspec.yaml and commit
+        run: |
+          VERSION="${{ steps.semver.outputs.new_tag }}"
+          VERSION="${VERSION#v}"
+          NEW_BUILD="${{ steps.version_bump.outputs.new_build_number }}"
+          # Update pubspec.yaml
+          sed -i "s/^version: .*/version: $VERSION+$NEW_BUILD/" pubspec.yaml
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # Commit the change
+          git add pubspec.yaml
+          git commit -m "Bump version to $VERSION+$NEW_BUILD"
+          git push
 
   build-android:
     name: Build Signed APK
@@ -47,8 +70,14 @@ jobs:
     if: needs.version.outputs.new_version != ''
 
     steps:
-      - name: Checkout code
+      - name: Checkout code with version bump
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - name: Pull latest changes
+        run: git pull origin ${{ github.ref_name }}
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -67,16 +96,6 @@ jobs:
 
       - name: Generate mock files
         run: dart run build_runner build --delete-conflicting-outputs
-
-      - name: Update version in pubspec.yaml
-        run: |
-          VERSION="${{ needs.version.outputs.new_version }}"
-          # Remove 'v' prefix if present
-          VERSION="${VERSION#v}"
-          # Update pubspec.yaml
-          sed -i "s/^version: .*/version: $VERSION/" pubspec.yaml
-          echo "Updated pubspec.yaml to version $VERSION"
-          cat pubspec.yaml | grep "^version:"
 
       - name: Decode keystore
         run: |
@@ -115,8 +134,14 @@ jobs:
     if: needs.version.outputs.new_version != ''
 
     steps:
-      - name: Checkout code
+      - name: Checkout code with version bump
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - name: Pull latest changes
+        run: git pull origin ${{ github.ref_name }}
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -129,14 +154,6 @@ jobs:
 
       - name: Generate mock files
         run: dart run build_runner build --delete-conflicting-outputs
-
-      - name: Update version in pubspec.yaml
-        run: |
-          VERSION="${{ needs.version.outputs.new_version }}"
-          VERSION="${VERSION#v}"
-          sed -i '' "s/^version: .*/version: $VERSION/" pubspec.yaml
-          echo "Updated pubspec.yaml to version $VERSION"
-          cat pubspec.yaml | grep "^version:"
 
       - name: Build macOS app
         run: flutter build macos --release
@@ -171,8 +188,14 @@ jobs:
     if: needs.version.outputs.new_version != ''
 
     steps:
-      - name: Checkout code
+      - name: Checkout code with version bump
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - name: Pull latest changes
+        run: git pull origin ${{ github.ref_name }}
 
       - name: Install Linux build dependencies
         run: |
@@ -190,14 +213,6 @@ jobs:
 
       - name: Generate mock files
         run: dart run build_runner build --delete-conflicting-outputs
-
-      - name: Update version in pubspec.yaml
-        run: |
-          VERSION="${{ needs.version.outputs.new_version }}"
-          VERSION="${VERSION#v}"
-          sed -i "s/^version: .*/version: $VERSION/" pubspec.yaml
-          echo "Updated pubspec.yaml to version $VERSION"
-          cat pubspec.yaml | grep "^version:"
 
       - name: Build Linux app
         run: flutter build linux --release
