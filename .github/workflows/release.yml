@@ -48,18 +48,29 @@ jobs:
           echo "Previous build: $CURRENT_BUILD"
           echo "New version: $VERSION+$NEW_BUILD"
 
-      - name: Update pubspec.yaml and commit
+      - name: Update version files and commit
         run: |
           VERSION="${{ steps.semver.outputs.new_tag }}"
           VERSION="${VERSION#v}"
           NEW_BUILD="${{ steps.version_bump.outputs.new_build_number }}"
+
           # Update pubspec.yaml
           sed -i "s/^version: .*/version: $VERSION+$NEW_BUILD/" pubspec.yaml
+
+          # Create F-Droid changelog directory if it doesn't exist
+          mkdir -p metadata/en-US/changelogs
+
+          # Create F-Droid changelog file
+          cat > metadata/en-US/changelogs/${NEW_BUILD}.txt <<'EOF'
+          ${{ steps.semver.outputs.changelog }}
+          EOF
+
           # Configure git
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # Commit the change
-          git add pubspec.yaml
+
+          # Commit the changes
+          git add pubspec.yaml metadata/en-US/changelogs/${NEW_BUILD}.txt
           git commit -m "Bump version to $VERSION+$NEW_BUILD"
           git push
 
