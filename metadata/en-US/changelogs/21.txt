@@ -1,0 +1,14 @@
+### [0.20.1](https://github.com/julius-d/ueberboese-app/compare/0.20.0...0.20.1) (2026-01-24)
+
+
+### Bug Fixes
+
+* resolve RenderFlex overflow in speaker detail hero section ([3561c64](https://github.com/julius-d/ueberboese-app/commit/3561c64d8e1957ebfae90c5dad99d0606d2c0767))
+
+
+### Build Systems
+
+* create changelog for F-Droid ([71d08a2](https://github.com/julius-d/ueberboese-app/commit/71d08a26cdcf6dabd0f314cd47cbf54dfeea4ab6))
+* increase version in `pubspec.yaml` ([84be383](https://github.com/julius-d/ueberboese-app/commit/84be38358198783eab32897f584b739961189f1b))
+
+
