@@ -1,0 +1,8 @@
+## [0.21.0](https://github.com/julius-d/ueberboese-app/compare/0.20.2...0.21.0) (2026-01-25)
+
+
+### Build Systems
+
+* include changed pubspec.yaml in  version tag ([c5503c4](https://github.com/julius-d/ueberboese-app/commit/c5503c41b14a03a70d3e8d4fe9b1c9fb6a751df1))
+
+
