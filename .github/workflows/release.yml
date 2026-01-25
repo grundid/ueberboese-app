@@ -258,7 +258,10 @@ jobs:
           fetch-depth: 0
 
       - name: Pull latest changes including version bump
-        run: git pull origin ${{ github.ref_name }}
+        run: |
+          git pull origin ${{ github.ref_name }}
+          echo "Current commit SHA: $(git rev-parse HEAD)"
+          git log -1 --oneline
 
       - name: Download APK artifact
         uses: actions/download-artifact@v4
@@ -280,11 +283,13 @@ jobs:
 
       - name: Create Release Tag
         id: create_tag
-        uses: mathieudutour/github-tag-action@v6.2
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          custom_tag: ${{ needs.version.outputs.new_version }}
-          tag_prefix: ''
+        run: |
+          VERSION="${{ needs.version.outputs.new_version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$VERSION" -m "Release $VERSION"
+          git push origin "$VERSION"
+          echo "tag=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
