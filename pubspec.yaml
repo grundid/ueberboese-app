@@ -1,7 +1,7 @@
 name: ueberboese_app
 description: "ueberboese app"
 publish_to: "none"
-version: 0.21.0+23
+version: 0.22.0+24
 
 environment:
   sdk: ^3.9.0
