@@ -1,0 +1,18 @@
+### [0.20.2](https://github.com/julius-d/ueberboese-app/compare/0.20.1...0.20.2) (2026-01-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* change applicationId
+
+### Bug Fixes
+
+* set correct deviceId for speaker ([c371597](https://github.com/julius-d/ueberboese-app/commit/c371597eab08ab2efa93e389907eddb9a0c80987))
+
+
+### Build Systems
+
+* change applicationId ([300f2c6](https://github.com/julius-d/ueberboese-app/commit/300f2c6e17416037661f440f23ea9708a41c9de9))
+* include changed pubspec.yaml in  version tag ([3a47362](https://github.com/julius-d/ueberboese-app/commit/3a47362e36ce25095b54ab1d378f40df80645861))
+
+
