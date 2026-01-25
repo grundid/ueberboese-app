@@ -251,10 +251,14 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout code
+      - name: Checkout code with version bump
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.ref }}
           fetch-depth: 0
+
+      - name: Pull latest changes including version bump
+        run: git pull origin ${{ github.ref_name }}
 
       - name: Download APK artifact
         uses: actions/download-artifact@v4
