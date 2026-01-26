@@ -121,6 +121,15 @@ void main() {
 
       const preset2 = Preset(
         id: '1',
+        itemName: 'Test',
+        source: 'TUNEIN',
+        location: '/test',
+        type: 'stationurl',
+        isPresetable: true,
+      );
+
+      const preset3 = Preset(
+        id: '1',
         itemName: 'Different Name',
         source: 'SPOTIFY',
         location: '/different',
@@ -128,7 +137,7 @@ void main() {
         isPresetable: false,
       );
 
-      const preset3 = Preset(
+      const preset4 = Preset(
         id: '2',
         itemName: 'Test',
         source: 'TUNEIN',
@@ -137,9 +146,15 @@ void main() {
         isPresetable: true,
       );
 
-      expect(preset1, equals(preset2)); // Same id
+      // Same id and same content
+      expect(preset1, equals(preset2));
       expect(preset1.hashCode, equals(preset2.hashCode));
-      expect(preset1, isNot(equals(preset3))); // Different id
+
+      // Same id but different content - should NOT be equal
+      expect(preset1, isNot(equals(preset3)));
+
+      // Different id - should NOT be equal
+      expect(preset1, isNot(equals(preset4)));
     });
 
     test('fromXml parses preset with sourceAccount attribute', () {

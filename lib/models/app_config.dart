@@ -24,4 +24,24 @@ class AppConfig {
         mgmtUsername: json['mgmtUsername'] as String? ?? 'admin',
         mgmtPassword: json['mgmtPassword'] as String? ?? 'change_me!',
       );
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is AppConfig &&
+        other.apiUrl == apiUrl &&
+        other.accountId == accountId &&
+        other.mgmtUsername == mgmtUsername &&
+        other.mgmtPassword == mgmtPassword;
+  }
+
+  @override
+  int get hashCode {
+    return Object.hash(
+      apiUrl,
+      accountId,
+      mgmtUsername,
+      mgmtPassword,
+    );
+  }
 }

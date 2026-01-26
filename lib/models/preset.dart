@@ -108,10 +108,34 @@ class Preset {
       );
 
   @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Preset && runtimeType == other.runtimeType && id == other.id;
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Preset &&
+        other.id == id &&
+        other.itemName == itemName &&
+        other.containerArt == containerArt &&
+        other.source == source &&
+        other.location == location &&
+        other.type == type &&
+        other.isPresetable == isPresetable &&
+        other.createdOn == createdOn &&
+        other.updatedOn == updatedOn &&
+        other.sourceAccount == sourceAccount;
+  }
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode {
+    return Object.hash(
+      id,
+      itemName,
+      containerArt,
+      source,
+      location,
+      type,
+      isPresetable,
+      createdOn,
+      updatedOn,
+      sourceAccount,
+    );
+  }
 }
