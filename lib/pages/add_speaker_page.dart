@@ -167,14 +167,9 @@ class _AddSpeakerPageState extends State<AddSpeakerPage> {
         }
       }
 
-      final newSpeaker = Speaker(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: speakerInfo.name,
-        emoji: _selectedEmoji,
-        ipAddress: ipAddress,
-        type: speakerInfo.type,
-        deviceId: speakerInfo.deviceId,
-      );
+      final newSpeaker = await _apiService.createSpeakerFromIp(ipAddress, _selectedEmoji);
+
+      if (!mounted) return;
 
       appState.addSpeaker(newSpeaker);
       Navigator.pop(context);

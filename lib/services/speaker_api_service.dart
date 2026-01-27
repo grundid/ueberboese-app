@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart';
 import 'package:ueberboese_app/models/speaker_info.dart';
+import 'package:ueberboese_app/models/speaker.dart';
 import 'package:ueberboese_app/models/volume.dart';
 import 'package:ueberboese_app/models/now_playing.dart';
 import 'package:ueberboese_app/models/zone.dart';
@@ -91,6 +92,18 @@ class SpeakerApiService {
         client.close();
       }
     }
+  }
+
+  Future<Speaker> createSpeakerFromIp(String ipAddress, String emoji) async {
+    final speakerInfo = await fetchSpeakerInfo(ipAddress);
+    return Speaker(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: speakerInfo.name,
+      emoji: emoji,
+      ipAddress: ipAddress,
+      type: speakerInfo.type,
+      deviceId: speakerInfo.deviceId,
+    );
   }
 
   Future<Volume> getVolume(String ipAddress) async {

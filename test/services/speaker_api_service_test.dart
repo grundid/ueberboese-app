@@ -228,6 +228,78 @@ void main() {
       );
     });
 
+    test('createSpeakerFromIp creates speaker with correct deviceId from speakerInfo', () async {
+      const xmlResponse = '''<?xml version="1.0" encoding="UTF-8" ?>
+<info deviceID="587A628A4073">
+  <name>Living Room</name>
+  <type>SoundTouch 10</type>
+  <margeAccountUUID>6921073</margeAccountUUID>
+  <margeURL>https://ueberboese.example.com</margeURL>
+</info>''';
+
+      when(mockClient.get(any)).thenAnswer(
+        (_) async => http.Response(xmlResponse, 200, headers: {'content-type': 'text/xml; charset=utf-8'}),
+      );
+
+      final speaker = await apiService.createSpeakerFromIp('192.168.1.100', '🔊');
+
+      expect(speaker.name, 'Living Room');
+      expect(speaker.type, 'SoundTouch 10');
+      expect(speaker.deviceId, '587A628A4073');  // deviceId from deviceID attribute, NOT from margeAccountUUID
+      expect(speaker.emoji, '🔊');
+      expect(speaker.ipAddress, '192.168.1.100');
+      expect(speaker.id, isNotEmpty);
+    });
+
+    test('createSpeakerFromIp creates speaker with deviceId even when accountId present', () async {
+      const xmlResponse = '''<?xml version="1.0" encoding="UTF-8" ?>
+<info deviceID="ABC123DEF456">
+  <name>Kitchen</name>
+  <type>SoundTouch 20</type>
+  <margeAccountUUID>ACCOUNT789</margeAccountUUID>
+</info>''';
+
+      when(mockClient.get(any)).thenAnswer(
+        (_) async => http.Response(xmlResponse, 200, headers: {'content-type': 'text/xml; charset=utf-8'}),
+      );
+
+      final speaker = await apiService.createSpeakerFromIp('192.168.1.50', '🎵');
+
+      // Verify deviceId comes from deviceID attribute, not margeAccountUUID
+      expect(speaker.deviceId, 'ABC123DEF456');
+      expect(speaker.deviceId, isNot('ACCOUNT789'));
+    });
+
+    test('createSpeakerFromIp throws exception when fetchSpeakerInfo fails', () async {
+      when(mockClient.get(any)).thenAnswer(
+        (_) async => http.Response('Not Found', 404),
+      );
+
+      expect(
+        () => apiService.createSpeakerFromIp('192.168.1.100', '🔊'),
+        throwsA(isA<Exception>()),
+      );
+    });
+
+    test('createSpeakerFromIp creates unique IDs for speakers', () async {
+      const xmlResponse = '''<?xml version="1.0" encoding="UTF-8" ?>
+<info deviceID="TEST123">
+  <name>Test Speaker</name>
+  <type>SoundTouch 10</type>
+</info>''';
+
+      when(mockClient.get(any)).thenAnswer(
+        (_) async => http.Response(xmlResponse, 200, headers: {'content-type': 'text/xml; charset=utf-8'}),
+      );
+
+      final speaker1 = await apiService.createSpeakerFromIp('192.168.1.100', '🔊');
+      // Small delay to ensure different timestamp
+      await Future<void>.delayed(const Duration(milliseconds: 2));
+      final speaker2 = await apiService.createSpeakerFromIp('192.168.1.100', '🔊');
+
+      expect(speaker1.id, isNot(equals(speaker2.id)));
+    });
+
     test('getVolume parses volume response correctly', () async {
       const xmlResponse = '''<?xml version="1.0" encoding="UTF-8" ?>
 <volume deviceID="1004567890AA">

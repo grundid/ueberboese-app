@@ -321,17 +321,8 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
 
         // Try to fetch speaker info and add
         try {
-          final speakerInfo = await _speakerApiService.fetchSpeakerInfo(ipAddress);
           final emoji = _getNextAvailableEmoji(appState.speakers);
-
-          final newSpeaker = Speaker(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
-            name: speakerInfo.name,
-            emoji: emoji,
-            ipAddress: ipAddress,
-            type: speakerInfo.type,
-            deviceId: speakerInfo.accountId ?? '',
-          );
+          final newSpeaker = await _speakerApiService.createSpeakerFromIp(ipAddress, emoji);
 
           appState.addSpeaker(newSpeaker);
           addedCount++;
