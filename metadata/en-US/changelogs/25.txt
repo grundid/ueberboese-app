@@ -1,0 +1,13 @@
+## [0.23.0](https://github.com/julius-d/ueberboese-app/compare/0.22.0...0.23.0) (2026-01-27)
+
+
+### Build Systems
+
+* disables dependency metadata ([e433002](https://github.com/julius-d/ueberboese-app/commit/e433002173a798a2ab62a3c65248db84de276e1f))
+
+
+### Code Refactoring
+
+* implement hash code and equals to prevent re-renderings ([9996662](https://github.com/julius-d/ueberboese-app/commit/9996662b4355ef91adf9df57cf63ee3458d5b539))
+
+
