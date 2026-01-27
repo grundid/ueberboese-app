@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:ueberboese_app/models/app_config.dart';
 import 'package:ueberboese_app/models/speaker.dart';
 import 'package:ueberboese_app/models/speaker_info.dart';
 import 'package:ueberboese_app/models/volume.dart';
@@ -39,7 +40,11 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
   StreamSubscription<NowPlaying>? _nowPlayingSubscription;
   StreamSubscription<void>? _zoneSubscription;
 
-  Volume? _currentVolume;
+  // Use ValueNotifier for volume to avoid rebuilding entire widget tree
+  final ValueNotifier<Volume?> _currentVolumeNotifier = ValueNotifier(null);
+  Volume? get _currentVolume => _currentVolumeNotifier.value;
+  set _currentVolume(Volume? value) => _currentVolumeNotifier.value = value;
+
   Zone? _currentZone;
   bool _isLoadingVolume = true;
   bool _isLoadingZone = true;
@@ -59,6 +64,12 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
   Timer? _volumeDebounceTimer;
   double? _pendingVolume;
 
+  // Scroll controller to preserve scroll position
+  final ScrollController _scrollController = ScrollController();
+
+  // Page storage key to maintain scroll position across rebuilds
+  final PageStorageKey<String> _scrollKey = const PageStorageKey<String>('speaker_detail_scroll');
+
   @override
   void initState() {
     super.initState();
@@ -76,14 +87,16 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
     _volumeSubscription = _websocketService!.volumeStream.listen(
           (volume) {
         if (!mounted) return;
-        setState(() {
-          _currentVolume = volume;
-          // Also update zone member volume if speaker is in a zone
-          if (_currentZone != null &&
-              _currentZone!.isInZone(widget.speaker.deviceId)) {
+        // Update volume via ValueNotifier - doesn't trigger full rebuild
+        _currentVolume = volume;
+
+        // Also update zone member volume if speaker is in a zone
+        if (_currentZone != null &&
+            _currentZone!.isInZone(widget.speaker.deviceId)) {
+          setState(() {
             _zoneMemberVolumes[widget.speaker.deviceId] = volume;
-          }
-        });
+          });
+        }
       },
       onError: (error) {
         // Errors are logged in the service
@@ -129,6 +142,8 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
     _nowPlayingSubscription?.cancel();
     _zoneSubscription?.cancel();
     _volumeDebounceTimer?.cancel();
+    _scrollController.dispose();
+    _currentVolumeNotifier.dispose();
     _websocketService?.dispose();
     super.dispose();
   }
@@ -277,44 +292,16 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
 
     final newVolume = (_currentVolume!.actualVolume + delta).clamp(0, 100);
 
-    setState(() {
-      _isLoadingVolume = true;
-      _volumeErrorMessage = null;
-      // Also update zone member volume loading state if speaker is in a zone
-      if (_currentZone != null &&
-          _currentZone!.isInZone(widget.speaker.deviceId)) {
-        _loadingVolumes[widget.speaker.deviceId] = true;
-        _volumeErrors[widget.speaker.deviceId] = null;
-      }
-    });
-
+    // Update optimistically without setting loading state
+    // The WebSocket will provide the authoritative update
     try {
-      final volume = await _apiService.setVolume(
-          widget.speaker.ipAddress, newVolume);
-      if (!mounted) return;
-      setState(() {
-        _currentVolume = volume;
-        _isLoadingVolume = false;
-        // Also update zone member volume if speaker is in a zone
-        if (_currentZone != null &&
-            _currentZone!.isInZone(widget.speaker.deviceId)) {
-          _zoneMemberVolumes[widget.speaker.deviceId] = volume;
-          _loadingVolumes[widget.speaker.deviceId] = false;
-        }
-      });
+      await _apiService.setVolume(widget.speaker.ipAddress, newVolume);
+      // WebSocket will update _currentVolume automatically via subscription
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _volumeErrorMessage = 'Failed to adjust volume: ${e.toString()}';
-        _isLoadingVolume = false;
-        // Also update zone member volume error state if speaker is in a zone
-        if (_currentZone != null &&
-            _currentZone!.isInZone(widget.speaker.deviceId)) {
-          _volumeErrors[widget.speaker.deviceId] =
-          'Failed to adjust volume: ${e.toString()}';
-          _loadingVolumes[widget.speaker.deviceId] = false;
-        }
-      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to adjust volume: ${e.toString()}')),
+      );
     }
   }
 
@@ -323,44 +310,16 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
 
     final newVolume = targetVolume.clamp(0, 100);
 
-    setState(() {
-      _isLoadingVolume = true;
-      _volumeErrorMessage = null;
-      // Also update zone member volume loading state if speaker is in a zone
-      if (_currentZone != null &&
-          _currentZone!.isInZone(widget.speaker.deviceId)) {
-        _loadingVolumes[widget.speaker.deviceId] = true;
-        _volumeErrors[widget.speaker.deviceId] = null;
-      }
-    });
-
+    // Update optimistically without setting loading state
+    // The WebSocket will provide the authoritative update
     try {
-      final volume = await _apiService.setVolume(
-          widget.speaker.ipAddress, newVolume);
-      if (!mounted) return;
-      setState(() {
-        _currentVolume = volume;
-        _isLoadingVolume = false;
-        // Also update zone member volume if speaker is in a zone
-        if (_currentZone != null &&
-            _currentZone!.isInZone(widget.speaker.deviceId)) {
-          _zoneMemberVolumes[widget.speaker.deviceId] = volume;
-          _loadingVolumes[widget.speaker.deviceId] = false;
-        }
-      });
+      await _apiService.setVolume(widget.speaker.ipAddress, newVolume);
+      // WebSocket will update _currentVolume automatically via subscription
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _volumeErrorMessage = 'Failed to set volume: ${e.toString()}';
-        _isLoadingVolume = false;
-        // Also update zone member volume error state if speaker is in a zone
-        if (_currentZone != null &&
-            _currentZone!.isInZone(widget.speaker.deviceId)) {
-          _volumeErrors[widget.speaker.deviceId] =
-          'Failed to set volume: ${e.toString()}';
-          _loadingVolumes[widget.speaker.deviceId] = false;
-        }
-      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to set volume: ${e.toString()}')),
+      );
     }
   }
 
@@ -1272,7 +1231,8 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
     );
   }
 
-  Widget _buildWarningBanner(BuildContext context, ThemeData theme, MyAppState appState) {
+  Widget _buildWarningBanner(BuildContext context, ThemeData theme) {
+    final appState = context.read<MyAppState>();
     return Container(
       width: double.infinity,
       color: theme.colorScheme.errorContainer,
@@ -1336,53 +1296,58 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
               ],
             ),
             const SizedBox(height: 16),
-            if (_isLoadingVolume && _currentVolume == null)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: CircularProgressIndicator(),
-                ),
-              )
-            else
-              if (_volumeErrorMessage != null)
-                Column(
-                  children: [
-                    Text(
-                      _volumeErrorMessage!,
-                      style: TextStyle(
-                        color: theme.colorScheme.error,
-                        fontSize: 14,
+            // Use ValueListenableBuilder to only rebuild volume section
+            ValueListenableBuilder<Volume?>(
+              valueListenable: _currentVolumeNotifier,
+              builder: (context, currentVolume, child) {
+                if (_isLoadingVolume && currentVolume == null) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+
+                if (_volumeErrorMessage != null) {
+                  return Column(
+                    children: [
+                      Text(
+                        _volumeErrorMessage!,
+                        style: TextStyle(
+                          color: theme.colorScheme.error,
+                          fontSize: 14,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: _loadVolume,
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                )
-              else
-                if (_currentVolume != null)
-                  Column(
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: _loadVolume,
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  );
+                }
+
+                if (currentVolume != null) {
+                  return Column(
                     children: [
                       const SizedBox(height: 16),
                       // Volume slider
                       Slider(
-                        value: (_pendingVolume ?? _currentVolume!.actualVolume.toDouble()),
+                        value: (_pendingVolume ?? currentVolume.actualVolume.toDouble()),
                         min: 0,
                         max: 100,
                         divisions: 20,
-                        label: '${(_pendingVolume ?? _currentVolume!.actualVolume.toDouble()).round()}%',
+                        label: '${(_pendingVolume ?? currentVolume.actualVolume.toDouble()).round()}%',
                         onChanged: _isLoadingVolume ? null : _onSliderChanged,
                         onChangeEnd: _onSliderChangeEnd,
                       ),
                       const SizedBox(height: 8),
                       // Volume control buttons
                       Row(
-                        mainAxisAlignment: MainAxisAlignment
-                            .center,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Vol up buttonn
+                          // Vol down button
                           FilledButton.icon(
                             onPressed: _isLoadingVolume
                                 ? null
@@ -1391,11 +1356,15 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                             label: const Text('Down'),
                           ),
                           const SizedBox(width: 16),
-                          Text(
-                            '${_currentVolume!.actualVolume} %',
-                            style: theme.textTheme.titleLarge
-                                ?.copyWith(
-                                fontWeight: FontWeight.bold
+                          SizedBox(
+                            width: 80,
+                            child: Center(
+                              child: Text(
+                                '${currentVolume.actualVolume} %',
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -1409,7 +1378,12 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                         ],
                       ),
                     ],
-                  ),
+                  );
+                }
+
+                return const SizedBox.shrink();
+              },
+            ),
           ],
         ),
       ),
@@ -1417,8 +1391,6 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
   }
 
   Widget _buildPresetsCard(BuildContext context, ThemeData theme) {
-    final appState = context.watch<MyAppState>();
-
     return Card(
       elevation: 1,
       child: Padding(
@@ -1453,7 +1425,7 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
             ),
             const SizedBox(height: 16),
             FutureBuilder<List<Preset>>(
-              future: appState.getPresets(widget.speaker.ipAddress),
+              future: context.read<MyAppState>().getPresets(widget.speaker.ipAddress),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
@@ -1477,7 +1449,7 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                       const SizedBox(height: 8),
                       TextButton(
                         onPressed: () {
-                          appState.invalidatePresetsCache(widget.speaker.ipAddress);
+                          context.read<MyAppState>().invalidatePresetsCache(widget.speaker.ipAddress);
                         },
                         child: const Text('Retry'),
                       ),
@@ -1528,8 +1500,6 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final appState = context.watch<MyAppState>();
-    final nowPlaying = appState.getCachedNowPlaying(widget.speaker.ipAddress);
 
     return Scaffold(
       appBar: AppBar(
@@ -1549,34 +1519,44 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
         children: [
           // Warning banner (only shown when there's a mismatch)
           if (_hasMargeUrlMismatch && _speakerInfo?.margeUrl != null)
-            _buildWarningBanner(context, theme, appState),
-          // Existing content
+            Selector<MyAppState, AppConfig>(
+              selector: (_, appState) => appState.config,
+              builder: (context, config, child) => _buildWarningBanner(context, theme),
+            ),
+          // Use Selector to only rebuild when this speaker's nowPlaying changes
           Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Conditional rendering: Hero Now Playing or Speaker Header
-                    if (_shouldShowNowPlayingCard(nowPlaying) && nowPlaying != null)
-                      _buildHeroNowPlaying(context, theme, nowPlaying)
-                    else
-                      _buildSpeakerHeader(context, theme),
-                    const SizedBox(height: 32),
-                    // Volume Control Section
-                    _buildVolumeCard(context, theme),
-                    const SizedBox(height: 16),
-                    // Multi-Room Zone Section
-                    _buildZoneCard(context, theme),
-                    const SizedBox(height: 16),
-                    // Presets Section
-                    _buildPresetsCard(context, theme),
-                    // Safe area padding for modern Android gesture navigation
-                    const SizedBox(height: 80),
-                  ],
-                ),
-              ),
+            child: Selector<MyAppState, NowPlaying?>(
+              selector: (_, appState) => appState.getCachedNowPlaying(widget.speaker.ipAddress),
+              builder: (context, nowPlaying, child) {
+                return SingleChildScrollView(
+                  key: _scrollKey,
+                  controller: _scrollController,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24.0, 24.0, 24.0, 24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Conditional rendering: Hero Now Playing or Speaker Header
+                        if (_shouldShowNowPlayingCard(nowPlaying) && nowPlaying != null)
+                          _buildHeroNowPlaying(context, theme, nowPlaying)
+                        else
+                          _buildSpeakerHeader(context, theme),
+                        const SizedBox(height: 32),
+                        // Volume Control Section
+                        _buildVolumeCard(context, theme),
+                        const SizedBox(height: 16),
+                        // Multi-Room Zone Section
+                        _buildZoneCard(context, theme),
+                        const SizedBox(height: 16),
+                        // Presets Section
+                        _buildPresetsCard(context, theme),
+                        // Safe area padding for modern Android gesture navigation
+                        const SizedBox(height: 80),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
