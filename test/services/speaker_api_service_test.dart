@@ -6,6 +6,7 @@ import 'package:mockito/mockito.dart';
 import 'package:ueberboese_app/services/speaker_api_service.dart';
 import 'package:ueberboese_app/models/zone.dart';
 import 'package:ueberboese_app/models/recent.dart';
+import 'package:ueberboese_app/models/preset.dart';
 
 import 'speaker_api_service_test.mocks.dart';
 
@@ -2275,6 +2276,181 @@ void main() {
           () => fastApiService.selectContentItem('192.168.1.131', recent),
           throwsA(isA<Exception>()),
         );
+      });
+    });
+
+    group('selectPreset', () {
+      test('selectPreset sends correct XML for preset', () async {
+        const xmlResponse = '''<?xml version="1.0" encoding="UTF-8" ?><status>/select</status>''';
+
+        when(mockClient.post(any, headers: anyNamed('headers'), body: anyNamed('body')))
+            .thenAnswer((_) async => http.Response(xmlResponse, 200));
+
+        const preset = Preset(
+          id: '1',
+          itemName: 'My Favorite Playlist',
+          source: 'SPOTIFY',
+          location: '/playback/container/c3BvdGlmeTpwbGF5bGlzdDoybjZXMnA1QzBNQUQ5YTR6NXhUVDdu',
+          type: 'tracklisturl',
+          isPresetable: true,
+          sourceAccount: 'user123',
+        );
+
+        await apiService.selectPreset('192.168.1.131', preset);
+
+        final captured = verify(
+          mockClient.post(
+            any,
+            headers: captureAnyNamed('headers'),
+            body: captureAnyNamed('body'),
+          ),
+        ).captured;
+
+        expect(captured[0], {'Content-Type': 'text/xml'});
+        final body = captured[1] as String;
+        expect(body, contains('<ContentItem'));
+        expect(body, contains('source="SPOTIFY"'));
+        expect(body, contains('type="tracklisturl"'));
+        expect(body, contains('location="/playback/container/c3BvdGlmeTpwbGF5bGlzdDoybjZXMnA1QzBNQUQ5YTR6NXhUVDdu"'));
+        expect(body, contains('isPresetable="true"'));
+        expect(body, contains('sourceAccount="user123"'));
+        expect(body, contains('<itemName>My Favorite Playlist</itemName>'));
+      });
+
+      test('selectPreset does not include sourceAccount if null', () async {
+        const xmlResponse = '''<?xml version="1.0" encoding="UTF-8" ?><status>/select</status>''';
+
+        when(mockClient.post(any, headers: anyNamed('headers'), body: anyNamed('body')))
+            .thenAnswer((_) async => http.Response(xmlResponse, 200));
+
+        const preset = Preset(
+          id: '2',
+          itemName: 'TuneIn Station',
+          source: 'TUNEIN',
+          location: '/v1/playback/station/s33828',
+          type: 'stationurl',
+          isPresetable: true,
+        );
+
+        await apiService.selectPreset('192.168.1.131', preset);
+
+        final captured = verify(
+          mockClient.post(
+            any,
+            headers: captureAnyNamed('headers'),
+            body: captureAnyNamed('body'),
+          ),
+        ).captured;
+
+        final body = captured[1] as String;
+        expect(body, isNot(contains('sourceAccount')));
+      });
+
+      test('selectPreset throws exception on non-200 status code without response body', () async {
+        when(mockClient.post(any, headers: anyNamed('headers'), body: anyNamed('body')))
+            .thenAnswer((_) async => http.Response('', 500));
+
+        const preset = Preset(
+          id: '1',
+          itemName: 'Test Preset',
+          source: 'TUNEIN',
+          location: '/v1/playback/station/s33828',
+          type: 'stationurl',
+          isPresetable: true,
+        );
+
+        expect(
+          () => apiService.selectPreset('192.168.1.131', preset),
+          throwsA(
+            predicate((e) =>
+                e is Exception &&
+                e.toString() == 'Exception: Failed to select preset: HTTP 500'),
+          ),
+        );
+      });
+
+      test('selectPreset includes response body in error message when available', () async {
+        const errorResponse = '<error><errorCode>INVALID_PRESET</errorCode><message>Preset not found</message></error>';
+        when(mockClient.post(any, headers: anyNamed('headers'), body: anyNamed('body')))
+            .thenAnswer((_) async => http.Response(errorResponse, 500));
+
+        const preset = Preset(
+          id: '1',
+          itemName: 'Test Preset',
+          source: 'TUNEIN',
+          location: '/v1/playback/station/s33828',
+          type: 'stationurl',
+          isPresetable: true,
+        );
+
+        expect(
+          () => apiService.selectPreset('192.168.1.131', preset),
+          throwsA(
+            predicate((e) =>
+                e is Exception &&
+                e.toString().contains('HTTP 500') &&
+                e.toString().contains(errorResponse)),
+          ),
+        );
+      });
+
+      test('selectPreset throws exception on timeout', () async {
+        final fastApiService = SpeakerApiService(
+          httpClient: mockClient,
+          timeout: const Duration(milliseconds: 100),
+        );
+
+        when(mockClient.post(any, headers: anyNamed('headers'), body: anyNamed('body')))
+            .thenAnswer(
+          (_) async => Future.delayed(
+            const Duration(milliseconds: 200),
+            () => http.Response('', 200),
+          ),
+        );
+
+        const preset = Preset(
+          id: '1',
+          itemName: 'Test Preset',
+          source: 'TUNEIN',
+          location: '/v1/playback/station/s33828',
+          type: 'stationurl',
+          isPresetable: true,
+        );
+
+        expect(
+          () => fastApiService.selectPreset('192.168.1.131', preset),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('selectPreset escapes special characters in itemName', () async {
+        const xmlResponse = '''<?xml version="1.0" encoding="UTF-8" ?><status>/select</status>''';
+
+        when(mockClient.post(any, headers: anyNamed('headers'), body: anyNamed('body')))
+            .thenAnswer((_) async => http.Response(xmlResponse, 200));
+
+        const preset = Preset(
+          id: '1',
+          itemName: 'Rock & Roll <with> "quotes"',
+          source: 'TUNEIN',
+          location: '/v1/playback/station/s80044',
+          type: 'stationurl',
+          isPresetable: true,
+        );
+
+        await apiService.selectPreset('192.168.1.131', preset);
+
+        final captured = verify(
+          mockClient.post(
+            any,
+            headers: captureAnyNamed('headers'),
+            body: captureAnyNamed('body'),
+          ),
+        ).captured;
+
+        final body = captured[1] as String;
+        // XML library escapes & and < but > and " don't need escaping in text content
+        expect(body, contains('Rock &amp; Roll &lt;with> "quotes"'));
       });
     });
   });

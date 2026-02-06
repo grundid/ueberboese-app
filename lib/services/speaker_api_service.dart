@@ -1085,9 +1085,11 @@ class SpeakerApiService {
           .timeout(timeout);
 
       if (response.statusCode != 200) {
-        throw Exception(
-          'Failed to select preset: HTTP ${response.statusCode}',
-        );
+        final responseBody = response.body.trim();
+        final errorMessage = responseBody.isNotEmpty
+            ? 'Failed to select preset: HTTP ${response.statusCode} - $responseBody'
+            : 'Failed to select preset: HTTP ${response.statusCode}';
+        throw Exception(errorMessage);
       }
     } catch (e) {
       if (e is Exception) {
