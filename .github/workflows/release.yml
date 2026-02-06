@@ -101,6 +101,7 @@ jobs:
         with:
           channel: 'stable'
           cache: true
+          flutter-version-file: pubspec.yaml
 
       - name: Get dependencies
         run: flutter pub get
@@ -159,6 +160,7 @@ jobs:
         with:
           channel: 'stable'
           cache: true
+          flutter-version-file: pubspec.yaml
 
       - name: Get dependencies
         run: flutter pub get
@@ -217,8 +219,8 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          flutter-version: 3.38.6
           cache: true
+          flutter-version-file: pubspec.yaml
 
       - name: Get dependencies
         run: flutter pub get
