@@ -1,15 +1,7 @@
-## [0.25.0](https://github.com/julius-d/ueberboese-app/compare/0.24.0...0.25.0) (2026-02-06)
-
-
 ### Features
 
-* include response body in preset selection errors ([d7c1945](https://github.com/julius-d/ueberboese-app/commit/d7c1945c165a34ab5ba7ce20e34e46bd2f6b8d08))
-
+* include response body in preset selection errors
 
 ### Build Systems
 
-* move flutter version into pubspec.yaml ([bfc1629](https://github.com/julius-d/ueberboese-app/commit/bfc1629d83e195499d6bd6eb055810994a7ff332))
-* use flutter version from pubspec.yaml ([d220a6d](https://github.com/julius-d/ueberboese-app/commit/d220a6dbeb1f54dea5c097dd65188470ae309a63))
-* use flutter version from pubspec.yaml in ci build ([ab925b1](https://github.com/julius-d/ueberboese-app/commit/ab925b16a778ed52559d6bbfe9e1902e976e656d))
-
-
+* move flutter version into pubspec.yaml
