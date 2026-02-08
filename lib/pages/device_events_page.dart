@@ -1,10 +1,14 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:ueberboese_app/models/device_event.dart';
+import 'package:ueberboese_app/models/recent.dart';
 import 'package:ueberboese_app/models/speaker.dart';
 import 'package:ueberboese_app/services/management_api_service.dart';
+import 'package:ueberboese_app/services/speaker_api_service.dart';
 import 'package:ueberboese_app/main.dart';
+import 'package:xml/xml.dart';
 
 class DeviceEventsPage extends StatefulWidget {
   final Speaker speaker;
@@ -22,12 +26,16 @@ class DeviceEventsPage extends StatefulWidget {
 
 class _DeviceEventsPageState extends State<DeviceEventsPage> {
   late final ManagementApiService _managementApiService;
+  late final SpeakerApiService _speakerApiService;
   Future<List<DeviceEvent>>? _eventsFuture;
+  bool _isPlaying = false;
+  String? _playingEventId;
 
   @override
   void initState() {
     super.initState();
     _managementApiService = widget.apiService ?? ManagementApiService();
+    _speakerApiService = SpeakerApiService();
     _loadEvents();
   }
 
@@ -72,12 +80,26 @@ class _DeviceEventsPageState extends State<DeviceEventsPage> {
   IconData _getEventIcon(String eventType) {
     if (eventType.contains('volume')) {
       return Icons.volume_up;
+    } else if (eventType.contains('mute')) {
+      return Icons.volume_off;
+    } else if (eventType.contains('skip-forward')) {
+      return Icons.skip_next;
+    } else if (eventType.contains('skip-backward')) {
+      return Icons.skip_previous;
+    } else if (eventType.contains('preset')) {
+      return Icons.star;
     } else if (eventType.contains('play') || eventType.contains('item-started')) {
       return Icons.play_arrow;
+    } else if (eventType == 'zone-state-changed') {
+      return Icons.speaker_group;
+    } else if (eventType == 'shuffle-state-changed') {
+      return Icons.shuffle;
     } else if (eventType.contains('source')) {
       return Icons.input;
     } else if (eventType.contains('art')) {
       return Icons.image;
+    } else if (eventType.contains('favorite')) {
+      return Icons.favorite;
     } else if (eventType.contains('masterdevice') || eventType.contains('system')) {
       return Icons.settings;
     } else {
@@ -88,20 +110,258 @@ class _DeviceEventsPageState extends State<DeviceEventsPage> {
   String _getEventSummary(DeviceEvent event) {
     final data = event.data;
 
-    if (event.type.contains('volume') && data.containsKey('volume')) {
+    // Handle empty item-started events (playback stopped)
+    if (event.type == 'item-started') {
+      final nowPlaying = data['nowPlaying'] as Map<String, dynamic>?;
+      final track = (nowPlaying?['track'] as Map<String, dynamic>?)?['text'] as String?;
+      if (track == null || track.isEmpty) {
+        return 'Playback stopped';
+      }
+    }
+
+    // Handle play-state-changed with formatted state
+    if (event.type == 'play-state-changed' && data.containsKey('play-state')) {
+      return _formatPlayState(data['play-state'] as String?);
+    }
+
+    // Handle source-state-changed with formatted source
+    if (event.type == 'source-state-changed' && data.containsKey('source-state')) {
+      return 'Source: ${_formatSourceState(data['source-state'] as String?)}';
+    }
+
+    // Handle art-changed
+    if (event.type == 'art-changed') {
+      final artStatus = data['art-status'] as String?;
+      if (artStatus == 'IMAGE_PRESENT') {
+        return 'Album art updated';
+      } else if (artStatus == 'SHOW_DEFAULT_IMAGE') {
+        return 'Using default image';
+      }
+    }
+
+    // Handle volume-change array format [oldVolume, newVolume]
+    if (event.type.contains('volume') && data.containsKey('volume-change')) {
+      final volumeChange = data['volume-change'];
+      if (volumeChange is List && volumeChange.isNotEmpty) {
+        if (volumeChange.length >= 2) {
+          return 'Volume: ${volumeChange[0]} → ${volumeChange[1]}';
+        } else {
+          return 'Volume: ${volumeChange[0]}';
+        }
+      }
+    } else if (event.type.contains('volume') && data.containsKey('volume')) {
       return 'Volume: ${data['volume']}';
     } else if (event.type.contains('play-state') && data.containsKey('playState')) {
       return 'Play state: ${data['playState']}';
     } else if (event.type.contains('source') && data.containsKey('source')) {
       return 'Source: ${data['source']}';
+    } else if (event.type.contains('favorite') && data.containsKey('favorite-value')) {
+      final isFavorite = data['favorite-value'] == 'true' || data['favorite-value'] == true;
+      return isFavorite ? 'Marked as favorite' : 'Removed from favorites';
     } else if (data.isNotEmpty) {
-      // Show first key-value pair as summary
-      final firstKey = data.keys.first;
-      final firstValue = data[firstKey];
-      return '$firstKey: ${firstValue.toString().length > 30 ? '${firstValue.toString().substring(0, 30)}...' : firstValue}';
+      // Show all key-value pairs as summary
+      final parts = <String>[];
+      for (final entry in data.entries) {
+        final key = entry.key;
+        final value = entry.value.toString();
+        final displayValue = value.length > 30 ? '${value.substring(0, 30)}...' : value;
+        parts.add('$key: $displayValue');
+      }
+      return parts.join(' • ');
     }
 
     return 'No additional data';
+  }
+
+  bool _isPlayableEvent(DeviceEvent event) {
+    // Check if event has contentItem field
+    if (!event.data.containsKey('contentItem')) return false;
+
+    final contentItem = event.data['contentItem'] as String?;
+    if (contentItem == null || contentItem.isEmpty) return false;
+
+    // For item-started events, also check if nowPlaying has valid track data
+    if (event.type == 'item-started') {
+      final nowPlaying = event.data['nowPlaying'] as Map<String, dynamic>?;
+      if (nowPlaying == null) return false;
+
+      final track = (nowPlaying['track'] as Map<String, dynamic>?)?['text'] as String?;
+      if (track == null || track.isEmpty) return false;
+    }
+
+    return true;
+  }
+
+  Recent? _parseContentItem(DeviceEvent event) {
+    try {
+      final contentItemBase64 = event.data['contentItem'] as String?;
+      if (contentItemBase64 == null) return null;
+
+      final xmlString = utf8.decode(base64Decode(contentItemBase64));
+      final document = XmlDocument.parse(xmlString);
+      final contentItemElement = document.rootElement;
+
+      final source = contentItemElement.getAttribute('source') ?? '';
+      final type = contentItemElement.getAttribute('type') ?? '';
+      final location = contentItemElement.getAttribute('location') ?? '';
+      final sourceAccount = contentItemElement.getAttribute('sourceAccount');
+      final isPresetable = contentItemElement.getAttribute('isPresetable') == 'true';
+
+      final itemName = contentItemElement.findElements('itemName').firstOrNull?.innerText ?? '';
+      final containerArt = contentItemElement.findElements('containerArt').firstOrNull?.innerText;
+
+      return Recent(
+        deviceId: widget.speaker.deviceId,
+        utcTime: event.time.millisecondsSinceEpoch ~/ 1000,
+        id: '${event.monoTime}',
+        itemName: itemName,
+        source: source,
+        location: location,
+        type: type,
+        isPresetable: isPresetable,
+        sourceAccount: sourceAccount,
+        containerArt: containerArt,
+      );
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Map<String, String>? _getNowPlayingInfo(DeviceEvent event) {
+    try {
+      final nowPlaying = event.data['nowPlaying'] as Map<String, dynamic>?;
+      if (nowPlaying == null) return null;
+
+      final track = (nowPlaying['track'] as Map<String, dynamic>?)?['text'] as String?;
+      final artist = (nowPlaying['artist'] as Map<String, dynamic>?)?['text'] as String?;
+      final album = (nowPlaying['album'] as Map<String, dynamic>?)?['text'] as String?;
+      final artUrl = (nowPlaying['art'] as Map<String, dynamic>?)?['text'] as String?;
+
+      final result = <String, String>{};
+      if (track != null) result['track'] = track;
+      if (artist != null) result['artist'] = artist;
+      if (album != null && album.isNotEmpty) result['album'] = album;
+      if (artUrl != null) result['artUrl'] = artUrl;
+
+      return result;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  String _formatPlayState(String? playState) {
+    if (playState == null) return '';
+    switch (playState) {
+      case 'PLAY_STATE':
+        return 'Playing';
+      case 'PAUSE_STATE':
+        return 'Paused';
+      case 'BUFFERING_STATE':
+        return 'Buffering';
+      case 'STOP_STATE':
+        return 'Stopped';
+      default:
+        return playState.replaceAll('_', ' ').toLowerCase();
+    }
+  }
+
+  String _formatSourceState(String? source) {
+    if (source == null || source.isEmpty) return '';
+    // Format known sources
+    final sourceMap = {
+      'SPOTIFY': 'Spotify',
+      'TUNEIN': 'TuneIn',
+      'BLUETOOTH': 'Bluetooth',
+      'AUX': 'AUX',
+      'AIRPLAY': 'AirPlay',
+    };
+    return sourceMap[source] ?? source;
+  }
+
+  String? _getEventContextInfo(DeviceEvent event) {
+    final data = event.data;
+    final parts = <String>[];
+
+    // Get source from various places
+    String? source;
+    if (data.containsKey('nowPlaying')) {
+      source = (data['nowPlaying'] as Map<String, dynamic>?)?['source'] as String?;
+    }
+
+    // Try to parse source from contentItem if not in nowPlaying
+    if (source == null || source.isEmpty) {
+      final recentItem = _parseContentItem(event);
+      source = recentItem?.source;
+    }
+
+    if (source != null && source.isNotEmpty && source != 'INVALID_SOURCE') {
+      parts.add(source);
+    }
+
+    // Get origin (how it was started)
+    final origin = data['origin'] as String?;
+    if (origin != null && origin.isNotEmpty) {
+      parts.add('via $origin');
+    }
+
+    // Get preset information
+    final preset = data['preset'];
+    if (preset != null && preset != 'none' && preset.toString().isNotEmpty) {
+      parts.add('Preset $preset');
+    }
+
+    // Get play state for item-started events
+    if (event.type == 'item-started') {
+      final playState = data['play-state'] as String?;
+      if (playState == 'PAUSE_STATE') {
+        parts.add('Paused');
+      }
+
+      // Add shuffle/repeat info
+      final shuffleState = data['shuffle-state'] as String?;
+      if (shuffleState == 'SHUFFLE_ON') {
+        parts.add('Shuffle');
+      }
+
+      final repeatState = data['repeat-state'] as String?;
+      if (repeatState == 'REPEAT_ONE') {
+        parts.add('Repeat one');
+      } else if (repeatState == 'REPEAT_ALL') {
+        parts.add('Repeat all');
+      }
+    }
+
+    return parts.isEmpty ? null : parts.join(' • ');
+  }
+
+  Future<void> _playContent(DeviceEvent event) async {
+    final recent = _parseContentItem(event);
+    if (recent == null) return;
+
+    setState(() {
+      _isPlaying = true;
+      _playingEventId = '${event.monoTime}';
+    });
+
+    try {
+      await _speakerApiService.selectContentItem(widget.speaker.ipAddress, recent);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Playing "${recent.itemName}"')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to play: ${e.toString()}')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPlaying = false;
+          _playingEventId = null;
+        });
+      }
+    }
   }
 
   @override
@@ -184,28 +444,170 @@ class _DeviceEventsPageState extends State<DeviceEventsPage> {
                   );
                 }
 
+                // Sort events by time, newest first
+                final sortedEvents = List<DeviceEvent>.from(events)
+                  ..sort((a, b) => b.time.compareTo(a.time));
+
                 return ListView.separated(
-                  itemCount: events.length,
+                  itemCount: sortedEvents.length,
                   separatorBuilder: (context, index) => const Divider(height: 1, indent: 72),
                   itemBuilder: (context, index) {
-                    final event = events[index];
+                    final event = sortedEvents[index];
+                    final isPlayable = _isPlayableEvent(event);
+
+                    // Display playable events like recent entries
+                    if (isPlayable) {
+                      final nowPlayingInfo = _getNowPlayingInfo(event);
+                      final recentItem = _parseContentItem(event);
+
+                      // Get title - prefer track from nowPlaying, fallback to itemName from contentItem
+                      final track = nowPlayingInfo?['track'] ?? recentItem?.itemName ?? 'Unknown Track';
+                      final artist = nowPlayingInfo?['artist'] ?? '';
+                      final album = nowPlayingInfo?['album'];
+                      final artUrl = nowPlayingInfo?['artUrl'] ?? recentItem?.containerArt;
+                      final contextInfo = _getEventContextInfo(event);
+                      final eventId = '${event.monoTime}';
+                      final isPlayingThis = _playingEventId == eventId;
+
+                      return ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                        leading: artUrl != null && artUrl.isNotEmpty
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  artUrl,
+                                  width: 56,
+                                  height: 56,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      width: 56,
+                                      height: 56,
+                                      decoration: BoxDecoration(
+                                        color: theme.colorScheme.surfaceContainerHighest,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        Icons.music_note,
+                                        color: theme.colorScheme.onSurfaceVariant,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              )
+                            : Container(
+                                width: 56,
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.music_note,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                        title: SelectableText(
+                          track,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (artist.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              SelectableText(
+                                artist,
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ],
+                            if (album != null && album.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              SelectableText(
+                                album,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
+                            if (contextInfo != null) ...[
+                              const SizedBox(height: 2),
+                              SelectableText(
+                                contextInfo,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 2),
+                            SelectableText(
+                              _formatTimestamp(event.time),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                        trailing: IconButton.filledTonal(
+                          onPressed: _isPlaying ? null : () => _playContent(event),
+                          icon: isPlayingThis
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.play_arrow),
+                        ),
+                      );
+                    }
+
+                    // Regular event display
                     final eventIcon = _getEventIcon(event.type);
+                    final artUri = event.data['art-uri'] as String?;
+                    final showArt = artUri != null && artUri.isNotEmpty;
 
                     return ListTile(
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                      leading: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          eventIcon,
-                          color: theme.colorScheme.onPrimaryContainer,
-                        ),
-                      ),
-                      title: Text(
+                      leading: showArt
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                artUri,
+                                width: 40,
+                                height: 40,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      color: theme.colorScheme.primaryContainer,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      eventIcon,
+                                      color: theme.colorScheme.onPrimaryContainer,
+                                    ),
+                                  );
+                                },
+                              ),
+                            )
+                          : Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                eventIcon,
+                                color: theme.colorScheme.onPrimaryContainer,
+                              ),
+                            ),
+                      title: SelectableText(
                         event.type,
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
@@ -215,12 +617,12 @@ class _DeviceEventsPageState extends State<DeviceEventsPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 4),
-                          Text(
+                          SelectableText(
                             _getEventSummary(event),
                             style: theme.textTheme.bodySmall,
                           ),
                           const SizedBox(height: 2),
-                          Text(
+                          SelectableText(
                             _formatTimestamp(event.time),
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
