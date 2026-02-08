@@ -1478,36 +1478,50 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                 }
 
                 final presets = snapshot.data ?? [];
-                return Column(
-                  children: [
-                    // First row: Presets 1-3
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        for (var i = 1; i <= 3; i++)
-                          _buildPresetButton(
-                            context,
-                            theme,
-                            i.toString(),
-                            presets.where((p) => p.id == i.toString()).firstOrNull,
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    // Second row: Presets 4-6
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        for (var i = 4; i <= 6; i++)
-                          _buildPresetButton(
-                            context,
-                            theme,
-                            i.toString(),
-                            presets.where((p) => p.id == i.toString()).firstOrNull,
-                          ),
-                      ],
-                    ),
-                  ],
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Calculate appropriate max width
+                    // On screens wider than 600px, constrain the preset grid to 500px
+                    // On smaller screens, use full width
+                    final maxGridWidth = constraints.maxWidth > 600 ? 500.0 : constraints.maxWidth;
+
+                    return Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: maxGridWidth),
+                        child: Column(
+                          children: [
+                            // First row: Presets 1-3
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                for (var i = 1; i <= 3; i++)
+                                  _buildPresetButton(
+                                    context,
+                                    theme,
+                                    i.toString(),
+                                    presets.where((p) => p.id == i.toString()).firstOrNull,
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            // Second row: Presets 4-6
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                for (var i = 4; i <= 6; i++)
+                                  _buildPresetButton(
+                                    context,
+                                    theme,
+                                    i.toString(),
+                                    presets.where((p) => p.id == i.toString()).firstOrNull,
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
             ),
