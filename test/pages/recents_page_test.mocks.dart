@@ -3,16 +3,17 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i6;
+import 'dart:async' as _i7;
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:ueberboese_app/models/now_playing.dart' as _i4;
-import 'package:ueberboese_app/models/preset.dart' as _i8;
-import 'package:ueberboese_app/models/recent.dart' as _i9;
+import 'package:ueberboese_app/models/now_playing.dart' as _i5;
+import 'package:ueberboese_app/models/preset.dart' as _i9;
+import 'package:ueberboese_app/models/recent.dart' as _i10;
+import 'package:ueberboese_app/models/speaker.dart' as _i3;
 import 'package:ueberboese_app/models/speaker_info.dart' as _i2;
-import 'package:ueberboese_app/models/volume.dart' as _i3;
-import 'package:ueberboese_app/models/zone.dart' as _i7;
-import 'package:ueberboese_app/services/speaker_api_service.dart' as _i5;
+import 'package:ueberboese_app/models/volume.dart' as _i4;
+import 'package:ueberboese_app/models/zone.dart' as _i8;
+import 'package:ueberboese_app/services/speaker_api_service.dart' as _i6;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -39,20 +40,25 @@ class _FakeSpeakerInfo_1 extends _i1.SmartFake implements _i2.SpeakerInfo {
     : super(parent, parentInvocation);
 }
 
-class _FakeVolume_2 extends _i1.SmartFake implements _i3.Volume {
-  _FakeVolume_2(Object parent, Invocation parentInvocation)
+class _FakeSpeaker_2 extends _i1.SmartFake implements _i3.Speaker {
+  _FakeSpeaker_2(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakeNowPlaying_3 extends _i1.SmartFake implements _i4.NowPlaying {
-  _FakeNowPlaying_3(Object parent, Invocation parentInvocation)
+class _FakeVolume_3 extends _i1.SmartFake implements _i4.Volume {
+  _FakeVolume_3(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeNowPlaying_4 extends _i1.SmartFake implements _i5.NowPlaying {
+  _FakeNowPlaying_4(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
 /// A class which mocks [SpeakerApiService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockSpeakerApiService extends _i1.Mock implements _i5.SpeakerApiService {
+class MockSpeakerApiService extends _i1.Mock implements _i6.SpeakerApiService {
   MockSpeakerApiService() {
     _i1.throwOnMissingStub(this);
   }
@@ -66,93 +72,109 @@ class MockSpeakerApiService extends _i1.Mock implements _i5.SpeakerApiService {
           as Duration);
 
   @override
-  _i6.Future<_i2.SpeakerInfo> fetchSpeakerInfo(String? ipAddress) =>
+  _i7.Future<_i2.SpeakerInfo> fetchSpeakerInfo(String? ipAddress) =>
       (super.noSuchMethod(
             Invocation.method(#fetchSpeakerInfo, [ipAddress]),
-            returnValue: _i6.Future<_i2.SpeakerInfo>.value(
+            returnValue: _i7.Future<_i2.SpeakerInfo>.value(
               _FakeSpeakerInfo_1(
                 this,
                 Invocation.method(#fetchSpeakerInfo, [ipAddress]),
               ),
             ),
           )
-          as _i6.Future<_i2.SpeakerInfo>);
+          as _i7.Future<_i2.SpeakerInfo>);
 
   @override
-  _i6.Future<_i3.Volume> getVolume(String? ipAddress) =>
+  _i7.Future<_i3.Speaker> createSpeakerFromIp(
+    String? ipAddress,
+    String? emoji,
+  ) =>
       (super.noSuchMethod(
-            Invocation.method(#getVolume, [ipAddress]),
-            returnValue: _i6.Future<_i3.Volume>.value(
-              _FakeVolume_2(this, Invocation.method(#getVolume, [ipAddress])),
+            Invocation.method(#createSpeakerFromIp, [ipAddress, emoji]),
+            returnValue: _i7.Future<_i3.Speaker>.value(
+              _FakeSpeaker_2(
+                this,
+                Invocation.method(#createSpeakerFromIp, [ipAddress, emoji]),
+              ),
             ),
           )
-          as _i6.Future<_i3.Volume>);
+          as _i7.Future<_i3.Speaker>);
 
   @override
-  _i6.Future<_i3.Volume> setVolume(String? ipAddress, int? volume) =>
+  _i7.Future<_i4.Volume> getVolume(String? ipAddress) =>
+      (super.noSuchMethod(
+            Invocation.method(#getVolume, [ipAddress]),
+            returnValue: _i7.Future<_i4.Volume>.value(
+              _FakeVolume_3(this, Invocation.method(#getVolume, [ipAddress])),
+            ),
+          )
+          as _i7.Future<_i4.Volume>);
+
+  @override
+  _i7.Future<_i4.Volume> setVolume(String? ipAddress, int? volume) =>
       (super.noSuchMethod(
             Invocation.method(#setVolume, [ipAddress, volume]),
-            returnValue: _i6.Future<_i3.Volume>.value(
-              _FakeVolume_2(
+            returnValue: _i7.Future<_i4.Volume>.value(
+              _FakeVolume_3(
                 this,
                 Invocation.method(#setVolume, [ipAddress, volume]),
               ),
             ),
           )
-          as _i6.Future<_i3.Volume>);
+          as _i7.Future<_i4.Volume>);
 
   @override
-  _i6.Future<_i4.NowPlaying> getNowPlaying(String? ipAddress) =>
+  _i7.Future<_i5.NowPlaying> getNowPlaying(String? ipAddress) =>
       (super.noSuchMethod(
             Invocation.method(#getNowPlaying, [ipAddress]),
-            returnValue: _i6.Future<_i4.NowPlaying>.value(
-              _FakeNowPlaying_3(
+            returnValue: _i7.Future<_i5.NowPlaying>.value(
+              _FakeNowPlaying_4(
                 this,
                 Invocation.method(#getNowPlaying, [ipAddress]),
               ),
             ),
           )
-          as _i6.Future<_i4.NowPlaying>);
+          as _i7.Future<_i5.NowPlaying>);
 
   @override
-  _i6.Future<_i7.Zone?> getZone(String? ipAddress) =>
+  _i7.Future<_i8.Zone?> getZone(String? ipAddress) =>
       (super.noSuchMethod(
             Invocation.method(#getZone, [ipAddress]),
-            returnValue: _i6.Future<_i7.Zone?>.value(),
+            returnValue: _i7.Future<_i8.Zone?>.value(),
           )
-          as _i6.Future<_i7.Zone?>);
+          as _i7.Future<_i8.Zone?>);
 
   @override
-  _i6.Future<void> createZone(
+  _i7.Future<void> createZone(
     String? ipAddress,
     String? masterId,
-    List<_i7.ZoneMember>? members,
+    List<_i8.ZoneMember>? members,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#createZone, [ipAddress, masterId, members]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i7.Future<void>);
 
   @override
-  _i6.Future<void> addZoneMembers(
+  _i7.Future<void> addZoneMembers(
     String? ipAddress,
     String? masterId,
-    List<_i7.ZoneMember>? members,
+    List<_i8.ZoneMember>? members,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#addZoneMembers, [ipAddress, masterId, members]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i7.Future<void>);
 
   @override
-  _i6.Future<void> removeZoneMembers(
+  _i7.Future<void> removeZoneMembers(
     String? ipAddress,
     String? masterId,
-    List<_i7.ZoneMember>? members,
+    List<_i8.ZoneMember>? members,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#removeZoneMembers, [
@@ -160,58 +182,58 @@ class MockSpeakerApiService extends _i1.Mock implements _i5.SpeakerApiService {
               masterId,
               members,
             ]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i7.Future<void>);
 
   @override
-  _i6.Future<void> userPlayControl(String? ipAddress, String? controlType) =>
+  _i7.Future<void> userPlayControl(String? ipAddress, String? controlType) =>
       (super.noSuchMethod(
             Invocation.method(#userPlayControl, [ipAddress, controlType]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i7.Future<void>);
 
   @override
-  _i6.Future<List<_i8.Preset>> getPresets(String? ipAddress) =>
+  _i7.Future<List<_i9.Preset>> getPresets(String? ipAddress) =>
       (super.noSuchMethod(
             Invocation.method(#getPresets, [ipAddress]),
-            returnValue: _i6.Future<List<_i8.Preset>>.value(<_i8.Preset>[]),
+            returnValue: _i7.Future<List<_i9.Preset>>.value(<_i9.Preset>[]),
           )
-          as _i6.Future<List<_i8.Preset>>);
+          as _i7.Future<List<_i9.Preset>>);
 
   @override
-  _i6.Future<List<_i9.Recent>> getRecents(String? ipAddress) =>
+  _i7.Future<List<_i10.Recent>> getRecents(String? ipAddress) =>
       (super.noSuchMethod(
             Invocation.method(#getRecents, [ipAddress]),
-            returnValue: _i6.Future<List<_i9.Recent>>.value(<_i9.Recent>[]),
+            returnValue: _i7.Future<List<_i10.Recent>>.value(<_i10.Recent>[]),
           )
-          as _i6.Future<List<_i9.Recent>>);
+          as _i7.Future<List<_i10.Recent>>);
 
   @override
-  _i6.Future<List<_i8.Preset>> removePreset(
+  _i7.Future<List<_i9.Preset>> removePreset(
     String? ipAddress,
     String? presetId,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#removePreset, [ipAddress, presetId]),
-            returnValue: _i6.Future<List<_i8.Preset>>.value(<_i8.Preset>[]),
+            returnValue: _i7.Future<List<_i9.Preset>>.value(<_i9.Preset>[]),
           )
-          as _i6.Future<List<_i8.Preset>>);
+          as _i7.Future<List<_i9.Preset>>);
 
   @override
-  _i6.Future<void> standby(String? ipAddress) =>
+  _i7.Future<void> standby(String? ipAddress) =>
       (super.noSuchMethod(
             Invocation.method(#standby, [ipAddress]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i7.Future<void>);
 
   @override
-  _i6.Future<List<_i8.Preset>> storePreset(
+  _i7.Future<List<_i9.Preset>> storePreset(
     String? ipAddress,
     String? presetId,
     String? spotifyUri,
@@ -228,12 +250,12 @@ class MockSpeakerApiService extends _i1.Mock implements _i5.SpeakerApiService {
               itemName,
               containerArt,
             ]),
-            returnValue: _i6.Future<List<_i8.Preset>>.value(<_i8.Preset>[]),
+            returnValue: _i7.Future<List<_i9.Preset>>.value(<_i9.Preset>[]),
           )
-          as _i6.Future<List<_i8.Preset>>);
+          as _i7.Future<List<_i9.Preset>>);
 
   @override
-  _i6.Future<List<_i8.Preset>> storeTuneInPreset(
+  _i7.Future<List<_i9.Preset>> storeTuneInPreset(
     String? ipAddress,
     String? presetId,
     String? stationId,
@@ -248,12 +270,12 @@ class MockSpeakerApiService extends _i1.Mock implements _i5.SpeakerApiService {
               itemName,
               containerArt,
             ]),
-            returnValue: _i6.Future<List<_i8.Preset>>.value(<_i8.Preset>[]),
+            returnValue: _i7.Future<List<_i9.Preset>>.value(<_i9.Preset>[]),
           )
-          as _i6.Future<List<_i8.Preset>>);
+          as _i7.Future<List<_i9.Preset>>);
 
   @override
-  _i6.Future<List<_i8.Preset>> storeInternetRadioPreset(
+  _i7.Future<List<_i9.Preset>> storeInternetRadioPreset(
     String? ipAddress,
     String? presetId,
     String? url,
@@ -270,47 +292,47 @@ class MockSpeakerApiService extends _i1.Mock implements _i5.SpeakerApiService {
               containerArt,
               apiUrl,
             ]),
-            returnValue: _i6.Future<List<_i8.Preset>>.value(<_i8.Preset>[]),
+            returnValue: _i7.Future<List<_i9.Preset>>.value(<_i9.Preset>[]),
           )
-          as _i6.Future<List<_i8.Preset>>);
+          as _i7.Future<List<_i9.Preset>>);
 
   @override
-  _i6.Future<void> sendKey(
+  _i7.Future<void> sendKey(
     String? ipAddress,
     String? keyValue,
     String? state,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#sendKey, [ipAddress, keyValue, state]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i7.Future<void>);
 
   @override
-  _i6.Future<void> setSpeakerName(String? ipAddress, String? name) =>
+  _i7.Future<void> setSpeakerName(String? ipAddress, String? name) =>
       (super.noSuchMethod(
             Invocation.method(#setSpeakerName, [ipAddress, name]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i7.Future<void>);
 
   @override
-  _i6.Future<void> selectContentItem(String? ipAddress, _i9.Recent? recent) =>
+  _i7.Future<void> selectContentItem(String? ipAddress, _i10.Recent? recent) =>
       (super.noSuchMethod(
             Invocation.method(#selectContentItem, [ipAddress, recent]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i7.Future<void>);
 
   @override
-  _i6.Future<void> selectPreset(String? ipAddress, _i8.Preset? preset) =>
+  _i7.Future<void> selectPreset(String? ipAddress, _i9.Preset? preset) =>
       (super.noSuchMethod(
             Invocation.method(#selectPreset, [ipAddress, preset]),
-            returnValue: _i6.Future<void>.value(),
-            returnValueForMissingStub: _i6.Future<void>.value(),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
           )
-          as _i6.Future<void>);
+          as _i7.Future<void>);
 }

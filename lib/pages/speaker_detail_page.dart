@@ -17,6 +17,7 @@ import 'package:ueberboese_app/pages/edit_speaker_page.dart';
 import 'package:ueberboese_app/pages/remote_control_page.dart';
 import 'package:ueberboese_app/pages/album_art_viewer_page.dart';
 import 'package:ueberboese_app/pages/recents_page.dart';
+import 'package:ueberboese_app/pages/device_events_page.dart';
 import 'package:ueberboese_app/pages/presets/presets_page.dart';
 
 class SpeakerDetailPage extends StatefulWidget {
@@ -1159,6 +1160,13 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
               builder: (context) => PresetsPage(speakerIp: widget.speaker.ipAddress),
             ),
           );
+        } else if (value == 'events') {
+          Navigator.push(
+            context,
+            MaterialPageRoute<void>(
+              builder: (context) => DeviceEventsPage(speaker: widget.speaker),
+            ),
+          );
         } else if (value == 'standby') {
           _sendToStandby();
         } else if (value == 'delete') {
@@ -1204,6 +1212,16 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
               Icon(Icons.star),
               SizedBox(width: 8),
               Text('Manage Presets'),
+            ],
+          ),
+        ),
+        const PopupMenuItem<String>(
+          value: 'events',
+          child: Row(
+            children: [
+              Icon(Icons.event),
+              SizedBox(width: 8),
+              Text('Device Events'),
             ],
           ),
         ),
