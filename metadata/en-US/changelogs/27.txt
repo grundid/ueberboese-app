@@ -1,7 +1,7 @@
-### Features
+Features:
 
-* include response body in preset selection errors
+- Include response body in preset selection errors
 
-### Build Systems
+Build Systems:
 
-* move flutter version into pubspec.yaml
+- Move flutter version into pubspec.yaml

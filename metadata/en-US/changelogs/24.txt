@@ -1,9 +1,4 @@
-## [0.22.0](https://github.com/julius-d/ueberboese-app/compare/0.21.0...0.22.0) (2026-01-25)
+Build Systems:
 
-
-### Build Systems
-
-* specify flutter version ([416a84e](https://github.com/julius-d/ueberboese-app/commit/416a84ef9f83df2b92a4dcfd49c7d387fe1b2c31))
-* update dependencies ([46720e1](https://github.com/julius-d/ueberboese-app/commit/46720e1143b3c2ef2509b308612bc70dcfc67382))
-
-
+- Specify flutter version
+- Update dependencies
