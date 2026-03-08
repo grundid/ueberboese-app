@@ -60,10 +60,15 @@ jobs:
           # Create F-Droid changelog directory if it doesn't exist
           mkdir -p metadata/en-US/changelogs
 
-          # Create F-Droid changelog file
-          cat > metadata/en-US/changelogs/${NEW_BUILD}.txt <<'EOF'
-          ${{ steps.semver.outputs.changelog }}
-          EOF
+          # Create F-Droid changelog file (plain text, no Markdown)
+          printf '%s\n' '${{ steps.semver.outputs.changelog }}' \
+            | sed '/^## \[/d' \
+            | sed 's/^### \(.*\)$/\1:/' \
+            | sed 's/^\* \(.*\) (\[[a-f0-9]*\]([^)]*))$/\1/' \
+            | awk '/:$/ || /^$/ {print; next} NF {print "- " toupper(substr($0,1,1)) substr($0,2)}' \
+            | sed '/^$/N;/^\n$/d' \
+            | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
+            > metadata/en-US/changelogs/${NEW_BUILD}.txt
 
           # Configure git
           git config user.name "github-actions[bot]"
