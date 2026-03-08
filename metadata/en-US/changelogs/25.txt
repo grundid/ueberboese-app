@@ -1,7 +1,5 @@
 Build Systems:
-
 - Disables dependency metadata
 
 Code Refactoring:
-
 - Implement hash code and equals to prevent re-renderings

@@ -1,8 +1,6 @@
 Bug Fixes:
-
 - Resolve RenderFlex overflow in speaker detail hero section
 
 Build Systems:
-
 - Create changelog for F-Droid
 - Increase version in `pubspec.yaml`

@@ -66,7 +66,8 @@ jobs:
             | sed 's/^### \(.*\)$/\1:/' \
             | sed 's/^\* \(.*\) (\[[a-f0-9]*\]([^)]*))$/\1/' \
             | awk '/:$/ || /^$/ {print; next} NF {print "- " toupper(substr($0,1,1)) substr($0,2)}' \
-            | sed '/^$/N;/^\n$/d' \
+            | sed 's/^- \*\*[^*]*\*\* /- /' \
+            | awk '/^[^-].*:$/ && NR>1 {print ""} {print} /^[^-].*:$/ {getline; next}' \
             | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
             > metadata/en-US/changelogs/${NEW_BUILD}.txt
 

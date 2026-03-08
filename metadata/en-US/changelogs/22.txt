@@ -1,12 +1,9 @@
 ⚠ Breaking Changes:
-
 - Change applicationId
 
 Bug Fixes:
-
 - Set correct deviceId for speaker
 
 Build Systems:
-
 - Change applicationId
 - Include changed pubspec.yaml in version tag
