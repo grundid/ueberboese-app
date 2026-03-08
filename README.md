@@ -25,11 +25,17 @@ The app has two main purposes:
 
 ## Installation
 
-### Via Obtainium (Recommended)
+### Via F-Droid (Recommended)
 
-Install and receive automatic updates using Obtainium:
+Install and receive automatic updates using F-Droid:
 
-[<img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="80">](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/julius-d/ueberboese-app)
+[<img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="80">](https://f-droid.org/packages/io.github.juliusd.ueberboese.app)
+
+### Via Obtainium
+
+Or you can use Obtainium for installation and updates:
+
+[<img src="https://github.com/user-attachments/assets/713d71c5-3dec-4ec4-a3f2-8d28d025a9c6" alt="Get it on Obtainium" height="80">](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/julius-d/ueberboese-app)
 
 ### Manual Installation
 
