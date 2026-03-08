@@ -1,0 +1,13 @@
+Features:
+
+- **events:** show events with more info
+- **speaker-details:** constrain preset grid width on wide screens
+Build Systems:
+
+- Strip Markdown from F-Droid changelog files
+Documentation:
+
+- Add F-Droid badge as recommended installation method
+- Add featureGraphic for F-Droid store
+- Clean up existing changelog files
+- Shorten changelog
