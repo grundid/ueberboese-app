@@ -10,6 +10,7 @@ The app has two main purposes:
 2. Additionally, the app also allows controlling your speakers via the
    [SoundTouch-WebServices-API](https://github.com/thlucas1/homeassistantcomponent_soundtouchplus/wiki/SoundTouch-WebServices-API) 
    that is provided by each speaker.
+   - **Presets**: View, play and change the 6 presets for each speaker
    - **Multi-Room Audio**: Control and view speaker zones for synchronized playback
    - **Volume Control**: Adjust volume levels for individual speakers
    - **Now Playing**: See what's currently playing on your speakers
