@@ -405,6 +405,29 @@ void main() {
       expect(find.text('Volume: 17 → 22'), findsOneWidget);
     });
 
+    testWidgets('displays volume change with first and last values for multi-step changes', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {
+            'volume-change': [33, 32, 31, 30, 29, 28, 27, 26, 25, 24],
+            'startTime': '2026-01-01T00:00:00.000000+00:00',
+          },
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'volume-change',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Volume: 33 → 24'), findsOneWidget);
+    });
+
     testWidgets('displays volume change with single value', (WidgetTester tester) async {
       final testEvents = [
         DeviceEvent(
@@ -710,6 +733,70 @@ void main() {
       expect(find.text('Playback stopped'), findsOneWidget);
       expect(find.byIcon(Icons.play_arrow), findsOneWidget); // Icon, not play button
       expect(find.byType(IconButton), findsNothing); // No play button
+    });
+
+    testWidgets('displays Bluetooth device name and status for item-started Bluetooth events', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {
+            'contentItem': '',
+            'nowPlaying': {
+              'track': {'text': ''},
+              'artist': {'text': ''},
+              'source': 'BLUETOOTH',
+              'connectionStatusInfo': {
+                'deviceName': 'Test Phone',
+                'status': 'CONNECTING',
+              },
+            },
+            'play-state': 'INVALID_PLAY_STATUS',
+          },
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'item-started',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Bluetooth: Test Phone (Connecting)'), findsOneWidget);
+      expect(find.byType(IconButton), findsNothing); // Not playable
+    });
+
+    testWidgets('displays Bluetooth device name without status when status is empty for item-started Bluetooth events', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {
+            'contentItem': '',
+            'nowPlaying': {
+              'track': {'text': ''},
+              'source': 'BLUETOOTH',
+              'connectionStatusInfo': {
+                'deviceName': 'My Speaker',
+                'status': '',
+              },
+            },
+            'play-state': '',
+          },
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'item-started',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Bluetooth: My Speaker'), findsOneWidget);
     });
 
     testWidgets('displays album name for item-started events with album info', (WidgetTester tester) async {
@@ -1100,14 +1187,14 @@ void main() {
       expect(find.text('System: Standby'), findsOneWidget);
     });
 
-    testWidgets('displays master device id summary for zone-state-changed events', (WidgetTester tester) async {
+    testWidgets('displays master device id and device count for zone-state-changed events with multiple devices', (WidgetTester tester) async {
       final testEvents = [
         DeviceEvent(
           data: {
-            'masterDeviceId': 'AABBCCDDEEFF',
+            'masterDeviceId': 'MASTER000001',
             'roles': [
-              {'deviceId': 'AABBCCDDEEFF', 'role': 'MASTER'},
-              {'deviceId': 'BBCCDDEEFF00', 'role': 'SLAVE'},
+              {'deviceId': 'MASTER000001', 'role': 'MASTER'},
+              {'deviceId': 'SLAVE0000001', 'role': 'SLAVE'},
             ],
           },
           monoTime: 12345,
@@ -1123,7 +1210,55 @@ void main() {
       await tester.pumpWidget(createWidgetUnderTest());
       await tester.pumpAndSettle();
 
-      expect(find.text('Master: AABBCCDDEEFF'), findsOneWidget);
+      expect(find.text('Master: MASTER000001 (2 devices)'), findsOneWidget);
+    });
+
+    testWidgets('displays master device id without count for zone-state-changed events with single device', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {
+            'masterDeviceId': 'MASTER000001',
+            'roles': [
+              {'deviceId': 'MASTER000001', 'role': 'MASTER'},
+            ],
+          },
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'zone-state-changed',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Master: MASTER000001'), findsOneWidget);
+    });
+
+    testWidgets('displays "Zone disbanded" for zone-state-changed events with no master', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {
+            'masterDeviceId': '',
+            'roles': <Map<String, String>>[],
+          },
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'zone-state-changed',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Zone disbanded'), findsOneWidget);
     });
 
     testWidgets('sorts events by newest first', (WidgetTester tester) async {

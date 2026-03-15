@@ -109,8 +109,23 @@ class _DeviceEventsPageState extends State<DeviceEventsPage> {
       icon: Icons.play_arrow,
       getSummary: (data) {
         final nowPlaying = data['nowPlaying'] as Map<String, dynamic>?;
+        final source = nowPlaying?['source'] as String?;
         final track = (nowPlaying?['track'] as Map<String, dynamic>?)?['text'] as String?;
-        if (track == null || track.isEmpty) return 'Playback stopped';
+        if (track == null || track.isEmpty) {
+          if (source == 'BLUETOOTH') {
+            final connInfo = nowPlaying?['connectionStatusInfo'] as Map<String, dynamic>?;
+            final deviceName = connInfo?['deviceName'] as String?;
+            final status = connInfo?['status'] as String?;
+            if (deviceName != null && deviceName.isNotEmpty) {
+              if (status != null && status.isNotEmpty) {
+                final formattedStatus = status[0].toUpperCase() + status.substring(1).toLowerCase();
+                return 'Bluetooth: $deviceName ($formattedStatus)';
+              }
+              return 'Bluetooth: $deviceName';
+            }
+          }
+          return 'Playback stopped';
+        }
         final artist = (nowPlaying?['artist'] as Map<String, dynamic>?)?['text'] as String?;
         if (artist != null && artist.isNotEmpty) return '$track — $artist';
         return track;
@@ -207,8 +222,8 @@ class _DeviceEventsPageState extends State<DeviceEventsPage> {
         if (data.containsKey('volume-change')) {
           final volumeChange = data['volume-change'];
           if (volumeChange is List && volumeChange.isNotEmpty) {
-            if (volumeChange.length >= 2) return 'Volume: ${volumeChange[0]} → ${volumeChange[1]}';
-            return 'Volume: ${volumeChange[0]}';
+            if (volumeChange.length >= 2) return 'Volume: ${volumeChange.first} → ${volumeChange.last}';
+            return 'Volume: ${volumeChange.first}';
           }
         }
         if (data.containsKey('volume')) return 'Volume: ${data['volume']}';
@@ -224,7 +239,15 @@ class _DeviceEventsPageState extends State<DeviceEventsPage> {
     ),
     'zone-state-changed': _EventHandler(
       icon: Icons.speaker_group,
-      getSummary: (data) => 'Master: ${data['masterDeviceId'] ?? ''}',
+      getSummary: (data) {
+        final masterId = data['masterDeviceId'] as String?;
+        if (masterId == null || masterId.isEmpty) return 'Zone disbanded';
+        final roles = data['roles'];
+        if (roles is List && roles.length > 1) {
+          return 'Master: $masterId (${roles.length} devices)';
+        }
+        return 'Master: $masterId';
+      },
     ),
   };
 
