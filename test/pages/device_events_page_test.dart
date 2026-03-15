@@ -239,7 +239,13 @@ void main() {
     testWidgets('displays speaker group icon for zone-state-changed events', (WidgetTester tester) async {
       final testEvents = [
         DeviceEvent(
-          data: {'zone-state': 'MASTER'},
+          data: {
+            'masterDeviceId': 'AABBCCDDEEFF',
+            'roles': [
+              {'deviceId': 'AABBCCDDEEFF', 'role': 'MASTER'},
+              {'deviceId': 'BBCCDDEEFF00', 'role': 'SLAVE'},
+            ],
+          },
           monoTime: 12345,
           time: DateTime.now(),
           type: 'zone-state-changed',
@@ -441,7 +447,7 @@ void main() {
       expect(find.text('No additional data'), findsOneWidget);
     });
 
-    testWidgets('displays all data fields for events with multiple fields', (WidgetTester tester) async {
+    testWidgets('displays play/pause summary for playpause-pressed events', (WidgetTester tester) async {
       final testEvents = [
         DeviceEvent(
           data: {
@@ -461,9 +467,7 @@ void main() {
       await tester.pumpWidget(createWidgetUnderTest());
       await tester.pumpAndSettle();
 
-      // Should display both fields joined with bullet point
-      expect(find.textContaining('buttonId: PLAY_PAUSE'), findsOneWidget);
-      expect(find.textContaining('origin: ir-remote'), findsOneWidget);
+      expect(find.text('Play/Pause via ir-remote'), findsOneWidget);
     });
 
     testWidgets('displays album art for art-changed events', (WidgetTester tester) async {
@@ -886,6 +890,240 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Using default image'), findsOneWidget);
+    });
+
+    testWidgets('displays balance icon and summary for balance-changed events', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {'balance': 0},
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'balance-changed',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.tune), findsOneWidget);
+      expect(find.text('Balance: 0'), findsOneWidget);
+    });
+
+    testWidgets('displays language icon and summary for language-changed events', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {'language': 'DISPLAY_LANGUAGE_GERMAN'},
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'language-changed',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.language), findsOneWidget);
+      expect(find.text('Language: German'), findsOneWidget);
+    });
+
+    testWidgets('displays settings icon and master device summary for masterdevice-changed events', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {'masterDeviceId': 'AABBCCDDEEFF'},
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'masterdevice-changed',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.settings), findsOneWidget);
+      expect(find.text('Master: AABBCCDDEEFF'), findsOneWidget);
+    });
+
+    testWidgets('displays play icon for play-item events', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {
+            'origin': 'device',
+            'preset': 'none',
+          },
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'play-item',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.play_arrow), findsOneWidget);
+      expect(find.text('Played from device'), findsOneWidget);
+    });
+
+    testWidgets('displays power icon and summary for power-pressed events', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {'buttonId': 'POWER', 'origin': 'console'},
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'power-pressed',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.power_settings_new), findsOneWidget);
+      expect(find.text('Power via console'), findsOneWidget);
+    });
+
+    testWidgets('displays preset number from buttonId for preset-pressed events', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {'buttonId': 'PRESET_6', 'origin': 'console'},
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'preset-pressed',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Preset 6'), findsOneWidget);
+    });
+
+    testWidgets('displays shuffle on summary for shuffle-state-changed events', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {'shuffle-state': 'SHUFFLE_ON'},
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'shuffle-state-changed',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Shuffle on'), findsOneWidget);
+    });
+
+    testWidgets('displays skip forward summary for skip-forward-pressed events', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {},
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'skip-forward-pressed',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Skip forward'), findsOneWidget);
+    });
+
+    testWidgets('displays skip backward summary for skip-backward-pressed events', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {},
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'skip-backward-pressed',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Skip backward'), findsOneWidget);
+    });
+
+    testWidgets('displays system state summary for system-state-changed events', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {'system-state': 'Standby'},
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'system-state-changed',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.text('System: Standby'), findsOneWidget);
+    });
+
+    testWidgets('displays master device id summary for zone-state-changed events', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {
+            'masterDeviceId': 'AABBCCDDEEFF',
+            'roles': [
+              {'deviceId': 'AABBCCDDEEFF', 'role': 'MASTER'},
+              {'deviceId': 'BBCCDDEEFF00', 'role': 'SLAVE'},
+            ],
+          },
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'zone-state-changed',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.text('Master: AABBCCDDEEFF'), findsOneWidget);
     });
 
     testWidgets('sorts events by newest first', (WidgetTester tester) async {

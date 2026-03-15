@@ -24,6 +24,13 @@ class DeviceEventsPage extends StatefulWidget {
   State<DeviceEventsPage> createState() => _DeviceEventsPageState();
 }
 
+class _EventHandler {
+  final IconData icon;
+  final String Function(Map<String, dynamic> data) getSummary;
+
+  const _EventHandler({required this.icon, required this.getSummary});
+}
+
 class _DeviceEventsPageState extends State<DeviceEventsPage> {
   late final ManagementApiService _managementApiService;
   late final SpeakerApiService _speakerApiService;
@@ -77,100 +84,174 @@ class _DeviceEventsPageState extends State<DeviceEventsPage> {
     }
   }
 
+  static final Map<String, _EventHandler> _eventHandlers = {
+    'art-changed': _EventHandler(
+      icon: Icons.image,
+      getSummary: (data) {
+        final artStatus = data['art-status'] as String?;
+        if (artStatus == 'IMAGE_PRESENT') return 'Album art updated';
+        if (artStatus == 'SHOW_DEFAULT_IMAGE') return 'Using default image';
+        return 'No additional data';
+      },
+    ),
+    'balance-changed': _EventHandler(
+      icon: Icons.tune,
+      getSummary: (data) => 'Balance: ${data['balance'] ?? ''}',
+    ),
+    'favorite-changed': _EventHandler(
+      icon: Icons.favorite,
+      getSummary: (data) {
+        final isFavorite = data['favorite-value'] == 'true' || data['favorite-value'] == true;
+        return isFavorite ? 'Marked as favorite' : 'Removed from favorites';
+      },
+    ),
+    'item-started': _EventHandler(
+      icon: Icons.play_arrow,
+      getSummary: (data) {
+        final nowPlaying = data['nowPlaying'] as Map<String, dynamic>?;
+        final track = (nowPlaying?['track'] as Map<String, dynamic>?)?['text'] as String?;
+        if (track == null || track.isEmpty) return 'Playback stopped';
+        final artist = (nowPlaying?['artist'] as Map<String, dynamic>?)?['text'] as String?;
+        if (artist != null && artist.isNotEmpty) return '$track — $artist';
+        return track;
+      },
+    ),
+    'language-changed': _EventHandler(
+      icon: Icons.language,
+      getSummary: (data) {
+        final lang = data['language'] as String?;
+        if (lang == null || lang.isEmpty) return 'No additional data';
+        const prefix = 'DISPLAY_LANGUAGE_';
+        final name = lang.startsWith(prefix) ? lang.substring(prefix.length) : lang;
+        final capitalized = name[0].toUpperCase() + name.substring(1).toLowerCase();
+        return 'Language: $capitalized';
+      },
+    ),
+    'masterdevice-changed': _EventHandler(
+      icon: Icons.settings,
+      getSummary: (data) => 'Master: ${data['masterDeviceId'] ?? ''}',
+    ),
+    'play-item': _EventHandler(
+      icon: Icons.play_arrow,
+      getSummary: (data) {
+        final origin = data['origin'] as String?;
+        if (origin != null && origin.isNotEmpty) return 'Played from $origin';
+        return 'Played from device';
+      },
+    ),
+    'play-state-changed': _EventHandler(
+      icon: Icons.play_arrow,
+      getSummary: (data) => _staticFormatPlayState(data['play-state'] as String?),
+    ),
+    'playpause-pressed': _EventHandler(
+      icon: Icons.play_arrow,
+      getSummary: (data) {
+        final origin = data['origin'] as String?;
+        if (origin != null && origin.isNotEmpty) return 'Play/Pause via $origin';
+        return 'Play/Pause pressed';
+      },
+    ),
+    'power-pressed': _EventHandler(
+      icon: Icons.power_settings_new,
+      getSummary: (data) {
+        final origin = data['origin'] as String?;
+        if (origin != null && origin.isNotEmpty) return 'Power via $origin';
+        return 'Power pressed';
+      },
+    ),
+    'preset-pressed': _EventHandler(
+      icon: Icons.star,
+      getSummary: (data) {
+        final buttonId = data['buttonId'] as String?;
+        if (buttonId != null) {
+          final match = RegExp(r'(\d+)$').firstMatch(buttonId);
+          if (match != null) return 'Preset ${match.group(1)}';
+        }
+        return 'Preset pressed';
+      },
+    ),
+    'shuffle-state-changed': _EventHandler(
+      icon: Icons.shuffle,
+      getSummary: (data) {
+        final state = data['shuffle-state'] as String?;
+        return state == 'SHUFFLE_ON' ? 'Shuffle on' : 'Shuffle off';
+      },
+    ),
+    'skip-forward-pressed': _EventHandler(
+      icon: Icons.skip_next,
+      getSummary: (_) => 'Skip forward',
+    ),
+    'skip-backward-pressed': _EventHandler(
+      icon: Icons.skip_previous,
+      getSummary: (_) => 'Skip backward',
+    ),
+    'mute-pressed': _EventHandler(
+      icon: Icons.volume_off,
+      getSummary: (_) => 'Mute pressed',
+    ),
+    'source-state-changed': _EventHandler(
+      icon: Icons.input,
+      getSummary: (data) => 'Source: ${_staticFormatSourceState(data['source-state'] as String?)}',
+    ),
+    'system-state-changed': _EventHandler(
+      icon: Icons.settings,
+      getSummary: (data) {
+        final state = data['system-state'] as String?;
+        if (state != null && state.isNotEmpty) return 'System: $state';
+        return 'No additional data';
+      },
+    ),
+    'volume-change': _EventHandler(
+      icon: Icons.volume_up,
+      getSummary: (data) {
+        if (data.containsKey('volume-change')) {
+          final volumeChange = data['volume-change'];
+          if (volumeChange is List && volumeChange.isNotEmpty) {
+            if (volumeChange.length >= 2) return 'Volume: ${volumeChange[0]} → ${volumeChange[1]}';
+            return 'Volume: ${volumeChange[0]}';
+          }
+        }
+        if (data.containsKey('volume')) return 'Volume: ${data['volume']}';
+        return 'No additional data';
+      },
+    ),
+    'volume-changed': _EventHandler(
+      icon: Icons.volume_up,
+      getSummary: (data) {
+        if (data.containsKey('volume')) return 'Volume: ${data['volume']}';
+        return 'No additional data';
+      },
+    ),
+    'zone-state-changed': _EventHandler(
+      icon: Icons.speaker_group,
+      getSummary: (data) => 'Master: ${data['masterDeviceId'] ?? ''}',
+    ),
+  };
+
   IconData _getEventIcon(String eventType) {
-    if (eventType.contains('volume')) {
-      return Icons.volume_up;
-    } else if (eventType.contains('mute')) {
-      return Icons.volume_off;
-    } else if (eventType.contains('skip-forward')) {
-      return Icons.skip_next;
-    } else if (eventType.contains('skip-backward')) {
-      return Icons.skip_previous;
-    } else if (eventType.contains('preset')) {
-      return Icons.star;
-    } else if (eventType.contains('play') || eventType.contains('item-started')) {
-      return Icons.play_arrow;
-    } else if (eventType == 'zone-state-changed') {
-      return Icons.speaker_group;
-    } else if (eventType == 'shuffle-state-changed') {
-      return Icons.shuffle;
-    } else if (eventType.contains('source')) {
-      return Icons.input;
-    } else if (eventType.contains('art')) {
-      return Icons.image;
-    } else if (eventType.contains('favorite')) {
-      return Icons.favorite;
-    } else if (eventType.contains('masterdevice') || eventType.contains('system')) {
-      return Icons.settings;
-    } else {
-      return Icons.event;
-    }
+    final handler = _eventHandlers[eventType];
+    if (handler != null) return handler.icon;
+    return Icons.event;
   }
 
   String _getEventSummary(DeviceEvent event) {
-    final data = event.data;
+    final handler = _eventHandlers[event.type];
+    if (handler != null) return handler.getSummary(event.data);
+    return _fallbackSummary(event);
+  }
 
-    // Handle empty item-started events (playback stopped)
-    if (event.type == 'item-started') {
-      final nowPlaying = data['nowPlaying'] as Map<String, dynamic>?;
-      final track = (nowPlaying?['track'] as Map<String, dynamic>?)?['text'] as String?;
-      if (track == null || track.isEmpty) {
-        return 'Playback stopped';
-      }
+  String _fallbackSummary(DeviceEvent event) {
+    if (event.data.isEmpty) return 'No additional data';
+    final parts = <String>[];
+    for (final entry in event.data.entries) {
+      final key = entry.key;
+      final value = entry.value.toString();
+      final displayValue = value.length > 30
+          ? '${value.substring(0, 30)}...'
+          : value;
+      parts.add('$key: $displayValue');
     }
-
-    // Handle play-state-changed with formatted state
-    if (event.type == 'play-state-changed' && data.containsKey('play-state')) {
-      return _formatPlayState(data['play-state'] as String?);
-    }
-
-    // Handle source-state-changed with formatted source
-    if (event.type == 'source-state-changed' && data.containsKey('source-state')) {
-      return 'Source: ${_formatSourceState(data['source-state'] as String?)}';
-    }
-
-    // Handle art-changed
-    if (event.type == 'art-changed') {
-      final artStatus = data['art-status'] as String?;
-      if (artStatus == 'IMAGE_PRESENT') {
-        return 'Album art updated';
-      } else if (artStatus == 'SHOW_DEFAULT_IMAGE') {
-        return 'Using default image';
-      }
-    }
-
-    // Handle volume-change array format [oldVolume, newVolume]
-    if (event.type.contains('volume') && data.containsKey('volume-change')) {
-      final volumeChange = data['volume-change'];
-      if (volumeChange is List && volumeChange.isNotEmpty) {
-        if (volumeChange.length >= 2) {
-          return 'Volume: ${volumeChange[0]} → ${volumeChange[1]}';
-        } else {
-          return 'Volume: ${volumeChange[0]}';
-        }
-      }
-    } else if (event.type.contains('volume') && data.containsKey('volume')) {
-      return 'Volume: ${data['volume']}';
-    } else if (event.type.contains('play-state') && data.containsKey('playState')) {
-      return 'Play state: ${data['playState']}';
-    } else if (event.type.contains('source') && data.containsKey('source')) {
-      return 'Source: ${data['source']}';
-    } else if (event.type.contains('favorite') && data.containsKey('favorite-value')) {
-      final isFavorite = data['favorite-value'] == 'true' || data['favorite-value'] == true;
-      return isFavorite ? 'Marked as favorite' : 'Removed from favorites';
-    } else if (data.isNotEmpty) {
-      // Show all key-value pairs as summary
-      final parts = <String>[];
-      for (final entry in data.entries) {
-        final key = entry.key;
-        final value = entry.value.toString();
-        final displayValue = value.length > 30 ? '${value.substring(0, 30)}...' : value;
-        parts.add('$key: $displayValue');
-      }
-      return parts.join(' • ');
-    }
-
-    return 'No additional data';
+    return parts.join(' • ');
   }
 
   bool _isPlayableEvent(DeviceEvent event) {
@@ -249,7 +330,7 @@ class _DeviceEventsPageState extends State<DeviceEventsPage> {
     }
   }
 
-  String _formatPlayState(String? playState) {
+  static String _staticFormatPlayState(String? playState) {
     if (playState == null) return '';
     switch (playState) {
       case 'PLAY_STATE':
@@ -265,7 +346,7 @@ class _DeviceEventsPageState extends State<DeviceEventsPage> {
     }
   }
 
-  String _formatSourceState(String? source) {
+  static String _staticFormatSourceState(String? source) {
     if (source == null || source.isEmpty) return '';
     // Format known sources
     final sourceMap = {
