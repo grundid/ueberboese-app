@@ -204,6 +204,30 @@ class _DeviceEventsPageState extends State<DeviceEventsPage> {
       icon: Icons.volume_off,
       getSummary: (_) => 'Mute pressed',
     ),
+    'like-pressed': _EventHandler(
+      icon: Icons.thumb_up,
+      getSummary: (data) {
+        final origin = data['origin'] as String?;
+        if (origin != null && origin.isNotEmpty) return 'Like via $origin';
+        return 'Like pressed';
+      },
+    ),
+    'dislike-pressed': _EventHandler(
+      icon: Icons.thumb_down,
+      getSummary: (data) {
+        final origin = data['origin'] as String?;
+        if (origin != null && origin.isNotEmpty) return 'Dislike via $origin';
+        return 'Dislike pressed';
+      },
+    ),
+    'aux-pressed': _EventHandler(
+      icon: Icons.settings_input_component,
+      getSummary: (data) {
+        final origin = data['origin'] as String?;
+        if (origin != null && origin.isNotEmpty) return 'AUX via $origin';
+        return 'AUX pressed';
+      },
+    ),
     'source-state-changed': _EventHandler(
       icon: Icons.input,
       getSummary: (data) => 'Source: ${_staticFormatSourceState(data['source-state'] as String?)}',

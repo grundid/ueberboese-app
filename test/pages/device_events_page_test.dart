@@ -1261,6 +1261,69 @@ void main() {
       expect(find.text('Zone disbanded'), findsOneWidget);
     });
 
+    testWidgets('displays thumb up icon and summary for like-pressed events', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {'buttonId': 'THUMBS_UP', 'origin': 'ir-remote'},
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'like-pressed',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.thumb_up), findsOneWidget);
+      expect(find.text('Like via ir-remote'), findsOneWidget);
+    });
+
+    testWidgets('displays thumb down icon and summary for dislike-pressed events', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {'buttonId': 'THUMBS_DOWN', 'origin': 'ir-remote'},
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'dislike-pressed',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.thumb_down), findsOneWidget);
+      expect(find.text('Dislike via ir-remote'), findsOneWidget);
+    });
+
+    testWidgets('displays AUX icon and summary for aux-pressed events', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {'buttonId': 'AUX_INPUT', 'origin': 'ir-remote'},
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'aux-pressed',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.settings_input_component), findsOneWidget);
+      expect(find.text('AUX via ir-remote'), findsOneWidget);
+    });
+
     testWidgets('sorts events by newest first', (WidgetTester tester) async {
       final now = DateTime.now();
       final testEvents = [
