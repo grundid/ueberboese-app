@@ -11,6 +11,7 @@ import 'package:ueberboese_app/services/management_api_service.dart';
 import 'package:ueberboese_app/pages/speaker_detail_page.dart';
 import 'package:ueberboese_app/pages/add_speaker_page.dart';
 import 'package:ueberboese_app/pages/configuration_page.dart';
+import 'package:ueberboese_app/pages/speaker_setup_wizard_page.dart';
 
 class SpeakerListPage extends StatefulWidget {
   final SpeakerApiService? apiService;
@@ -563,6 +564,52 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
                       onPressed: _addAllSpeakersFromAccount,
                       tooltip: 'Add all from account',
                       child: const Icon(Icons.cloud_download),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Mini FAB 1b: Set up new speaker
+          FadeTransition(
+            opacity: _fadeAnimation,
+            child: ScaleTransition(
+              scale: _fadeAnimation,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Material(
+                      elevation: 3,
+                      borderRadius: BorderRadius.circular(8),
+                      color: theme.colorScheme.surface,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        child: Text(
+                          'Set up new speaker',
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    FloatingActionButton.small(
+                      heroTag: 'setup_new_speaker_fab',
+                      onPressed: () {
+                        _closeFab();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (context) =>
+                                const SpeakerSetupWizardPage(),
+                          ),
+                        );
+                      },
+                      tooltip: 'Set up new speaker',
+                      child: const Icon(Icons.wifi_protected_setup),
                     ),
                   ],
                 ),

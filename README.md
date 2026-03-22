@@ -15,6 +15,7 @@ The app has two main purposes:
    - **Volume Control**: Adjust volume levels for individual speakers
    - **Now Playing**: See what's currently playing on your speakers
    - **Recently Played**: See what got recently played
+   - **New speaker setup**: If you got another SoundTouch speaker, the app has a wizard for the complete setup 
 
 ## Screenshots
 
