@@ -1,0 +1,13 @@
+
+
+
+Features:
+- add new speaker setup wizard
+- Handle presets-changed device event type
+
+
+
+Bug Fixes:
+- Use correct speakerIp when saving presets from Manage Presets page
+
+
