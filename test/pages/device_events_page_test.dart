@@ -1324,6 +1324,54 @@ void main() {
       expect(find.text('AUX via ir-remote'), findsOneWidget);
     });
 
+    testWidgets('displays star icon and preset names for presets-changed events', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {
+            'presets': [
+              {'id': 'P1', 'name': 'Preset One', 'contentItem': ''},
+              {'id': 'P2', 'name': 'Preset Two', 'contentItem': ''},
+              {'id': 'P3', 'name': 'Preset Three', 'contentItem': ''},
+            ],
+          },
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'presets-changed',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(find.text('P1: Preset One \u2013 P2: Preset Two \u2013 P3: Preset Three'), findsOneWidget);
+    });
+
+    testWidgets('displays fallback summary for presets-changed event with no presets', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {'presets': <dynamic>[]},
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'presets-changed',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(find.text('Presets updated'), findsOneWidget);
+    });
+
     testWidgets('sorts events by newest first', (WidgetTester tester) async {
       final now = DateTime.now();
       final testEvents = [

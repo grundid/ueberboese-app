@@ -228,6 +228,20 @@ class _DeviceEventsPageState extends State<DeviceEventsPage> {
         return 'AUX pressed';
       },
     ),
+    'presets-changed': _EventHandler(
+      icon: Icons.star,
+      getSummary: (data) {
+        final presets = data['presets'] as List<dynamic>?;
+        if (presets == null || presets.isEmpty) return 'Presets updated';
+        final parts = presets.map((p) {
+          final preset = p as Map<String, dynamic>;
+          final id = preset['id'] as String? ?? '';
+          final name = preset['name'] as String? ?? '';
+          return '$id: $name';
+        }).where((s) => s != ': ').toList();
+        return parts.isNotEmpty ? parts.join(' \u2013 ') : 'Presets updated';
+      },
+    ),
     'source-state-changed': _EventHandler(
       icon: Icons.input,
       getSummary: (data) => 'Source: ${_staticFormatSourceState(data['source-state'] as String?)}',
