@@ -10,15 +10,17 @@ import 'package:ueberboese_app/models/preset.dart';
 import 'package:ueberboese_app/models/spotify_account.dart';
 import 'package:ueberboese_app/models/spotify_entity.dart';
 import 'package:ueberboese_app/pages/presets/edit_spotify_preset_page.dart';
+import 'package:ueberboese_app/services/speaker_api_service.dart';
 import 'package:ueberboese_app/services/spotify_api_service.dart';
 
-@GenerateMocks([SpotifyApiService])
+@GenerateMocks([SpotifyApiService, SpeakerApiService])
 import 'edit_spotify_preset_page_test.mocks.dart';
 
 void main() {
   group('EditSpotifyPresetPage', () {
     late MyAppState appState;
     late MockSpotifyApiService mockApiService;
+    late MockSpeakerApiService mockSpeakerApiService;
 
     setUp(() {
       appState = MyAppState();
@@ -28,6 +30,7 @@ void main() {
         mgmtPassword: 'password',
       );
       mockApiService = MockSpotifyApiService();
+      mockSpeakerApiService = MockSpeakerApiService();
     });
 
     Widget createWidgetWithProvider(Widget child) {
@@ -51,7 +54,7 @@ void main() {
 
       await tester.pumpWidget(
         createWidgetWithProvider(
-          EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+          EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
         ),
       );
 
@@ -71,7 +74,7 @@ void main() {
 
       await tester.pumpWidget(
         createWidgetWithProvider(
-          EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+          EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
         ),
       );
 
@@ -96,7 +99,7 @@ void main() {
 
       await tester.pumpWidget(
         createWidgetWithProvider(
-          EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+          EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
         ),
       );
 
@@ -116,7 +119,7 @@ void main() {
 
       await tester.pumpWidget(
         createWidgetWithProvider(
-          EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+          EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
         ),
       );
 
@@ -142,7 +145,7 @@ void main() {
 
       await tester.pumpWidget(
         createWidgetWithProvider(
-          EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+          EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
         ),
       );
 
@@ -176,7 +179,7 @@ void main() {
 
       await tester.pumpWidget(
         createWidgetWithProvider(
-          EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+          EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
         ),
       );
 
@@ -203,7 +206,7 @@ void main() {
 
       await tester.pumpWidget(
         createWidgetWithProvider(
-          EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+          EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
         ),
       );
 
@@ -223,7 +226,7 @@ void main() {
 
       await tester.pumpWidget(
         createWidgetWithProvider(
-          EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+          EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
         ),
       );
 
@@ -243,7 +246,7 @@ void main() {
 
       await tester.pumpWidget(
         createWidgetWithProvider(
-          EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+          EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
         ),
       );
 
@@ -265,7 +268,7 @@ void main() {
 
       await tester.pumpWidget(
         createWidgetWithProvider(
-          EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+          EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
         ),
       );
 
@@ -303,7 +306,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -356,7 +359,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -399,7 +402,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -445,7 +448,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -503,7 +506,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -551,7 +554,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -581,7 +584,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -626,7 +629,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -676,7 +679,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -709,7 +712,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -741,7 +744,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -787,7 +790,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -835,7 +838,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -876,7 +879,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -916,7 +919,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -951,7 +954,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -976,7 +979,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -1023,7 +1026,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -1073,7 +1076,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -1122,7 +1125,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -1159,7 +1162,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -1200,7 +1203,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -1241,7 +1244,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -1282,7 +1285,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -1356,7 +1359,7 @@ void main() {
 
         await tester.pumpWidget(
           createWidgetWithProvider(
-            EditSpotifyPresetPage(preset: testPreset, apiService: mockApiService),
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
           ),
         );
 
@@ -1385,6 +1388,71 @@ void main() {
         // Should remain unchanged
         final textField2 = tester.widget<TextField>(find.byType(TextField));
         expect(textField2.controller?.text, equals('https://open.spotify.com/playlist/'));
+      });
+    });
+
+    group('Save', () {
+      testWidgets('uses provided speakerIp when saving preset', (WidgetTester tester) async {
+        const spotifyUri = 'spotify:playlist:test123';
+        final base64Encoded = base64Encode(utf8.encode(spotifyUri));
+        final location = '/playback/container/$base64Encoded';
+
+        final testPreset = Preset(
+          id: '1',
+          itemName: 'Test Playlist',
+          source: 'SPOTIFY',
+          location: location,
+          type: 'playlist',
+          isPresetable: true,
+        );
+
+        final accounts = [
+          SpotifyAccount(
+            displayName: 'John Doe',
+            createdAt: DateTime(2024, 1, 1),
+            spotifyUserId: 'user123',
+          ),
+        ];
+
+        const entity = SpotifyEntity(name: 'Test Playlist', imageUrl: null);
+
+        when(mockApiService.listSpotifyAccounts(any)).thenAnswer((_) async => accounts);
+        when(mockApiService.getSpotifyEntity(any, any)).thenAnswer((_) async => entity);
+        when(mockSpeakerApiService.storePreset(any, any, any, any, any, any))
+            .thenAnswer((_) async => []);
+
+        await tester.pumpWidget(
+          createWidgetWithProvider(
+            EditSpotifyPresetPage(
+              preset: testPreset,
+              speakerIp: '10.0.0.42',
+              apiService: mockApiService,
+              speakerApiService: mockSpeakerApiService,
+            ),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        // Select account
+        await tester.tap(find.byType(DropdownButtonFormField<SpotifyAccount>));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('John Doe').last);
+        await tester.pumpAndSettle();
+
+        // Tap save
+        await tester.ensureVisible(find.widgetWithText(ElevatedButton, 'Save'));
+        await tester.tap(find.widgetWithText(ElevatedButton, 'Save'));
+        await tester.pump();
+
+        verify(mockSpeakerApiService.storePreset(
+          '10.0.0.42',
+          '1',
+          spotifyUri,
+          'user123',
+          'Test Playlist',
+          null,
+        )).called(1);
       });
     });
   });

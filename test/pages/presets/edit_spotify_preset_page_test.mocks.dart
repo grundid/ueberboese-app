@@ -3,13 +3,21 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i4;
+import 'dart:async' as _i8;
 
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i5;
-import 'package:ueberboese_app/models/spotify_account.dart' as _i6;
+import 'package:mockito/src/dummies.dart' as _i9;
+import 'package:ueberboese_app/models/now_playing.dart' as _i6;
+import 'package:ueberboese_app/models/preset.dart' as _i13;
+import 'package:ueberboese_app/models/recent.dart' as _i14;
+import 'package:ueberboese_app/models/speaker.dart' as _i4;
+import 'package:ueberboese_app/models/speaker_info.dart' as _i3;
+import 'package:ueberboese_app/models/spotify_account.dart' as _i10;
 import 'package:ueberboese_app/models/spotify_entity.dart' as _i2;
-import 'package:ueberboese_app/services/spotify_api_service.dart' as _i3;
+import 'package:ueberboese_app/models/volume.dart' as _i5;
+import 'package:ueberboese_app/models/zone.dart' as _i12;
+import 'package:ueberboese_app/services/speaker_api_service.dart' as _i11;
+import 'package:ueberboese_app/services/spotify_api_service.dart' as _i7;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -36,10 +44,30 @@ class _FakeSpotifyEntity_1 extends _i1.SmartFake implements _i2.SpotifyEntity {
     : super(parent, parentInvocation);
 }
 
+class _FakeSpeakerInfo_2 extends _i1.SmartFake implements _i3.SpeakerInfo {
+  _FakeSpeakerInfo_2(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeSpeaker_3 extends _i1.SmartFake implements _i4.Speaker {
+  _FakeSpeaker_3(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeVolume_4 extends _i1.SmartFake implements _i5.Volume {
+  _FakeVolume_4(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakeNowPlaying_5 extends _i1.SmartFake implements _i6.NowPlaying {
+  _FakeNowPlaying_5(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
 /// A class which mocks [SpotifyApiService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockSpotifyApiService extends _i1.Mock implements _i3.SpotifyApiService {
+class MockSpotifyApiService extends _i1.Mock implements _i7.SpotifyApiService {
   MockSpotifyApiService() {
     _i1.throwOnMissingStub(this);
   }
@@ -53,50 +81,332 @@ class MockSpotifyApiService extends _i1.Mock implements _i3.SpotifyApiService {
           as Duration);
 
   @override
-  _i4.Future<String> initSpotifyAuth(String? apiUrl) =>
+  _i8.Future<String> initSpotifyAuth(String? apiUrl) =>
       (super.noSuchMethod(
             Invocation.method(#initSpotifyAuth, [apiUrl]),
-            returnValue: _i4.Future<String>.value(
-              _i5.dummyValue<String>(
+            returnValue: _i8.Future<String>.value(
+              _i9.dummyValue<String>(
                 this,
                 Invocation.method(#initSpotifyAuth, [apiUrl]),
               ),
             ),
           )
-          as _i4.Future<String>);
+          as _i8.Future<String>);
 
   @override
-  _i4.Future<void> confirmSpotifyAuth(String? apiUrl, String? code) =>
+  _i8.Future<void> confirmSpotifyAuth(String? apiUrl, String? code) =>
       (super.noSuchMethod(
             Invocation.method(#confirmSpotifyAuth, [apiUrl, code]),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
           )
-          as _i4.Future<void>);
+          as _i8.Future<void>);
 
   @override
-  _i4.Future<List<_i6.SpotifyAccount>> listSpotifyAccounts(String? apiUrl) =>
+  _i8.Future<List<_i10.SpotifyAccount>> listSpotifyAccounts(String? apiUrl) =>
       (super.noSuchMethod(
             Invocation.method(#listSpotifyAccounts, [apiUrl]),
-            returnValue: _i4.Future<List<_i6.SpotifyAccount>>.value(
-              <_i6.SpotifyAccount>[],
+            returnValue: _i8.Future<List<_i10.SpotifyAccount>>.value(
+              <_i10.SpotifyAccount>[],
             ),
           )
-          as _i4.Future<List<_i6.SpotifyAccount>>);
+          as _i8.Future<List<_i10.SpotifyAccount>>);
 
   @override
-  _i4.Future<_i2.SpotifyEntity> getSpotifyEntity(
+  _i8.Future<_i2.SpotifyEntity> getSpotifyEntity(
     String? apiUrl,
     String? spotifyUri,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#getSpotifyEntity, [apiUrl, spotifyUri]),
-            returnValue: _i4.Future<_i2.SpotifyEntity>.value(
+            returnValue: _i8.Future<_i2.SpotifyEntity>.value(
               _FakeSpotifyEntity_1(
                 this,
                 Invocation.method(#getSpotifyEntity, [apiUrl, spotifyUri]),
               ),
             ),
           )
-          as _i4.Future<_i2.SpotifyEntity>);
+          as _i8.Future<_i2.SpotifyEntity>);
+}
+
+/// A class which mocks [SpeakerApiService].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockSpeakerApiService extends _i1.Mock implements _i11.SpeakerApiService {
+  MockSpeakerApiService() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  Duration get timeout =>
+      (super.noSuchMethod(
+            Invocation.getter(#timeout),
+            returnValue: _FakeDuration_0(this, Invocation.getter(#timeout)),
+          )
+          as Duration);
+
+  @override
+  _i8.Future<_i3.SpeakerInfo> fetchSpeakerInfo(String? ipAddress) =>
+      (super.noSuchMethod(
+            Invocation.method(#fetchSpeakerInfo, [ipAddress]),
+            returnValue: _i8.Future<_i3.SpeakerInfo>.value(
+              _FakeSpeakerInfo_2(
+                this,
+                Invocation.method(#fetchSpeakerInfo, [ipAddress]),
+              ),
+            ),
+          )
+          as _i8.Future<_i3.SpeakerInfo>);
+
+  @override
+  _i8.Future<_i4.Speaker> createSpeakerFromIp(
+    String? ipAddress,
+    String? emoji,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#createSpeakerFromIp, [ipAddress, emoji]),
+            returnValue: _i8.Future<_i4.Speaker>.value(
+              _FakeSpeaker_3(
+                this,
+                Invocation.method(#createSpeakerFromIp, [ipAddress, emoji]),
+              ),
+            ),
+          )
+          as _i8.Future<_i4.Speaker>);
+
+  @override
+  _i8.Future<_i5.Volume> getVolume(String? ipAddress) =>
+      (super.noSuchMethod(
+            Invocation.method(#getVolume, [ipAddress]),
+            returnValue: _i8.Future<_i5.Volume>.value(
+              _FakeVolume_4(this, Invocation.method(#getVolume, [ipAddress])),
+            ),
+          )
+          as _i8.Future<_i5.Volume>);
+
+  @override
+  _i8.Future<_i5.Volume> setVolume(String? ipAddress, int? volume) =>
+      (super.noSuchMethod(
+            Invocation.method(#setVolume, [ipAddress, volume]),
+            returnValue: _i8.Future<_i5.Volume>.value(
+              _FakeVolume_4(
+                this,
+                Invocation.method(#setVolume, [ipAddress, volume]),
+              ),
+            ),
+          )
+          as _i8.Future<_i5.Volume>);
+
+  @override
+  _i8.Future<_i6.NowPlaying> getNowPlaying(String? ipAddress) =>
+      (super.noSuchMethod(
+            Invocation.method(#getNowPlaying, [ipAddress]),
+            returnValue: _i8.Future<_i6.NowPlaying>.value(
+              _FakeNowPlaying_5(
+                this,
+                Invocation.method(#getNowPlaying, [ipAddress]),
+              ),
+            ),
+          )
+          as _i8.Future<_i6.NowPlaying>);
+
+  @override
+  _i8.Future<_i12.Zone?> getZone(String? ipAddress) =>
+      (super.noSuchMethod(
+            Invocation.method(#getZone, [ipAddress]),
+            returnValue: _i8.Future<_i12.Zone?>.value(),
+          )
+          as _i8.Future<_i12.Zone?>);
+
+  @override
+  _i8.Future<void> createZone(
+    String? ipAddress,
+    String? masterId,
+    List<_i12.ZoneMember>? members,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#createZone, [ipAddress, masterId, members]),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<void> addZoneMembers(
+    String? ipAddress,
+    String? masterId,
+    List<_i12.ZoneMember>? members,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#addZoneMembers, [ipAddress, masterId, members]),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<void> removeZoneMembers(
+    String? ipAddress,
+    String? masterId,
+    List<_i12.ZoneMember>? members,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#removeZoneMembers, [
+              ipAddress,
+              masterId,
+              members,
+            ]),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<void> userPlayControl(String? ipAddress, String? controlType) =>
+      (super.noSuchMethod(
+            Invocation.method(#userPlayControl, [ipAddress, controlType]),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<List<_i13.Preset>> getPresets(String? ipAddress) =>
+      (super.noSuchMethod(
+            Invocation.method(#getPresets, [ipAddress]),
+            returnValue: _i8.Future<List<_i13.Preset>>.value(<_i13.Preset>[]),
+          )
+          as _i8.Future<List<_i13.Preset>>);
+
+  @override
+  _i8.Future<List<_i14.Recent>> getRecents(String? ipAddress) =>
+      (super.noSuchMethod(
+            Invocation.method(#getRecents, [ipAddress]),
+            returnValue: _i8.Future<List<_i14.Recent>>.value(<_i14.Recent>[]),
+          )
+          as _i8.Future<List<_i14.Recent>>);
+
+  @override
+  _i8.Future<List<_i13.Preset>> removePreset(
+    String? ipAddress,
+    String? presetId,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#removePreset, [ipAddress, presetId]),
+            returnValue: _i8.Future<List<_i13.Preset>>.value(<_i13.Preset>[]),
+          )
+          as _i8.Future<List<_i13.Preset>>);
+
+  @override
+  _i8.Future<void> standby(String? ipAddress) =>
+      (super.noSuchMethod(
+            Invocation.method(#standby, [ipAddress]),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<List<_i13.Preset>> storePreset(
+    String? ipAddress,
+    String? presetId,
+    String? spotifyUri,
+    String? spotifyUserId,
+    String? itemName,
+    String? containerArt,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#storePreset, [
+              ipAddress,
+              presetId,
+              spotifyUri,
+              spotifyUserId,
+              itemName,
+              containerArt,
+            ]),
+            returnValue: _i8.Future<List<_i13.Preset>>.value(<_i13.Preset>[]),
+          )
+          as _i8.Future<List<_i13.Preset>>);
+
+  @override
+  _i8.Future<List<_i13.Preset>> storeTuneInPreset(
+    String? ipAddress,
+    String? presetId,
+    String? stationId,
+    String? itemName,
+    String? containerArt,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#storeTuneInPreset, [
+              ipAddress,
+              presetId,
+              stationId,
+              itemName,
+              containerArt,
+            ]),
+            returnValue: _i8.Future<List<_i13.Preset>>.value(<_i13.Preset>[]),
+          )
+          as _i8.Future<List<_i13.Preset>>);
+
+  @override
+  _i8.Future<List<_i13.Preset>> storeInternetRadioPreset(
+    String? ipAddress,
+    String? presetId,
+    String? url,
+    String? itemName,
+    String? containerArt,
+    String? apiUrl,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#storeInternetRadioPreset, [
+              ipAddress,
+              presetId,
+              url,
+              itemName,
+              containerArt,
+              apiUrl,
+            ]),
+            returnValue: _i8.Future<List<_i13.Preset>>.value(<_i13.Preset>[]),
+          )
+          as _i8.Future<List<_i13.Preset>>);
+
+  @override
+  _i8.Future<void> sendKey(
+    String? ipAddress,
+    String? keyValue,
+    String? state,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#sendKey, [ipAddress, keyValue, state]),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<void> setSpeakerName(String? ipAddress, String? name) =>
+      (super.noSuchMethod(
+            Invocation.method(#setSpeakerName, [ipAddress, name]),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<void> selectContentItem(String? ipAddress, _i14.Recent? recent) =>
+      (super.noSuchMethod(
+            Invocation.method(#selectContentItem, [ipAddress, recent]),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
+
+  @override
+  _i8.Future<void> selectPreset(String? ipAddress, _i13.Preset? preset) =>
+      (super.noSuchMethod(
+            Invocation.method(#selectPreset, [ipAddress, preset]),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
 }

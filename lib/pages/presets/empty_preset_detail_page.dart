@@ -127,6 +127,7 @@ class _EmptyPresetDetailPageState extends State<EmptyPresetDetailPage> {
       ),
       floatingActionButton: PresetEditFab(
         preset: tempPreset,
+        speakerIp: widget.speakerIp,
         isExpandedNotifier: _fabExpandedNotifier,
       ),
     );

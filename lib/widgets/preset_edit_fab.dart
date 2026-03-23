@@ -8,11 +8,13 @@ import 'package:ueberboese_app/pages/presets/edit_internet_radio_preset_page.dar
 /// a preset as Spotify, TuneIn, or Internet Radio.
 class PresetEditFab extends StatefulWidget {
   final Preset preset;
+  final String speakerIp;
   final ValueNotifier<bool>? isExpandedNotifier;
 
   const PresetEditFab({
     super.key,
     required this.preset,
+    required this.speakerIp,
     this.isExpandedNotifier,
   });
 
@@ -94,8 +96,10 @@ class _PresetEditFabState extends State<PresetEditFab>
     Navigator.push(
       context,
       MaterialPageRoute<void>(
-        builder: (context) =>
-            EditInternetRadioPresetPage(preset: widget.preset),
+        builder: (context) => EditInternetRadioPresetPage(
+          preset: widget.preset,
+          speakerIp: widget.speakerIp,
+        ),
       ),
     );
   }
@@ -105,7 +109,10 @@ class _PresetEditFabState extends State<PresetEditFab>
     Navigator.push(
       context,
       MaterialPageRoute<void>(
-        builder: (context) => EditTuneInPresetPage(preset: widget.preset),
+        builder: (context) => EditTuneInPresetPage(
+          preset: widget.preset,
+          speakerIp: widget.speakerIp,
+        ),
       ),
     );
   }
@@ -115,7 +122,10 @@ class _PresetEditFabState extends State<PresetEditFab>
     Navigator.push(
       context,
       MaterialPageRoute<void>(
-        builder: (context) => EditSpotifyPresetPage(preset: widget.preset),
+        builder: (context) => EditSpotifyPresetPage(
+          preset: widget.preset,
+          speakerIp: widget.speakerIp,
+        ),
       ),
     );
   }

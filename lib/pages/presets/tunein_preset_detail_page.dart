@@ -10,6 +10,7 @@ import 'package:ueberboese_app/services/tunein_api_service.dart';
 class TuneInPresetDetailPage extends StatefulWidget {
   final Preset preset;
   final TuneInStation station;
+  final String speakerIp;
   final TuneInApiService? tuneInApiService;
   final SpeakerApiService? speakerApiService;
 
@@ -17,6 +18,7 @@ class TuneInPresetDetailPage extends StatefulWidget {
     super.key,
     required this.preset,
     required this.station,
+    required this.speakerIp,
     this.tuneInApiService,
     this.speakerApiService,
   });
@@ -86,11 +88,6 @@ class _TuneInPresetDetailPageState extends State<TuneInPresetDetailPage> {
   Future<void> _onSavePressed() async {
     final appState = context.read<MyAppState>();
 
-    if (appState.speakers.isEmpty) {
-      _showErrorDialog('No speakers available');
-      return;
-    }
-
     if (_stationDetail == null) {
       _showErrorDialog('Station details not loaded');
       return;
@@ -101,9 +98,8 @@ class _TuneInPresetDetailPageState extends State<TuneInPresetDetailPage> {
     });
 
     try {
-      final speaker = appState.speakers.first;
       await _speakerApiService.storeTuneInPreset(
-        speaker.ipAddress,
+        widget.speakerIp,
         widget.preset.id,
         widget.station.guideId,
         _stationDetail!.name,
@@ -113,7 +109,7 @@ class _TuneInPresetDetailPageState extends State<TuneInPresetDetailPage> {
       if (!mounted) return;
 
       // Invalidate preset cache to trigger UI refresh
-      appState.invalidatePresetsCache(speaker.ipAddress);
+      appState.invalidatePresetsCache(widget.speakerIp);
 
       // Show success snackbar
       ScaffoldMessenger.of(context).showSnackBar(

@@ -8,12 +8,14 @@ import 'package:ueberboese_app/models/tunein_station.dart';
 
 class EditInternetRadioPresetPage extends StatefulWidget {
   final Preset preset;
+  final String speakerIp;
   final SpeakerApiService? speakerApiService;
   final TuneInApiService? tuneInApiService;
 
   const EditInternetRadioPresetPage({
     super.key,
     required this.preset,
+    required this.speakerIp,
     this.speakerApiService,
     this.tuneInApiService,
   });
@@ -185,21 +187,15 @@ class _EditInternetRadioPresetPageState extends State<EditInternetRadioPresetPag
       return;
     }
 
-    if (appState.speakers.isEmpty) {
-      _showErrorDialog('No speakers available');
-      return;
-    }
-
     setState(() {
       _isSaving = true;
     });
 
     try {
-      final speaker = appState.speakers.first;
       final containerArt = _containerArtController.text.trim();
 
       await _speakerApiService.storeInternetRadioPreset(
-        speaker.ipAddress,
+        widget.speakerIp,
         widget.preset.id,
         url,
         name,
@@ -210,7 +206,7 @@ class _EditInternetRadioPresetPageState extends State<EditInternetRadioPresetPag
       if (!mounted) return;
 
       // Invalidate preset cache to trigger UI refresh
-      appState.invalidatePresetsCache(speaker.ipAddress);
+      appState.invalidatePresetsCache(widget.speakerIp);
 
       // Show success snackbar
       ScaffoldMessenger.of(context).showSnackBar(

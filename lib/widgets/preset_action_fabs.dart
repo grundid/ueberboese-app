@@ -69,6 +69,7 @@ class _PresetActionFabsState extends State<PresetActionFabs> {
         // Edit FAB
         PresetEditFab(
           preset: widget.preset,
+          speakerIp: widget.speakerIp,
           isExpandedNotifier: widget.isExpandedNotifier,
         ),
         const SizedBox(height: 16),

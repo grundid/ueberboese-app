@@ -12,12 +12,14 @@ import 'package:ueberboese_app/services/spotify_api_service.dart';
 
 class EditSpotifyPresetPage extends StatefulWidget {
   final Preset preset;
+  final String speakerIp;
   final SpotifyApiService? apiService;
   final SpeakerApiService? speakerApiService;
 
   const EditSpotifyPresetPage({
     super.key,
     required this.preset,
+    required this.speakerIp,
     this.apiService,
     this.speakerApiService,
   });
@@ -354,19 +356,13 @@ class _EditSpotifyPresetPageState extends State<EditSpotifyPresetPage> {
       return;
     }
 
-    if (appState.speakers.isEmpty) {
-      _showErrorDialog('No speakers available');
-      return;
-    }
-
     setState(() {
       _isSaving = true;
     });
 
     try {
-      final speaker = appState.speakers.first;
       await _speakerApiService.storePreset(
-        speaker.ipAddress,
+        widget.speakerIp,
         widget.preset.id,
         spotifyUri,
         _selectedAccount!.spotifyUserId,
@@ -377,7 +373,7 @@ class _EditSpotifyPresetPageState extends State<EditSpotifyPresetPage> {
       if (!mounted) return;
 
       // Invalidate preset cache to trigger UI refresh
-      appState.invalidatePresetsCache(speaker.ipAddress);
+      appState.invalidatePresetsCache(widget.speakerIp);
 
       // Show success snackbar
       ScaffoldMessenger.of(context).showSnackBar(

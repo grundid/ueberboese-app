@@ -6,11 +6,13 @@ import 'package:ueberboese_app/services/tunein_api_service.dart';
 
 class EditTuneInPresetPage extends StatefulWidget {
   final Preset preset;
+  final String speakerIp;
   final TuneInApiService? apiService;
 
   const EditTuneInPresetPage({
     super.key,
     required this.preset,
+    required this.speakerIp,
     this.apiService,
   });
 
@@ -83,6 +85,7 @@ class _EditTuneInPresetPageState extends State<EditTuneInPresetPage> {
         builder: (context) => TuneInPresetDetailPage(
           preset: widget.preset,
           station: station,
+          speakerIp: widget.speakerIp,
         ),
       ),
     );

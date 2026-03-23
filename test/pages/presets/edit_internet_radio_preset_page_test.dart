@@ -72,6 +72,7 @@ void main() {
         createWidgetWithProvider(
           EditInternetRadioPresetPage(
             preset: testPreset,
+            speakerIp: '192.168.1.100',
             speakerApiService: mockSpeakerApiService,
           ),
         ),
@@ -95,6 +96,7 @@ void main() {
         createWidgetWithProvider(
           EditInternetRadioPresetPage(
             preset: testPreset,
+            speakerIp: '192.168.1.100',
             speakerApiService: mockSpeakerApiService,
           ),
         ),
@@ -120,6 +122,7 @@ void main() {
         createWidgetWithProvider(
           EditInternetRadioPresetPage(
             preset: testPreset,
+            speakerIp: '192.168.1.100',
             speakerApiService: mockSpeakerApiService,
           ),
         ),
@@ -142,6 +145,7 @@ void main() {
         createWidgetWithProvider(
           EditInternetRadioPresetPage(
             preset: testPreset,
+            speakerIp: '192.168.1.100',
             speakerApiService: mockSpeakerApiService,
           ),
         ),
@@ -183,6 +187,7 @@ void main() {
         createWidgetWithProvider(
           EditInternetRadioPresetPage(
             preset: testPreset,
+            speakerIp: '192.168.1.100',
             speakerApiService: mockSpeakerApiService,
           ),
         ),
@@ -215,6 +220,7 @@ void main() {
         createWidgetWithProvider(
           EditInternetRadioPresetPage(
             preset: testPreset,
+            speakerIp: '192.168.1.100',
             speakerApiService: mockSpeakerApiService,
           ),
         ),
@@ -247,6 +253,7 @@ void main() {
         createWidgetWithProvider(
           EditInternetRadioPresetPage(
             preset: testPreset,
+            speakerIp: '192.168.1.100',
             speakerApiService: mockSpeakerApiService,
           ),
         ),
@@ -295,6 +302,7 @@ void main() {
         createWidgetWithProvider(
           EditInternetRadioPresetPage(
             preset: testPreset,
+            speakerIp: '192.168.1.100',
             speakerApiService: mockSpeakerApiService,
           ),
         ),
@@ -347,6 +355,7 @@ void main() {
         createWidgetWithProvider(
           EditInternetRadioPresetPage(
             preset: testPreset,
+            speakerIp: '192.168.1.100',
             speakerApiService: mockSpeakerApiService,
           ),
         ),
@@ -403,6 +412,7 @@ void main() {
         createWidgetWithProvider(
           EditInternetRadioPresetPage(
             preset: testPreset,
+            speakerIp: '192.168.1.100',
             speakerApiService: mockSpeakerApiService,
           ),
         ),
@@ -425,8 +435,7 @@ void main() {
       expect(find.text('Failed to save preset: Exception: Network error'), findsOneWidget);
     });
 
-    testWidgets('shows error dialog when no speakers available', (WidgetTester tester) async {
-      final emptyAppState = MyAppState();
+    testWidgets('uses the provided speakerIp when saving', (WidgetTester tester) async {
       const testPreset = Preset(
         id: '1',
         itemName: 'Test Station',
@@ -436,19 +445,25 @@ void main() {
         isPresetable: false,
       );
 
+      when(mockSpeakerApiService.storeInternetRadioPreset(
+        any,
+        any,
+        any,
+        any,
+        any,
+        any,
+      )).thenAnswer((_) async => [testPreset]);
+
       await tester.pumpWidget(
-        ChangeNotifierProvider<MyAppState>.value(
-          value: emptyAppState,
-          child: MaterialApp(
-            home: EditInternetRadioPresetPage(
-              preset: testPreset,
-              speakerApiService: mockSpeakerApiService,
-            ),
+        createWidgetWithProvider(
+          EditInternetRadioPresetPage(
+            preset: testPreset,
+            speakerIp: '10.0.0.42',
+            speakerApiService: mockSpeakerApiService,
           ),
         ),
       );
 
-      // Enter valid data
       await tester.enterText(
         find.widgetWithText(TextField, 'Station Name *'),
         'My Radio Station',
@@ -458,11 +473,17 @@ void main() {
         'https://stream.example.com/radio',
       );
 
-      // Tap save button
       await tester.tap(find.widgetWithText(ElevatedButton, 'Save'));
-      await tester.pumpAndSettle();
+      await tester.pump();
 
-      expect(find.text('No speakers available'), findsOneWidget);
+      verify(mockSpeakerApiService.storeInternetRadioPreset(
+        '10.0.0.42',
+        '1',
+        'https://stream.example.com/radio',
+        'My Radio Station',
+        null,
+        'https://ueberboese.example.com',
+      )).called(1);
     });
 
     testWidgets('search button is visible', (WidgetTester tester) async {
@@ -479,6 +500,7 @@ void main() {
         createWidgetWithProvider(
           EditInternetRadioPresetPage(
             preset: testPreset,
+            speakerIp: '192.168.1.100',
             speakerApiService: mockSpeakerApiService,
             tuneInApiService: mockTuneInApiService,
           ),
@@ -503,6 +525,7 @@ void main() {
         createWidgetWithProvider(
           EditInternetRadioPresetPage(
             preset: testPreset,
+            speakerIp: '192.168.1.100',
             speakerApiService: mockSpeakerApiService,
             tuneInApiService: mockTuneInApiService,
           ),
@@ -536,6 +559,7 @@ void main() {
         createWidgetWithProvider(
           EditInternetRadioPresetPage(
             preset: testPreset,
+            speakerIp: '192.168.1.100',
             speakerApiService: mockSpeakerApiService,
             tuneInApiService: mockTuneInApiService,
           ),
@@ -574,6 +598,7 @@ void main() {
         createWidgetWithProvider(
           EditInternetRadioPresetPage(
             preset: testPreset,
+            speakerIp: '192.168.1.100',
             speakerApiService: mockSpeakerApiService,
             tuneInApiService: mockTuneInApiService,
           ),
@@ -606,6 +631,7 @@ void main() {
         createWidgetWithProvider(
           EditInternetRadioPresetPage(
             preset: testPreset,
+            speakerIp: '192.168.1.100',
             speakerApiService: mockSpeakerApiService,
             tuneInApiService: mockTuneInApiService,
           ),
@@ -653,6 +679,7 @@ void main() {
         createWidgetWithProvider(
           EditInternetRadioPresetPage(
             preset: testPreset,
+            speakerIp: '192.168.1.100',
             speakerApiService: mockSpeakerApiService,
             tuneInApiService: mockTuneInApiService,
           ),
@@ -704,6 +731,7 @@ void main() {
         createWidgetWithProvider(
           EditInternetRadioPresetPage(
             preset: testPreset,
+            speakerIp: '192.168.1.100',
             speakerApiService: mockSpeakerApiService,
             tuneInApiService: mockTuneInApiService,
           ),
