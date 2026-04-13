@@ -200,9 +200,63 @@ class _DeviceEventsPageState extends State<DeviceEventsPage> {
       icon: Icons.skip_previous,
       getSummary: (_) => 'Skip backward',
     ),
+    'bass-changed': _EventHandler(
+      icon: Icons.equalizer,
+      getSummary: (data) {
+        if (data.containsKey('bass')) return 'Bass: ${data['bass']}';
+        return 'No additional data';
+      },
+    ),
+    'clock-changed': _EventHandler(
+      icon: Icons.access_time,
+      getSummary: (data) {
+        final parts = <String>[];
+        final timezone = data['timezone'] as String?;
+        if (timezone != null && timezone.isNotEmpty) parts.add(timezone);
+        final timeformat = data['timeformat'];
+        if (timeformat != null) parts.add('${timeformat}h');
+        final brightness = data['brightness'];
+        if (brightness != null) parts.add('Brightness: $brightness');
+        final enabled = data['enabled'];
+        if (enabled != null) parts.add('Display: ${enabled == 'true' || enabled == true ? 'on' : 'off'}');
+        final useroffset = data['useroffset'];
+        if (useroffset != null) parts.add('Offset: $useroffset');
+        final usertime = data['usertime'];
+        if (usertime != null) parts.add('User time: $usertime');
+        return parts.isNotEmpty ? parts.join(' • ') : 'No additional data';
+      },
+    ),
     'mute-pressed': _EventHandler(
       icon: Icons.volume_off,
       getSummary: (_) => 'Mute pressed',
+    ),
+    'pause-pressed': _EventHandler(
+      icon: Icons.pause,
+      getSummary: (data) {
+        final origin = data['origin'] as String?;
+        if (origin != null && origin.isNotEmpty) return 'Pause via $origin';
+        return 'Pause pressed';
+      },
+    ),
+    'preset-assigned': _EventHandler(
+      icon: Icons.star,
+      getSummary: (data) {
+        final preset = data['preset'] as String?;
+        final origin = data['origin'] as String?;
+        if (preset != null && preset.isNotEmpty) {
+          if (origin != null && origin.isNotEmpty) return '$preset assigned via $origin';
+          return '$preset assigned';
+        }
+        return 'Preset assigned';
+      },
+    ),
+    'stop-pressed': _EventHandler(
+      icon: Icons.stop,
+      getSummary: (data) {
+        final origin = data['origin'] as String?;
+        if (origin != null && origin.isNotEmpty) return 'Stop via $origin';
+        return 'Stop pressed';
+      },
     ),
     'like-pressed': _EventHandler(
       icon: Icons.thumb_up,

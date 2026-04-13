@@ -1372,6 +1372,121 @@ void main() {
       expect(find.text('Presets updated'), findsOneWidget);
     });
 
+    testWidgets('displays equalizer icon and bass value for bass-changed events', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {'bass': -1},
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'bass-changed',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.equalizer), findsOneWidget);
+      expect(find.text('Bass: -1'), findsOneWidget);
+    });
+
+    testWidgets('displays clock icon and timezone/format for clock-changed events', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {
+            'brightness': 100,
+            'enabled': 'true',
+            'timeformat': 24,
+            'timezone': 'Europe/Berlin',
+            'useroffset': 0,
+            'usertime': 0,
+          },
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'clock-changed',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.access_time), findsOneWidget);
+      expect(find.text('Europe/Berlin • 24h • Brightness: 100 • Display: on • Offset: 0 • User time: 0'), findsOneWidget);
+    });
+
+    testWidgets('displays pause icon and origin for pause-pressed events', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {'buttonId': 'PAUSE', 'origin': 'gabbo'},
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'pause-pressed',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.pause), findsOneWidget);
+      expect(find.text('Pause via gabbo'), findsOneWidget);
+    });
+
+    testWidgets('displays star icon and preset/origin for preset-assigned events', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {
+            'preset': 'P1',
+            'origin': 'device',
+          },
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'preset-assigned',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.star), findsOneWidget);
+      expect(find.text('P1 assigned via device'), findsOneWidget);
+    });
+
+    testWidgets('displays stop icon and origin for stop-pressed events', (WidgetTester tester) async {
+      final testEvents = [
+        DeviceEvent(
+          data: {'buttonId': 'STOP', 'origin': 'gabbo'},
+          monoTime: 12345,
+          time: DateTime.now(),
+          type: 'stop-pressed',
+        ),
+      ];
+
+      when(mockApiService.fetchDeviceEvents(any, any, any, any)).thenAnswer(
+        (_) async => testEvents,
+      );
+
+      await tester.pumpWidget(createWidgetUnderTest());
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.stop), findsOneWidget);
+      expect(find.text('Stop via gabbo'), findsOneWidget);
+    });
+
     testWidgets('sorts events by newest first', (WidgetTester tester) async {
       final now = DateTime.now();
       final testEvents = [
