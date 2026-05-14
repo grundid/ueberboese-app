@@ -18,6 +18,7 @@ import 'package:ueberboese_app/pages/remote_control_page.dart';
 import 'package:ueberboese_app/pages/album_art_viewer_page.dart';
 import 'package:ueberboese_app/pages/recents_page.dart';
 import 'package:ueberboese_app/pages/device_events_page.dart';
+import 'package:ueberboese_app/utils/url_utils.dart';
 import 'package:ueberboese_app/pages/presets/presets_page.dart';
 
 class SpeakerDetailPage extends StatefulWidget {
@@ -220,11 +221,11 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
           .toLowerCase()
           .replaceAll(RegExp(r'/+$'), '');
 
-      // Check for mismatch: both must be non-empty and different
+      // Warn only when the hosts (scheme+domain+port) differ; ignore path differences
       final hasMismatch = normalizedMargeUrl != null &&
           normalizedMargeUrl.isNotEmpty &&
           normalizedConfigUrl.isNotEmpty &&
-          normalizedMargeUrl != normalizedConfigUrl;
+          !urlHostsMatch(normalizedMargeUrl, normalizedConfigUrl);
 
       setState(() {
         _speakerInfo = speakerInfo;
