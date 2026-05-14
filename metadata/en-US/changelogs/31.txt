@@ -1,8 +1,3 @@
-
-
-
 Features:
 - Add monochrome adaptive icon layer for Android 13 themed icons
 - Handle bass-changed, clock-changed, pause-pressed, preset-assigned, and stop-pressed event types
-
-

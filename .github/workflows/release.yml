@@ -69,6 +69,8 @@ jobs:
             | sed 's/^- \*\*[^*]*\*\* /- /' \
             | awk '/^[^-].*:$/ && NR>1 {print ""} {print} /^[^-].*:$/ {getline; next}' \
             | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
+            | awk '/^$/{blank++; next} {if(blank>0 && NR>1) print ""; blank=0; print}' \
+            | awk 'NF{found=1} found' \
             > metadata/en-US/changelogs/${NEW_BUILD}.txt
 
           # Configure git

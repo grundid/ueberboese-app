@@ -1,14 +1,7 @@
-
-
-
 Features:
 - Handle like-pressed, dislike-pressed, and aux-pressed event types
 - Handle more event types on device_events_page
 - Improve device event summaries for volume, zone, and Bluetooth events
 
-
-
 Documentation:
 - Mention presets
-
-

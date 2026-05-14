@@ -49,5 +49,49 @@ void main() {
           reason: 'At least 3 screenshots are recommended');
     });
 
+    group('changelog files', () {
+      late List<File> changelogFiles;
+
+      setUp(() {
+        final dir = Directory('metadata/en-US/changelogs');
+        changelogFiles = dir
+            .listSync()
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.txt'))
+            .toList();
+      });
+
+      test('changelog directory has at least one file', () {
+        expect(changelogFiles.isNotEmpty, true,
+            reason: 'At least one changelog file must exist');
+      });
+
+      test('no changelog file starts with a blank line', () {
+        for (final file in changelogFiles) {
+          final content = file.readAsStringSync();
+          if (content.isEmpty) continue;
+          expect(content.startsWith('\n'), false,
+              reason: '${file.path} must not start with a blank line');
+        }
+      });
+
+      test('no changelog file ends with more than one newline', () {
+        for (final file in changelogFiles) {
+          final content = file.readAsStringSync();
+          if (content.isEmpty) continue;
+          expect(content.endsWith('\n\n'), false,
+              reason: '${file.path} must not end with extra blank lines');
+        }
+      });
+
+      test('no changelog file contains consecutive blank lines', () {
+        for (final file in changelogFiles) {
+          final content = file.readAsStringSync();
+          expect(content.contains('\n\n\n'), false,
+              reason: '${file.path} must not contain consecutive blank lines');
+        }
+      });
+    });
+
   });
 }
