@@ -1,0 +1,6 @@
+Features:
+- Do not warn if marge url has different path
+
+Build Systems:
+- Remove extra blank lines from F-Droid changelog files
+- Upgrade dependencies
