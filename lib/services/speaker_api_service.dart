@@ -1102,4 +1102,63 @@ class SpeakerApiService {
       }
     }
   }
+
+  Future<int> getLanguage(String ipAddress) async {
+    final url = Uri.parse('http://$ipAddress:8090/language');
+    final client = httpClient ?? http.Client();
+
+    try {
+      final response = await client.get(url).timeout(timeout);
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to get language: HTTP ${response.statusCode}',
+        );
+      }
+
+      final bodyText = utf8.decode(response.bodyBytes);
+      final document = XmlDocument.parse(bodyText);
+      final elements = document.findAllElements('sysLanguage');
+      if (elements.isEmpty) {
+        throw Exception('sysLanguage element not found in response');
+      }
+      final value = int.tryParse(elements.first.innerText.trim());
+      if (value == null) {
+        throw Exception('Invalid language code in response');
+      }
+      return value;
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Failed to get language: $e');
+    } finally {
+      if (httpClient == null) client.close();
+    }
+  }
+
+  Future<void> setLanguage(String ipAddress, int languageCode) async {
+    final url = Uri.parse('http://$ipAddress:8090/language');
+    final client = httpClient ?? http.Client();
+
+    try {
+      final body = '<sysLanguage>$languageCode</sysLanguage>';
+      final response = await client
+          .post(
+            url,
+            headers: {'Content-Type': 'text/xml'},
+            body: body,
+          )
+          .timeout(timeout);
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to set language: HTTP ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Failed to set language: $e');
+    } finally {
+      if (httpClient == null) client.close();
+    }
+  }
 }

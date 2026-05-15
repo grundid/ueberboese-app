@@ -20,6 +20,7 @@ import 'package:ueberboese_app/pages/recents_page.dart';
 import 'package:ueberboese_app/pages/device_events_page.dart';
 import 'package:ueberboese_app/utils/url_utils.dart';
 import 'package:ueberboese_app/pages/presets/presets_page.dart';
+import 'package:ueberboese_app/pages/speaker_settings_page.dart';
 
 class SpeakerDetailPage extends StatefulWidget {
   final Speaker speaker;
@@ -1174,6 +1175,14 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
               builder: (context) => DeviceEventsPage(speaker: widget.speaker),
             ),
           );
+        } else if (value == 'settings') {
+          Navigator.push(
+            context,
+            MaterialPageRoute<void>(
+              builder: (context) =>
+                  SpeakerSettingsPage(speaker: widget.speaker),
+            ),
+          );
         } else if (value == 'standby') {
           _sendToStandby();
         } else if (value == 'delete') {
@@ -1229,6 +1238,16 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
               Icon(Icons.event),
               SizedBox(width: 8),
               Text('Device Events'),
+            ],
+          ),
+        ),
+        const PopupMenuItem<String>(
+          value: 'settings',
+          child: Row(
+            children: [
+              Icon(Icons.settings),
+              SizedBox(width: 8),
+              Text('Settings'),
             ],
           ),
         ),

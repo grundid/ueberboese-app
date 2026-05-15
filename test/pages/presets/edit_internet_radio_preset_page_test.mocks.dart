@@ -344,6 +344,23 @@ class MockSpeakerApiService extends _i1.Mock implements _i7.SpeakerApiService {
             returnValueForMissingStub: _i8.Future<void>.value(),
           )
           as _i8.Future<void>);
+
+  @override
+  _i8.Future<int> getLanguage(String? ipAddress) =>
+      (super.noSuchMethod(
+            Invocation.method(#getLanguage, [ipAddress]),
+            returnValue: _i8.Future<int>.value(0),
+          )
+          as _i8.Future<int>);
+
+  @override
+  _i8.Future<void> setLanguage(String? ipAddress, int? languageCode) =>
+      (super.noSuchMethod(
+            Invocation.method(#setLanguage, [ipAddress, languageCode]),
+            returnValue: _i8.Future<void>.value(),
+            returnValueForMissingStub: _i8.Future<void>.value(),
+          )
+          as _i8.Future<void>);
 }
 
 /// A class which mocks [TuneInApiService].

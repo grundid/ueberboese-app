@@ -335,4 +335,21 @@ class MockSpeakerApiService extends _i1.Mock implements _i6.SpeakerApiService {
             returnValueForMissingStub: _i7.Future<void>.value(),
           )
           as _i7.Future<void>);
+
+  @override
+  _i7.Future<int> getLanguage(String? ipAddress) =>
+      (super.noSuchMethod(
+            Invocation.method(#getLanguage, [ipAddress]),
+            returnValue: _i7.Future<int>.value(0),
+          )
+          as _i7.Future<int>);
+
+  @override
+  _i7.Future<void> setLanguage(String? ipAddress, int? languageCode) =>
+      (super.noSuchMethod(
+            Invocation.method(#setLanguage, [ipAddress, languageCode]),
+            returnValue: _i7.Future<void>.value(),
+            returnValueForMissingStub: _i7.Future<void>.value(),
+          )
+          as _i7.Future<void>);
 }

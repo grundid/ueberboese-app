@@ -2453,5 +2453,91 @@ void main() {
         expect(body, contains('Rock &amp; Roll &lt;with> "quotes"'));
       });
     });
+
+    group('getLanguage', () {
+      test('parses language code from response', () async {
+        const xmlResponse =
+            '<?xml version="1.0" encoding="UTF-8" ?><sysLanguage>3</sysLanguage>';
+
+        when(mockClient.get(any)).thenAnswer(
+          (_) async => http.Response(
+            xmlResponse,
+            200,
+            headers: {'content-type': 'text/xml; charset=utf-8'},
+          ),
+        );
+
+        final code = await apiService.getLanguage('192.168.1.100');
+        expect(code, 3);
+      });
+
+      test('throws on non-200 response', () async {
+        when(mockClient.get(any)).thenAnswer(
+          (_) async => http.Response('', 500),
+        );
+
+        expect(
+          () => apiService.getLanguage('192.168.1.100'),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('throws when sysLanguage element is missing', () async {
+        const xmlResponse =
+            '<?xml version="1.0" encoding="UTF-8" ?><other>3</other>';
+
+        when(mockClient.get(any)).thenAnswer(
+          (_) async => http.Response(
+            xmlResponse,
+            200,
+            headers: {'content-type': 'text/xml; charset=utf-8'},
+          ),
+        );
+
+        expect(
+          () => apiService.getLanguage('192.168.1.100'),
+          throwsA(isA<Exception>()),
+        );
+      });
+    });
+
+    group('setLanguage', () {
+      test('sends correct XML body with language code', () async {
+        when(
+          mockClient.post(
+            any,
+            headers: anyNamed('headers'),
+            body: anyNamed('body'),
+          ),
+        ).thenAnswer((_) async => http.Response('', 200));
+
+        await apiService.setLanguage('192.168.1.100', 2);
+
+        final captured = verify(
+          mockClient.post(
+            any,
+            headers: captureAnyNamed('headers'),
+            body: captureAnyNamed('body'),
+          ),
+        ).captured;
+
+        expect(captured[1], '<sysLanguage>2</sysLanguage>');
+      });
+
+      test('throws on non-200 response', () async {
+        when(
+          mockClient.post(
+            any,
+            headers: anyNamed('headers'),
+            body: anyNamed('body'),
+          ),
+        ).thenAnswer((_) async => http.Response('', 500));
+
+        expect(
+          () => apiService.setLanguage('192.168.1.100', 3),
+          throwsA(isA<Exception>()),
+        );
+      });
+    });
   });
 }
