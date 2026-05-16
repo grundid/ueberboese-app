@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ueberboese_app/models/bass.dart';
 import 'package:ueberboese_app/models/speaker.dart';
 import 'package:ueberboese_app/services/speaker_api_service.dart';
 
@@ -62,11 +63,18 @@ class _SpeakerSettingsPageState extends State<SpeakerSettingsPage> {
   bool _loadingLanguage = true;
   String? _languageError;
 
+  BassCapabilities? _bassCapabilities;
+  Bass? _currentBass;
+  bool _loadingBass = true;
+  String? _bassError;
+  double? _pendingBass;
+
   @override
   void initState() {
     super.initState();
     _apiService = widget.apiService ?? SpeakerApiService();
     _loadLanguage();
+    _loadBass();
   }
 
   Future<void> _loadLanguage() async {
@@ -84,6 +92,30 @@ class _SpeakerSettingsPageState extends State<SpeakerSettingsPage> {
       setState(() {
         _languageError = e.toString();
         _loadingLanguage = false;
+      });
+    }
+  }
+
+  Future<void> _loadBass() async {
+    setState(() {
+      _loadingBass = true;
+      _bassError = null;
+    });
+    try {
+      final capabilities =
+          await _apiService.getBassCapabilities(widget.speaker.ipAddress);
+      final bass = capabilities.bassAvailable
+          ? await _apiService.getBass(widget.speaker.ipAddress)
+          : null;
+      setState(() {
+        _bassCapabilities = capabilities;
+        _currentBass = bass;
+        _loadingBass = false;
+      });
+    } catch (e) {
+      setState(() {
+        _bassError = e.toString();
+        _loadingBass = false;
       });
     }
   }
@@ -111,6 +143,43 @@ class _SpeakerSettingsPageState extends State<SpeakerSettingsPage> {
     }
   }
 
+  Future<void> _onBassChangeEnd(double value) async {
+    await _applyBass(value.round());
+  }
+
+  Future<void> _adjustBass(int delta) async {
+    final caps = _bassCapabilities;
+    final bass = _currentBass;
+    if (caps == null || bass == null) return;
+    final current = (_pendingBass ?? bass.actualBass.toDouble()).round();
+    final next = (current + delta).clamp(caps.bassMin, caps.bassMax);
+    await _applyBass(next);
+  }
+
+  Future<void> _resetBass() async {
+    final caps = _bassCapabilities;
+    if (caps == null) return;
+    await _applyBass(caps.bassDefault);
+  }
+
+  Future<void> _applyBass(int value) async {
+    try {
+      await _apiService.setBass(widget.speaker.ipAddress, value);
+      final bass = await _apiService.getBass(widget.speaker.ipAddress);
+      if (!mounted) return;
+      setState(() {
+        _currentBass = bass;
+        _pendingBass = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _pendingBass = null);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to set bass: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -123,6 +192,8 @@ class _SpeakerSettingsPageState extends State<SpeakerSettingsPage> {
         padding: const EdgeInsets.all(16),
         children: [
           _buildLanguageCard(theme),
+          const SizedBox(height: 16),
+          _buildBassCard(theme),
         ],
       ),
     );
@@ -185,6 +256,149 @@ class _SpeakerSettingsPageState extends State<SpeakerSettingsPage> {
     return Text(
       lang != null ? lang.displayName : 'Unknown',
       style: theme.textTheme.bodyLarge,
+    );
+  }
+
+  Widget _buildBassCard(ThemeData theme) {
+    return Card(
+      elevation: 1,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.equalizer, color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Text(
+                  'Bass',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildBassContent(theme),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBassContent(ThemeData theme) {
+    if (_loadingBass) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_bassError != null) {
+      return Column(
+        children: [
+          Text(
+            'Error loading bass',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.error,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: _loadBass,
+            child: const Text('Retry'),
+          ),
+        ],
+      );
+    }
+
+    final caps = _bassCapabilities;
+    if (caps == null) return const SizedBox.shrink();
+
+    if (!caps.bassAvailable) {
+      return Text(
+        'Bass control not supported on this device',
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      );
+    }
+
+    final bass = _currentBass;
+    if (bass == null) return const SizedBox.shrink();
+
+    final sliderValue = (_pendingBass ?? bass.actualBass.toDouble())
+        .clamp(caps.bassMin.toDouble(), caps.bassMax.toDouble());
+    final busy = _pendingBass != null;
+
+    return Column(
+      children: [
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Text(
+              caps.bassMin.toString(),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            Expanded(
+              child: Slider(
+                value: sliderValue,
+                min: caps.bassMin.toDouble(),
+                max: caps.bassMax.toDouble(),
+                label: sliderValue.round().toString(),
+                onChanged: (value) => setState(() => _pendingBass = value),
+                onChangeEnd: _onBassChangeEnd,
+              ),
+            ),
+            Text(
+              caps.bassMax.toString(),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            FilledButton.icon(
+              onPressed: busy ? null : () => _adjustBass(-1),
+              icon: const Icon(Icons.remove),
+              label: const Text('Down'),
+            ),
+            const SizedBox(width: 16),
+            SizedBox(
+              width: 60,
+              child: Center(
+                child: Text(
+                  sliderValue.round().toString(),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            FilledButton.icon(
+              onPressed: busy ? null : () => _adjustBass(1),
+              icon: const Icon(Icons.add),
+              label: const Text('Up'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        TextButton.icon(
+          onPressed: busy ? null : _resetBass,
+          icon: const Icon(Icons.restart_alt),
+          label: Text('Reset to default (${caps.bassDefault})'),
+        ),
+      ],
     );
   }
 }

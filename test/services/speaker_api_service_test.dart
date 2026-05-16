@@ -2539,5 +2539,142 @@ void main() {
         );
       });
     });
+
+    group('getBassCapabilities', () {
+      test('parses full response correctly', () async {
+        const xmlResponse = '''<?xml version="1.0" encoding="UTF-8" ?>
+<bassCapabilities deviceID="1004567890AA">
+  <bassAvailable>true</bassAvailable>
+  <bassMin>-9</bassMin>
+  <bassMax>0</bassMax>
+  <bassDefault>0</bassDefault>
+</bassCapabilities>''';
+
+        when(mockClient.get(any)).thenAnswer(
+          (_) async => http.Response(xmlResponse, 200),
+        );
+
+        final caps = await apiService.getBassCapabilities('192.168.1.131');
+
+        expect(caps.bassAvailable, isTrue);
+        expect(caps.bassMin, -9);
+        expect(caps.bassMax, 0);
+        expect(caps.bassDefault, 0);
+      });
+
+      test('parses bassAvailable=false correctly', () async {
+        const xmlResponse = '''<?xml version="1.0" encoding="UTF-8" ?>
+<bassCapabilities deviceID="1004567890AA">
+  <bassAvailable>false</bassAvailable>
+  <bassMin>-9</bassMin>
+  <bassMax>0</bassMax>
+  <bassDefault>0</bassDefault>
+</bassCapabilities>''';
+
+        when(mockClient.get(any)).thenAnswer(
+          (_) async => http.Response(xmlResponse, 200),
+        );
+
+        final caps = await apiService.getBassCapabilities('192.168.1.131');
+
+        expect(caps.bassAvailable, isFalse);
+      });
+
+      test('throws on non-200 response', () async {
+        when(mockClient.get(any)).thenAnswer(
+          (_) async => http.Response('', 500),
+        );
+
+        expect(
+          () => apiService.getBassCapabilities('192.168.1.131'),
+          throwsA(isA<Exception>()),
+        );
+      });
+    });
+
+    group('getBass', () {
+      test('parses bass response correctly', () async {
+        const xmlResponse = '''<?xml version="1.0" encoding="UTF-8" ?>
+<bass deviceID="1004567890AA">
+  <targetbass>-5</targetbass>
+  <actualbass>-5</actualbass>
+</bass>''';
+
+        when(mockClient.get(any)).thenAnswer(
+          (_) async => http.Response(xmlResponse, 200),
+        );
+
+        final bass = await apiService.getBass('192.168.1.131');
+
+        expect(bass.targetBass, -5);
+        expect(bass.actualBass, -5);
+      });
+
+      test('throws when targetbass element missing', () async {
+        const xmlResponse = '''<?xml version="1.0" encoding="UTF-8" ?>
+<bass deviceID="1004567890AA">
+  <actualbass>0</actualbass>
+</bass>''';
+
+        when(mockClient.get(any)).thenAnswer(
+          (_) async => http.Response(xmlResponse, 200),
+        );
+
+        expect(
+          () => apiService.getBass('192.168.1.131'),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('throws on non-200 response', () async {
+        when(mockClient.get(any)).thenAnswer(
+          (_) async => http.Response('', 500),
+        );
+
+        expect(
+          () => apiService.getBass('192.168.1.131'),
+          throwsA(isA<Exception>()),
+        );
+      });
+    });
+
+    group('setBass', () {
+      test('sends correct XML body with bass value', () async {
+        when(
+          mockClient.post(
+            any,
+            headers: anyNamed('headers'),
+            body: anyNamed('body'),
+          ),
+        ).thenAnswer((_) async => http.Response('', 200));
+
+        await apiService.setBass('192.168.1.131', -5);
+
+        final captured = verify(
+          mockClient.post(
+            any,
+            headers: captureAnyNamed('headers'),
+            body: captureAnyNamed('body'),
+          ),
+        ).captured;
+
+        expect(captured[1], '<bass>-5</bass>');
+      });
+
+      test('throws on non-200 response', () async {
+        when(
+          mockClient.post(
+            any,
+            headers: anyNamed('headers'),
+            body: anyNamed('body'),
+          ),
+        ).thenAnswer((_) async => http.Response('', 500));
+
+        expect(
+          () => apiService.setBass('192.168.1.131', -5),
+          throwsA(isA<Exception>()),
+        );
+      });
+    });
   });
 }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart';
+import 'package:ueberboese_app/models/bass.dart';
 import 'package:ueberboese_app/models/speaker_info.dart';
 import 'package:ueberboese_app/models/speaker.dart';
 import 'package:ueberboese_app/models/volume.dart';
@@ -1130,6 +1131,124 @@ class SpeakerApiService {
     } catch (e) {
       if (e is Exception) rethrow;
       throw Exception('Failed to get language: $e');
+    } finally {
+      if (httpClient == null) client.close();
+    }
+  }
+
+  Future<BassCapabilities> getBassCapabilities(String ipAddress) async {
+    final url = Uri.parse('http://$ipAddress:8090/bassCapabilities');
+    final client = httpClient ?? http.Client();
+
+    try {
+      final response = await client.get(url).timeout(timeout);
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to get bass capabilities: HTTP ${response.statusCode}',
+        );
+      }
+
+      final bodyText = utf8.decode(response.bodyBytes);
+      final document = XmlDocument.parse(bodyText);
+
+      bool bassAvailable = false;
+      final bassAvailableElements = document.findAllElements('bassAvailable');
+      if (bassAvailableElements.isNotEmpty) {
+        bassAvailable = bassAvailableElements.first.innerText.toLowerCase() == 'true';
+      }
+
+      int bassMin = -9;
+      final bassMinElements = document.findAllElements('bassMin');
+      if (bassMinElements.isNotEmpty) {
+        bassMin = int.parse(bassMinElements.first.innerText);
+      }
+
+      int bassMax = 0;
+      final bassMaxElements = document.findAllElements('bassMax');
+      if (bassMaxElements.isNotEmpty) {
+        bassMax = int.parse(bassMaxElements.first.innerText);
+      }
+
+      int bassDefault = 0;
+      final bassDefaultElements = document.findAllElements('bassDefault');
+      if (bassDefaultElements.isNotEmpty) {
+        bassDefault = int.parse(bassDefaultElements.first.innerText);
+      }
+
+      return BassCapabilities(
+        bassAvailable: bassAvailable,
+        bassMin: bassMin,
+        bassMax: bassMax,
+        bassDefault: bassDefault,
+      );
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Failed to get bass capabilities: $e');
+    } finally {
+      if (httpClient == null) client.close();
+    }
+  }
+
+  Future<Bass> getBass(String ipAddress) async {
+    final url = Uri.parse('http://$ipAddress:8090/bass');
+    final client = httpClient ?? http.Client();
+
+    try {
+      final response = await client.get(url).timeout(timeout);
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to get bass: HTTP ${response.statusCode}',
+        );
+      }
+
+      final bodyText = utf8.decode(response.bodyBytes);
+      final document = XmlDocument.parse(bodyText);
+
+      final targetBassElements = document.findAllElements('targetbass');
+      if (targetBassElements.isEmpty) {
+        throw Exception('targetbass element not found in response');
+      }
+      final targetBass = int.parse(targetBassElements.first.innerText);
+
+      final actualBassElements = document.findAllElements('actualbass');
+      if (actualBassElements.isEmpty) {
+        throw Exception('actualbass element not found in response');
+      }
+      final actualBass = int.parse(actualBassElements.first.innerText);
+
+      return Bass(targetBass: targetBass, actualBass: actualBass);
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Failed to get bass: $e');
+    } finally {
+      if (httpClient == null) client.close();
+    }
+  }
+
+  Future<void> setBass(String ipAddress, int bass) async {
+    final url = Uri.parse('http://$ipAddress:8090/bass');
+    final client = httpClient ?? http.Client();
+
+    try {
+      final body = '<bass>$bass</bass>';
+      final response = await client
+          .post(
+            url,
+            headers: {'Content-Type': 'text/xml'},
+            body: body,
+          )
+          .timeout(timeout);
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to set bass: HTTP ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Failed to set bass: $e');
     } finally {
       if (httpClient == null) client.close();
     }
