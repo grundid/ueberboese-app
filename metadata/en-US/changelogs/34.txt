@@ -1,0 +1,8 @@
+Features:
+- Add bass control card to speaker settings page
+- Add clock display settings card to speaker settings page
+- Add speaker discovery via UPnP/SSDP
+- Use nowSelectionUpdated WebSocket event for quicker feedback
+
+Documentation:
+- Add new banner for F-Droid app store
