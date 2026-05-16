@@ -77,30 +77,29 @@ class _EditSpotifyPresetPageState extends State<EditSpotifyPresetPage> {
       final location = widget.preset.location;
       const prefix = '/playback/container/';
 
-      if (!location.startsWith(prefix)) {
-        _decodingError = 'Invalid location format';
-        return;
+      if (location.isNotEmpty) {
+        if (!location.startsWith(prefix)) {
+          _decodingError = 'Invalid location format';
+        } else {
+          final base64Part = location.substring(prefix.length);
+          final decodedBytes = base64Decode(base64Part);
+          final decodedUri = utf8.decode(decodedBytes);
+          _spotifyUriController.text = decodedUri;
+        }
       }
-
-      final base64Part = location.substring(prefix.length);
-      final decodedBytes = base64Decode(base64Part);
-      final decodedUri = utf8.decode(decodedBytes);
-
-      _spotifyUriController.text = decodedUri;
-
-      // Fetch entity info on page load if no decoding error
-      if (_decodingError == null) {
-        _fetchEntityInfo();
-      }
+      // empty location → new preset → leave text field blank, no error
     } catch (e) {
       _decodingError = 'Failed to decode Spotify URI: ${e.toString()}';
     }
 
-    // Add listener for URI changes with debouncing
+    // Always add listener and fetch accounts, even on decoding error
     _spotifyUriController.addListener(_onUriChanged);
-
-    // Fetch Spotify accounts
     _fetchSpotifyAccounts();
+
+    // Fetch entity info only if decoding succeeded and URI is non-empty
+    if (_decodingError == null && _spotifyUriController.text.isNotEmpty) {
+      _fetchEntityInfo();
+    }
   }
 
   @override

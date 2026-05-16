@@ -582,6 +582,9 @@ void main() {
           isPresetable: true,
         );
 
+        when(mockApiService.listSpotifyAccounts(any))
+            .thenAnswer((_) async => []);
+
         await tester.pumpWidget(
           createWidgetWithProvider(
             EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
@@ -916,6 +919,8 @@ void main() {
 
         when(mockApiService.listSpotifyAccounts(any))
             .thenAnswer((_) async => accounts);
+        when(mockApiService.getSpotifyEntity(any, any))
+            .thenAnswer((_) async => const SpotifyEntity(name: 'Test', imageUrl: null));
 
         await tester.pumpWidget(
           createWidgetWithProvider(
@@ -1388,6 +1393,88 @@ void main() {
         // Should remain unchanged
         final textField2 = tester.widget<TextField>(find.byType(TextField));
         expect(textField2.controller?.text, equals('https://open.spotify.com/playlist/'));
+      });
+    });
+
+    group('Empty/new preset', () {
+      testWidgets('shows no error and enables controls when location is empty (new preset)',
+          (WidgetTester tester) async {
+        const testPreset = Preset(
+          id: '1',
+          itemName: 'Empty Preset',
+          source: 'NONE',
+          location: '',
+          type: 'none',
+          isPresetable: true,
+        );
+
+        when(mockApiService.listSpotifyAccounts(any))
+            .thenAnswer((_) async => []);
+
+        await tester.pumpWidget(
+          createWidgetWithProvider(
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        // No decoding error should be shown
+        expect(find.text('Invalid location format'), findsNothing);
+        expect(find.textContaining('Failed to decode'), findsNothing);
+
+        // TextField should be enabled
+        final textField = tester.widget<TextField>(find.byType(TextField));
+        expect(textField.enabled, isTrue);
+        expect(textField.controller?.text, isEmpty);
+      });
+
+      testWidgets('accounts are fetched when location is empty', (WidgetTester tester) async {
+        const testPreset = Preset(
+          id: '1',
+          itemName: 'Empty Preset',
+          source: 'NONE',
+          location: '',
+          type: 'none',
+          isPresetable: true,
+        );
+
+        when(mockApiService.listSpotifyAccounts(any))
+            .thenAnswer((_) async => []);
+
+        await tester.pumpWidget(
+          createWidgetWithProvider(
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        verify(mockApiService.listSpotifyAccounts('https://api.example.com')).called(1);
+      });
+
+      testWidgets('accounts are fetched even when location is invalid', (WidgetTester tester) async {
+        const testPreset = Preset(
+          id: '1',
+          itemName: 'Test Playlist',
+          source: 'SPOTIFY',
+          location: '/invalid/path/abc123',
+          type: 'playlist',
+          isPresetable: true,
+        );
+
+        when(mockApiService.listSpotifyAccounts(any))
+            .thenAnswer((_) async => []);
+
+        await tester.pumpWidget(
+          createWidgetWithProvider(
+            EditSpotifyPresetPage(preset: testPreset, speakerIp: '192.168.1.100', apiService: mockApiService),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        verify(mockApiService.listSpotifyAccounts('https://api.example.com')).called(1);
       });
     });
 
