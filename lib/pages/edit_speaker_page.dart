@@ -185,7 +185,7 @@ class _EditSpeakerPageState extends State<EditSpeakerPage> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
+                  SelectableText(
                     widget.speaker.type,
                     style: theme.textTheme.bodyLarge,
                   ),
@@ -209,7 +209,7 @@ class _EditSpeakerPageState extends State<EditSpeakerPage> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
+                  SelectableText(
                     widget.speaker.ipAddress,
                     style: theme.textTheme.bodyLarge,
                   ),
@@ -233,7 +233,7 @@ class _EditSpeakerPageState extends State<EditSpeakerPage> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
+                  SelectableText(
                     widget.speaker.deviceId,
                     style: theme.textTheme.bodyLarge,
                   ),

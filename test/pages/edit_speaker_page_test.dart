@@ -65,7 +65,7 @@ void main() {
       expect(textField.controller?.text, 'Test Speaker');
     });
 
-    testWidgets('displays read-only speaker type', (WidgetTester tester) async {
+    testWidgets('displays selectable speaker type', (WidgetTester tester) async {
       await tester.pumpWidget(
         ChangeNotifierProvider(
           create: (_) => MyAppState(),
@@ -76,10 +76,16 @@ void main() {
       );
 
       expect(find.text('Speaker Type'), findsOneWidget);
-      expect(find.text('Bose Home Speaker'), findsOneWidget);
+      expect(
+        find.ancestor(
+          of: find.text('Bose Home Speaker'),
+          matching: find.byType(SelectableText),
+        ),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('displays read-only IP address', (WidgetTester tester) async {
+    testWidgets('displays selectable IP address', (WidgetTester tester) async {
       await tester.pumpWidget(
         ChangeNotifierProvider(
           create: (_) => MyAppState(),
@@ -90,10 +96,16 @@ void main() {
       );
 
       expect(find.text('IP Address'), findsOneWidget);
-      expect(find.text('192.168.1.100'), findsOneWidget);
+      expect(
+        find.ancestor(
+          of: find.text('192.168.1.100'),
+          matching: find.byType(SelectableText),
+        ),
+        findsOneWidget,
+      );
     });
 
-    testWidgets('displays read-only device ID', (WidgetTester tester) async {
+    testWidgets('displays selectable device ID', (WidgetTester tester) async {
       await tester.pumpWidget(
         ChangeNotifierProvider(
           create: (_) => MyAppState(),
@@ -111,7 +123,13 @@ void main() {
       );
 
       expect(find.text('Device ID'), findsOneWidget);
-      expect(find.text('ABC123'), findsOneWidget);
+      expect(
+        find.ancestor(
+          of: find.text('ABC123'),
+          matching: find.byType(SelectableText),
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('shows emoji selector when tapped',
