@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart';
 import 'package:ueberboese_app/models/bass.dart';
+import 'package:ueberboese_app/models/clock_display.dart';
 import 'package:ueberboese_app/models/speaker_info.dart';
 import 'package:ueberboese_app/models/speaker.dart';
 import 'package:ueberboese_app/models/volume.dart';
@@ -1276,6 +1277,114 @@ class SpeakerApiService {
     } catch (e) {
       if (e is Exception) rethrow;
       throw Exception('Failed to set language: $e');
+    } finally {
+      if (httpClient == null) client.close();
+    }
+  }
+
+  Future<bool> isClockDisplaySupported(String ipAddress) async {
+    final url = Uri.parse('http://$ipAddress:8090/supportedURLs');
+    final client = httpClient ?? http.Client();
+
+    try {
+      final response = await client.get(url).timeout(timeout);
+
+      if (response.statusCode != 200) {
+        return false;
+      }
+
+      final bodyText = utf8.decode(response.bodyBytes);
+      final document = XmlDocument.parse(bodyText);
+      return document
+          .findAllElements('URL')
+          .any((e) => e.getAttribute('location') == '/clockDisplay');
+    } catch (e) {
+      return false;
+    } finally {
+      if (httpClient == null) client.close();
+    }
+  }
+
+  Future<ClockConfig> getClockDisplay(String ipAddress) async {
+    final url = Uri.parse('http://$ipAddress:8090/clockDisplay');
+    final client = httpClient ?? http.Client();
+
+    try {
+      final response = await client.get(url).timeout(timeout);
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to get clock display: HTTP ${response.statusCode}',
+        );
+      }
+
+      final bodyText = utf8.decode(response.bodyBytes);
+      final document = XmlDocument.parse(bodyText);
+      final elements = document.findAllElements('clockConfig');
+      if (elements.isEmpty) {
+        throw Exception('clockConfig element not found in response');
+      }
+      final el = elements.first;
+
+      final userEnable = el.getAttribute('userEnable')?.toLowerCase() == 'true';
+      final timeFormat =
+          el.getAttribute('timeFormat') ?? ClockConfig.format12h;
+      final brightnessLevel =
+          int.tryParse(el.getAttribute('brightnessLevel') ?? '') ?? 0;
+      final timezoneInfo = el.getAttribute('timezoneInfo') ?? '';
+      final userOffsetMinute =
+          int.tryParse(el.getAttribute('userOffsetMinute') ?? '') ?? 0;
+      final userUtcTime =
+          int.tryParse(el.getAttribute('userUtcTime') ?? '') ?? 0;
+
+      return ClockConfig(
+        userEnable: userEnable,
+        timeFormat: timeFormat,
+        brightnessLevel: brightnessLevel,
+        timezoneInfo: timezoneInfo,
+        userOffsetMinute: userOffsetMinute,
+        userUtcTime: userUtcTime,
+      );
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Failed to get clock display: $e');
+    } finally {
+      if (httpClient == null) client.close();
+    }
+  }
+
+  Future<void> setClockDisplay(String ipAddress, ClockConfig config) async {
+    final url = Uri.parse('http://$ipAddress:8090/clockDisplay');
+    final client = httpClient ?? http.Client();
+
+    try {
+      final body = '<?xml version="1.0" encoding="UTF-8" ?>'
+          '<clockDisplay>'
+          '<clockConfig'
+          ' timezoneInfo="${config.timezoneInfo}"'
+          ' userEnable="${config.userEnable}"'
+          ' timeFormat="${config.timeFormat}"'
+          ' userOffsetMinute="${config.userOffsetMinute}"'
+          ' brightnessLevel="${config.brightnessLevel}"'
+          ' userUtcTime="${config.userUtcTime}"'
+          '/>'
+          '</clockDisplay>';
+      final response = await client
+          .post(
+            url,
+            headers: {'Content-Type': 'text/xml'},
+            body: body,
+          )
+          .timeout(timeout);
+
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Failed to set clock display: HTTP ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Failed to set clock display: $e');
     } finally {
       if (httpClient == null) client.close();
     }

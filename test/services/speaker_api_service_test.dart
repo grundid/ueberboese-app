@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
+import 'package:ueberboese_app/models/clock_display.dart';
 import 'package:ueberboese_app/services/speaker_api_service.dart';
 import 'package:ueberboese_app/models/zone.dart';
 import 'package:ueberboese_app/models/recent.dart';
@@ -2672,6 +2673,226 @@ void main() {
 
         expect(
           () => apiService.setBass('192.168.1.131', -5),
+          throwsA(isA<Exception>()),
+        );
+      });
+    });
+
+    group('isClockDisplaySupported', () {
+      test('returns true when /clockDisplay is in supportedURLs', () async {
+        const xmlResponse = '''<?xml version="1.0" encoding="UTF-8" ?>
+<supportedURLs deviceID="1004567890AA">
+  <URL location="/volume"/>
+  <URL location="/clockDisplay"/>
+  <URL location="/bass"/>
+</supportedURLs>''';
+
+        when(mockClient.get(any)).thenAnswer(
+          (_) async => http.Response(xmlResponse, 200),
+        );
+
+        final supported =
+            await apiService.isClockDisplaySupported('192.168.1.131');
+        expect(supported, isTrue);
+      });
+
+      test('returns false when /clockDisplay is not in supportedURLs',
+          () async {
+        const xmlResponse = '''<?xml version="1.0" encoding="UTF-8" ?>
+<supportedURLs deviceID="1004567890AA">
+  <URL location="/volume"/>
+  <URL location="/bass"/>
+</supportedURLs>''';
+
+        when(mockClient.get(any)).thenAnswer(
+          (_) async => http.Response(xmlResponse, 200),
+        );
+
+        final supported =
+            await apiService.isClockDisplaySupported('192.168.1.131');
+        expect(supported, isFalse);
+      });
+
+      test('returns false on non-200 response (e.g. 404 on older devices)',
+          () async {
+        when(mockClient.get(any)).thenAnswer(
+          (_) async => http.Response('', 404),
+        );
+
+        final supported =
+            await apiService.isClockDisplaySupported('192.168.1.131');
+        expect(supported, isFalse);
+      });
+    });
+
+    group('getClockDisplay', () {
+      test('parses all clockConfig attributes correctly', () async {
+        const xmlResponse = '''<?xml version="1.0" encoding="UTF-8" ?>
+<clockDisplay>
+  <clockConfig timezoneInfo="America/Chicago"
+               userEnable="false"
+               timeFormat="TIME_FORMAT_12HOUR_ID"
+               userOffsetMinute="0"
+               brightnessLevel="70"
+               userUtcTime="1701824606" />
+</clockDisplay>''';
+
+        when(mockClient.get(any)).thenAnswer(
+          (_) async => http.Response(xmlResponse, 200),
+        );
+
+        final config = await apiService.getClockDisplay('192.168.1.131');
+
+        expect(config.userEnable, isFalse);
+        expect(config.timeFormat, 'TIME_FORMAT_12HOUR_ID');
+        expect(config.brightnessLevel, 70);
+        expect(config.timezoneInfo, 'America/Chicago');
+        expect(config.userOffsetMinute, 0);
+        expect(config.userUtcTime, 1701824606);
+        expect(config.is24Hour, isFalse);
+      });
+
+      test('is24Hour returns true for 24h format', () async {
+        const xmlResponse = '''<?xml version="1.0" encoding="UTF-8" ?>
+<clockDisplay>
+  <clockConfig timezoneInfo="Europe/Berlin"
+               userEnable="true"
+               timeFormat="TIME_FORMAT_24HOUR_ID"
+               userOffsetMinute="60"
+               brightnessLevel="50"
+               userUtcTime="0" />
+</clockDisplay>''';
+
+        when(mockClient.get(any)).thenAnswer(
+          (_) async => http.Response(xmlResponse, 200),
+        );
+
+        final config = await apiService.getClockDisplay('192.168.1.131');
+
+        expect(config.is24Hour, isTrue);
+        expect(config.userEnable, isTrue);
+        expect(config.brightnessLevel, 50);
+      });
+
+      test('throws when clockConfig element is missing', () async {
+        const xmlResponse = '''<?xml version="1.0" encoding="UTF-8" ?>
+<clockDisplay />''';
+
+        when(mockClient.get(any)).thenAnswer(
+          (_) async => http.Response(xmlResponse, 200),
+        );
+
+        expect(
+          () => apiService.getClockDisplay('192.168.1.131'),
+          throwsA(isA<Exception>()),
+        );
+      });
+
+      test('throws on non-200 response', () async {
+        when(mockClient.get(any)).thenAnswer(
+          (_) async => http.Response('', 500),
+        );
+
+        expect(
+          () => apiService.getClockDisplay('192.168.1.131'),
+          throwsA(isA<Exception>()),
+        );
+      });
+    });
+
+    group('setClockDisplay', () {
+      test('sends correct XML body', () async {
+        when(
+          mockClient.post(
+            any,
+            headers: anyNamed('headers'),
+            body: anyNamed('body'),
+          ),
+        ).thenAnswer((_) async => http.Response('', 200));
+
+        const config = ClockConfig(
+          userEnable: true,
+          timeFormat: ClockConfig.format12h,
+          brightnessLevel: 70,
+          timezoneInfo: 'America/Chicago',
+          userOffsetMinute: 0,
+          userUtcTime: 0,
+        );
+
+        await apiService.setClockDisplay('192.168.1.131', config);
+
+        final captured = verify(
+          mockClient.post(
+            any,
+            headers: captureAnyNamed('headers'),
+            body: captureAnyNamed('body'),
+          ),
+        ).captured;
+
+        final body = captured[1] as String;
+        expect(body, contains('userEnable="true"'));
+        expect(body, contains('timeFormat="${ClockConfig.format12h}"'));
+        expect(body, contains('brightnessLevel="70"'));
+        expect(body, contains('timezoneInfo="America/Chicago"'));
+        expect(body, contains('userOffsetMinute="0"'));
+      });
+
+      test('sends correct XML body for 24h disabled clock', () async {
+        when(
+          mockClient.post(
+            any,
+            headers: anyNamed('headers'),
+            body: anyNamed('body'),
+          ),
+        ).thenAnswer((_) async => http.Response('', 200));
+
+        const config = ClockConfig(
+          userEnable: false,
+          timeFormat: ClockConfig.format24h,
+          brightnessLevel: 30,
+          timezoneInfo: 'Europe/Berlin',
+          userOffsetMinute: 60,
+          userUtcTime: 0,
+        );
+
+        await apiService.setClockDisplay('192.168.1.131', config);
+
+        final captured = verify(
+          mockClient.post(
+            any,
+            headers: captureAnyNamed('headers'),
+            body: captureAnyNamed('body'),
+          ),
+        ).captured;
+
+        final body = captured[1] as String;
+        expect(body, contains('userEnable="false"'));
+        expect(body, contains('timeFormat="${ClockConfig.format24h}"'));
+        expect(body, contains('brightnessLevel="30"'));
+        expect(body, contains('timezoneInfo="Europe/Berlin"'));
+        expect(body, contains('userOffsetMinute="60"'));
+      });
+
+      test('throws on non-200 response', () async {
+        when(
+          mockClient.post(
+            any,
+            headers: anyNamed('headers'),
+            body: anyNamed('body'),
+          ),
+        ).thenAnswer((_) async => http.Response('', 500));
+
+        const config = ClockConfig(
+          userEnable: true,
+          timeFormat: ClockConfig.format12h,
+          brightnessLevel: 70,
+          timezoneInfo: '',
+          userOffsetMinute: 0,
+          userUtcTime: 0,
+        );
+
+        expect(
+          () => apiService.setClockDisplay('192.168.1.131', config),
           throwsA(isA<Exception>()),
         );
       });

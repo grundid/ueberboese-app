@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ueberboese_app/models/bass.dart';
+import 'package:ueberboese_app/models/clock_display.dart';
 import 'package:ueberboese_app/models/speaker.dart';
 import 'package:ueberboese_app/services/speaker_api_service.dart';
 
@@ -69,12 +70,20 @@ class _SpeakerSettingsPageState extends State<SpeakerSettingsPage> {
   String? _bassError;
   double? _pendingBass;
 
+  ClockConfig? _clockConfig;
+  bool _clockSupported = false;
+  bool _loadingClock = true;
+  String? _clockError;
+  int? _pendingBrightness;
+  bool _applyingClock = false;
+
   @override
   void initState() {
     super.initState();
     _apiService = widget.apiService ?? SpeakerApiService();
     _loadLanguage();
     _loadBass();
+    _loadClock();
   }
 
   Future<void> _loadLanguage() async {
@@ -116,6 +125,30 @@ class _SpeakerSettingsPageState extends State<SpeakerSettingsPage> {
       setState(() {
         _bassError = e.toString();
         _loadingBass = false;
+      });
+    }
+  }
+
+  Future<void> _loadClock() async {
+    setState(() {
+      _loadingClock = true;
+      _clockError = null;
+    });
+    try {
+      final supported =
+          await _apiService.isClockDisplaySupported(widget.speaker.ipAddress);
+      final config = supported
+          ? await _apiService.getClockDisplay(widget.speaker.ipAddress)
+          : null;
+      setState(() {
+        _clockSupported = supported;
+        _clockConfig = config;
+        _loadingClock = false;
+      });
+    } catch (e) {
+      setState(() {
+        _clockError = e.toString();
+        _loadingClock = false;
       });
     }
   }
@@ -180,6 +213,30 @@ class _SpeakerSettingsPageState extends State<SpeakerSettingsPage> {
     }
   }
 
+  Future<void> _applyClockConfig(ClockConfig updated) async {
+    setState(() => _applyingClock = true);
+    try {
+      await _apiService.setClockDisplay(widget.speaker.ipAddress, updated);
+      final config =
+          await _apiService.getClockDisplay(widget.speaker.ipAddress);
+      if (!mounted) return;
+      setState(() {
+        _clockConfig = config;
+        _pendingBrightness = null;
+        _applyingClock = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _pendingBrightness = null;
+        _applyingClock = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to set clock display: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -194,6 +251,8 @@ class _SpeakerSettingsPageState extends State<SpeakerSettingsPage> {
           _buildLanguageCard(theme),
           const SizedBox(height: 16),
           _buildBassCard(theme),
+          const SizedBox(height: 16),
+          _buildClockCard(theme),
         ],
       ),
     );
@@ -397,6 +456,193 @@ class _SpeakerSettingsPageState extends State<SpeakerSettingsPage> {
           onPressed: busy ? null : _resetBass,
           icon: const Icon(Icons.restart_alt),
           label: Text('Reset to default (${caps.bassDefault})'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildClockCard(ThemeData theme) {
+    final config = _clockConfig;
+    final busy = _applyingClock || _pendingBrightness != null;
+
+    return Card(
+      elevation: 1,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.access_time, color: theme.colorScheme.primary),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Clock Display',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                if (!_loadingClock && _clockSupported && config != null)
+                  Switch(
+                    value: config.userEnable,
+                    onChanged: busy
+                        ? null
+                        : (value) =>
+                            _applyClockConfig(config.copyWith(userEnable: value)),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildClockContent(theme),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildClockContent(ThemeData theme) {
+    if (_loadingClock) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_clockError != null) {
+      return Column(
+        children: [
+          SelectableText(
+            'Error loading clock display: $_clockError',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.error,
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: _loadClock,
+            child: const Text('Retry'),
+          ),
+        ],
+      );
+    }
+
+    if (!_clockSupported) {
+      return Text(
+        'Clock display not supported on this device',
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      );
+    }
+
+    final config = _clockConfig;
+    if (config == null) return const SizedBox.shrink();
+
+    final busy = _applyingClock || _pendingBrightness != null;
+    final brightness =
+        (_pendingBrightness ?? config.brightnessLevel).clamp(0, 100);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'Time format',
+              style: theme.textTheme.bodyMedium,
+            ),
+            const SizedBox(width: 16),
+            OutlinedButton(
+              onPressed: busy || !config.is24Hour
+                  ? null
+                  : () => _applyClockConfig(
+                        config.copyWith(timeFormat: ClockConfig.format12h),
+                      ),
+              style: OutlinedButton.styleFrom(
+                backgroundColor: !config.is24Hour
+                    ? theme.colorScheme.primaryContainer
+                    : null,
+              ),
+              child: const Text('12h'),
+            ),
+            const SizedBox(width: 8),
+            OutlinedButton(
+              onPressed: busy || config.is24Hour
+                  ? null
+                  : () => _applyClockConfig(
+                        config.copyWith(timeFormat: ClockConfig.format24h),
+                      ),
+              style: OutlinedButton.styleFrom(
+                backgroundColor: config.is24Hour
+                    ? theme.colorScheme.primaryContainer
+                    : null,
+              ),
+              child: const Text('24h'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Text('Time zone', style: theme.textTheme.bodyMedium),
+            const SizedBox(width: 16),
+            Text(
+              config.timezoneInfo.isNotEmpty ? config.timezoneInfo : '—',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'Brightness',
+          style: theme.textTheme.bodyMedium,
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            FilledButton.icon(
+              onPressed: busy || brightness <= 0
+                  ? null
+                  : () {
+                      final next = (brightness - 1).clamp(0, 100);
+                      setState(() => _pendingBrightness = next);
+                      _applyClockConfig(config.copyWith(brightnessLevel: next));
+                    },
+              icon: const Icon(Icons.remove),
+              label: const Text('Down'),
+            ),
+            const SizedBox(width: 16),
+            SizedBox(
+              width: 60,
+              child: Center(
+                child: Text(
+                  '$brightness%',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            FilledButton.icon(
+              onPressed: busy || brightness >= 100
+                  ? null
+                  : () {
+                      final next = (brightness + 1).clamp(0, 100);
+                      setState(() => _pendingBrightness = next);
+                      _applyClockConfig(config.copyWith(brightnessLevel: next));
+                    },
+              icon: const Icon(Icons.add),
+              label: const Text('Up'),
+            ),
+          ],
         ),
       ],
     );
