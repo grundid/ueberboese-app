@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ueberboese_app/main.dart';
@@ -237,27 +236,6 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
       return;
     }
 
-    // Check if running on web
-    if (kIsWeb) {
-      if (!mounted) return;
-      showDialog<void>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Web Platform Not Supported'),
-          content: const Text(
-            'Adding speakers from account is not supported in the web browser due to CORS restrictions.\n\n'
-            'Please use the native app instead.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
 
     // Show loading dialog
     if (!mounted) return;
