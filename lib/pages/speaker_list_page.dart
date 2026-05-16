@@ -11,6 +11,7 @@ import 'package:ueberboese_app/pages/speaker_detail_page.dart';
 import 'package:ueberboese_app/pages/add_speaker_page.dart';
 import 'package:ueberboese_app/pages/configuration_page.dart';
 import 'package:ueberboese_app/pages/speaker_setup_wizard_page.dart';
+import 'package:ueberboese_app/pages/discover_speakers_page.dart';
 
 class SpeakerListPage extends StatefulWidget {
   final SpeakerApiService? apiService;
@@ -511,6 +512,51 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
+          // Mini FAB 3: Discover speakers
+          FadeTransition(
+            opacity: _fadeAnimation,
+            child: ScaleTransition(
+              scale: _fadeAnimation,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Material(
+                      elevation: 3,
+                      borderRadius: BorderRadius.circular(8),
+                      color: theme.colorScheme.surface,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        child: Text(
+                          'Discover',
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    FloatingActionButton.small(
+                      heroTag: 'discover_fab',
+                      onPressed: () {
+                        _closeFab();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (context) => const DiscoverSpeakersPage(),
+                          ),
+                        );
+                      },
+                      tooltip: 'Discover speakers',
+                      child: const Icon(Icons.wifi_find),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
           // Mini FAB 2: Add all from account
           FadeTransition(
             opacity: _fadeAnimation,
