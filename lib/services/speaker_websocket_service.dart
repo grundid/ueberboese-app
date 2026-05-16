@@ -94,8 +94,14 @@ class SpeakerWebsocketService {
         _handleZoneUpdate();
       }
 
+      // Check for now selection updates (preset selected/queued)
+      final nowSelectionUpdatedElements = updatesElement.findElements('nowSelectionUpdated');
+      if (nowSelectionUpdatedElements.isNotEmpty) {
+        _handleNowSelectionUpdate(nowSelectionUpdatedElements.first);
+      }
+
       // Check for other update types and log them
-      final knownTypes = {'volumeUpdated', 'nowPlayingUpdated', 'zoneUpdated'};
+      final knownTypes = {'volumeUpdated', 'nowPlayingUpdated', 'zoneUpdated', 'nowSelectionUpdated'};
       final childElements = updatesElement.childElements;
       for (final child in childElements) {
         if (!knownTypes.contains(child.name.local)) {
@@ -156,29 +162,33 @@ class SpeakerWebsocketService {
 
       final nowPlayingElement = nowPlayingElements.first;
 
-      // Extract optional fields
+      // Extract optional fields — normalize empty strings to null
       String? track;
       final trackElements = nowPlayingElement.findElements('track');
       if (trackElements.isNotEmpty) {
-        track = trackElements.first.innerText;
+        final v = trackElements.first.innerText;
+        track = v.isNotEmpty ? v : null;
       }
 
       String? artist;
       final artistElements = nowPlayingElement.findElements('artist');
       if (artistElements.isNotEmpty) {
-        artist = artistElements.first.innerText;
+        final v = artistElements.first.innerText;
+        artist = v.isNotEmpty ? v : null;
       }
 
       String? album;
       final albumElements = nowPlayingElement.findElements('album');
       if (albumElements.isNotEmpty) {
-        album = albumElements.first.innerText;
+        final v = albumElements.first.innerText;
+        album = v.isNotEmpty ? v : null;
       }
 
       String? art;
       final artElements = nowPlayingElement.findElements('art');
       if (artElements.isNotEmpty) {
-        art = artElements.first.innerText;
+        final v = artElements.first.innerText;
+        art = v.isNotEmpty ? v : null;
       }
 
       String? artImageStatus;
@@ -242,6 +252,45 @@ class SpeakerWebsocketService {
       }
     } catch (e) {
       debugPrint('[WebSocket] Error parsing now playing update: $e');
+    }
+  }
+
+  void _handleNowSelectionUpdate(XmlElement nowSelectionUpdatedElement) {
+    try {
+      final presetElement = nowSelectionUpdatedElement.findElements('preset').firstOrNull;
+      if (presetElement == null) {
+        debugPrint('[WebSocket] No <preset> element in nowSelectionUpdated');
+        return;
+      }
+
+      final contentItem = presetElement.findElements('ContentItem').firstOrNull;
+      if (contentItem == null) {
+        debugPrint('[WebSocket] No <ContentItem> element in nowSelectionUpdated preset');
+        return;
+      }
+
+      final source = contentItem.getAttribute('source');
+      final location = contentItem.getAttribute('location');
+      final sourceAccount = contentItem.getAttribute('sourceAccount');
+      final itemName = contentItem.findElements('itemName').firstOrNull?.innerText;
+      final containerArt = contentItem.findElements('containerArt').firstOrNull?.innerText;
+
+      final nowPlaying = NowPlaying(
+        source: source,
+        location: location,
+        sourceAccount: sourceAccount,
+        track: itemName,
+        art: (containerArt?.isNotEmpty ?? false) ? containerArt : null,
+        playStatus: 'PLAY_STATE',
+      );
+
+      debugPrint('[WebSocket] Now selection update: ${itemName ?? "Unknown"}');
+
+      if (!_nowPlayingController.isClosed) {
+        _nowPlayingController.add(nowPlaying);
+      }
+    } catch (e) {
+      debugPrint('[WebSocket] Error parsing now selection update: $e');
     }
   }
 

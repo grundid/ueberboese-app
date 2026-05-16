@@ -160,6 +160,87 @@ void main() {
       service.dispose();
     });
 
+    test('normalizes empty string fields to null in nowPlayingUpdated', () async {
+      final service = SpeakerWebsocketService(
+        '192.168.1.100',
+        webSocketFactory: (uri, {protocols}) => mockChannel,
+      );
+
+      final nowPlayingUpdates = <NowPlaying>[];
+      service.nowPlayingStream.listen((nowPlaying) {
+        nowPlayingUpdates.add(nowPlaying);
+      });
+
+      service.connect();
+
+      const xmlMessage = '''<?xml version="1.0" encoding="UTF-8"?>
+<updates deviceID="9884E39E1EA8">
+  <nowPlayingUpdated>
+    <nowPlaying deviceID="9884E39E1EA8" source="TUNEIN" sourceAccount="">
+      <ContentItem source="TUNEIN" type="stationurl" location="/v1/playback/station/s80044" sourceAccount="" isPresetable="true">
+        <itemName>Radio TEDDY</itemName>
+      </ContentItem>
+      <track></track>
+      <artist></artist>
+      <album></album>
+      <art artImageStatus="SHOW_DEFAULT_IMAGE" />
+      <playStatus>BUFFERING_STATE</playStatus>
+    </nowPlaying>
+  </nowPlayingUpdated>
+</updates>''';
+
+      messageController.add(xmlMessage);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(nowPlayingUpdates.length, 1);
+      expect(nowPlayingUpdates[0].track, isNull);
+      expect(nowPlayingUpdates[0].artist, isNull);
+      expect(nowPlayingUpdates[0].album, isNull);
+      expect(nowPlayingUpdates[0].art, isNull);
+      expect(nowPlayingUpdates[0].playStatus, 'BUFFERING_STATE');
+
+      service.dispose();
+    });
+
+    test('parses nowSelectionUpdated XML correctly', () async {
+      final service = SpeakerWebsocketService(
+        '192.168.1.100',
+        webSocketFactory: (uri, {protocols}) => mockChannel,
+      );
+
+      final nowPlayingUpdates = <NowPlaying>[];
+      service.nowPlayingStream.listen((nowPlaying) {
+        nowPlayingUpdates.add(nowPlaying);
+      });
+
+      service.connect();
+
+      const xmlMessage = '''<?xml version="1.0" encoding="UTF-8"?>
+<updates deviceID="9884E39E1EA8">
+  <nowSelectionUpdated>
+    <preset id="5">
+      <ContentItem source="SPOTIFY" type="tracklisturl" location="/playback/container/c3BvdGlmeTpwbGF5bGlzdDoybjZXMnA1QzBNQUQ5YTR6NXhUVDdu" sourceAccount="z5zt8py3wuxytbza4cxa431ge" isPresetable="true">
+        <itemName>Komplett Entspannt</itemName>
+        <containerArt>https://image-cdn-ak.spotifycdn.com/image/ab67706c0000da843b38733ef58fbd3530776a42</containerArt>
+      </ContentItem>
+    </preset>
+  </nowSelectionUpdated>
+</updates>''';
+
+      messageController.add(xmlMessage);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(nowPlayingUpdates.length, 1);
+      expect(nowPlayingUpdates[0].source, 'SPOTIFY');
+      expect(nowPlayingUpdates[0].location, '/playback/container/c3BvdGlmeTpwbGF5bGlzdDoybjZXMnA1QzBNQUQ5YTR6NXhUVDdu');
+      expect(nowPlayingUpdates[0].sourceAccount, 'z5zt8py3wuxytbza4cxa431ge');
+      expect(nowPlayingUpdates[0].track, 'Komplett Entspannt');
+      expect(nowPlayingUpdates[0].playStatus, 'PLAY_STATE');
+      expect(nowPlayingUpdates[0].art, isNotNull);
+
+      service.dispose();
+    });
+
     test('parses zone update correctly', () async {
       final service = SpeakerWebsocketService(
         '192.168.1.100',
