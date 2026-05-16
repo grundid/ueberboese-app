@@ -1,0 +1,7 @@
+Features:
+- Add speaker settings page with language configuration
+- Make device ID, IP address, and type selectable in edit speaker page
+- Remove web platform restrictions for adding speakers
+
+Bug Fixes:
+- Handle empty location in EditSpotifyPresetPage for new preset slots
