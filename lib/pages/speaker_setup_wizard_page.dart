@@ -707,8 +707,7 @@ class _SpeakerSetupWizardPageState extends State<SpeakerSetupWizardPage> {
           'to your regular Wi-Fi network.\n\n'
           'Restart the speaker by plugging out the power adapter. '
           'After the restart the speaker should appear on your local network.\n\n'
-          'You can add it to the app using "Add by IP" or '
-          '"Add all from account".',
+          'You can add it to the app using "Add by IP" or "Discover".',
       children: [
         FilledButton(
           onPressed: () => Navigator.pop(context),

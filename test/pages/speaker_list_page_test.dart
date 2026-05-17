@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/models/speaker.dart';
-import 'package:ueberboese_app/models/app_config.dart';
 import 'package:ueberboese_app/models/now_playing.dart';
 import 'package:ueberboese_app/pages/speaker_list_page.dart';
 import 'package:ueberboese_app/pages/speaker_detail_page.dart';
@@ -194,9 +193,7 @@ void main() {
       // Speed dial options should now be visible
       expect(find.byIcon(Icons.close), findsOneWidget);
       expect(find.text('Add by IP'), findsOneWidget);
-      expect(find.text('Add all from account'), findsOneWidget);
       expect(find.byIcon(Icons.router), findsOneWidget);
-      expect(find.byIcon(Icons.cloud_download), findsOneWidget);
     });
 
     testWidgets('backdrop closes speed dial when tapped',
@@ -253,147 +250,6 @@ void main() {
 
       // Should navigate to AddSpeakerPage (check for the page title)
       expect(find.text('Add Speaker'), findsOneWidget);
-    });
-
-    testWidgets(
-        'Add all from account shows error when API URL not configured',
-        (WidgetTester tester) async {
-      final appState = MyAppState();
-      await appState.initializeSpeakers();
-
-      // Ensure config has empty API URL
-      appState.updateConfig(const AppConfig(
-        apiUrl: '',
-        accountId: '123',
-        mgmtUsername: 'admin',
-        mgmtPassword: 'password',
-      ));
-
-      await tester.pumpWidget(
-        ChangeNotifierProvider.value(
-          value: appState,
-          child: const MaterialApp(
-            home: Scaffold(body: SpeakerListPage()),
-          ),
-        ),
-      );
-
-      // Expand speed dial
-      await tester.tap(find.byIcon(Icons.add));
-      await tester.pumpAndSettle();
-
-      // Tap "Add all from account"
-      await tester.tap(find.byIcon(Icons.cloud_download));
-      await tester.pumpAndSettle();
-
-      // Should show error dialog
-      expect(find.text('API URL not configured'), findsOneWidget);
-      expect(find.text('Go to Settings'), findsOneWidget);
-    });
-
-    testWidgets(
-        'Add all from account shows error when Account ID not configured',
-        (WidgetTester tester) async {
-      final appState = MyAppState();
-      await appState.initializeSpeakers();
-
-      // Ensure config has empty Account ID
-      appState.updateConfig(const AppConfig(
-        apiUrl: 'https://api.example.com',
-        accountId: '',
-        mgmtUsername: 'admin',
-        mgmtPassword: 'password',
-      ));
-
-      await tester.pumpWidget(
-        ChangeNotifierProvider.value(
-          value: appState,
-          child: const MaterialApp(
-            home: Scaffold(body: SpeakerListPage()),
-          ),
-        ),
-      );
-
-      // Expand speed dial
-      await tester.tap(find.byIcon(Icons.add));
-      await tester.pumpAndSettle();
-
-      // Tap "Add all from account"
-      await tester.tap(find.byIcon(Icons.cloud_download));
-      await tester.pumpAndSettle();
-
-      // Should show error dialog
-      expect(find.text('Account ID not configured'), findsOneWidget);
-    });
-
-    testWidgets(
-        'Add all from account shows error when username not configured',
-        (WidgetTester tester) async {
-      final appState = MyAppState();
-      await appState.initializeSpeakers();
-
-      // Ensure config has empty username
-      appState.updateConfig(const AppConfig(
-        apiUrl: 'https://api.example.com',
-        accountId: '123',
-        mgmtUsername: '',
-        mgmtPassword: 'password',
-      ));
-
-      await tester.pumpWidget(
-        ChangeNotifierProvider.value(
-          value: appState,
-          child: const MaterialApp(
-            home: Scaffold(body: SpeakerListPage()),
-          ),
-        ),
-      );
-
-      // Expand speed dial
-      await tester.tap(find.byIcon(Icons.add));
-      await tester.pumpAndSettle();
-
-      // Tap "Add all from account"
-      await tester.tap(find.byIcon(Icons.cloud_download));
-      await tester.pumpAndSettle();
-
-      // Should show error dialog
-      expect(find.text('Management username not configured'), findsOneWidget);
-    });
-
-    testWidgets(
-        'Add all from account shows error when password not configured',
-        (WidgetTester tester) async {
-      final appState = MyAppState();
-      await appState.initializeSpeakers();
-
-      // Ensure config has empty password
-      appState.updateConfig(const AppConfig(
-        apiUrl: 'https://api.example.com',
-        accountId: '123',
-        mgmtUsername: 'admin',
-        mgmtPassword: '',
-      ));
-
-      await tester.pumpWidget(
-        ChangeNotifierProvider.value(
-          value: appState,
-          child: const MaterialApp(
-            home: Scaffold(body: SpeakerListPage()),
-          ),
-        ),
-      );
-
-      // Expand speed dial
-      await tester.tap(find.byIcon(Icons.add));
-      await tester.pumpAndSettle();
-
-      // Tap "Add all from account"
-      await tester.tap(find.byIcon(Icons.cloud_download));
-      await tester.pumpAndSettle();
-
-      // Should show error dialog
-      expect(find.text('Management password not configured'), findsOneWidget);
     });
 
     testWidgets('displays disconnected chip when speaker status is not loaded',

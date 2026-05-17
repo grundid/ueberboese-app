@@ -4,19 +4,13 @@ import 'package:provider/provider.dart';
 import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/models/speaker.dart';
 import 'package:ueberboese_app/models/now_playing.dart';
-import 'package:ueberboese_app/widgets/emoji_selector.dart';
-import 'package:ueberboese_app/services/speaker_api_service.dart';
-import 'package:ueberboese_app/services/management_api_service.dart';
 import 'package:ueberboese_app/pages/speaker_detail_page.dart';
 import 'package:ueberboese_app/pages/add_speaker_page.dart';
-import 'package:ueberboese_app/pages/configuration_page.dart';
 import 'package:ueberboese_app/pages/speaker_setup_wizard_page.dart';
 import 'package:ueberboese_app/pages/discover_speakers_page.dart';
 
 class SpeakerListPage extends StatefulWidget {
-  final SpeakerApiService? apiService;
-
-  const SpeakerListPage({super.key, this.apiService});
+  const SpeakerListPage({super.key});
 
   @override
   State<SpeakerListPage> createState() => _SpeakerListPageState();
@@ -28,15 +22,11 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
   late Animation<double> _rotationAnimation;
   late Animation<double> _fadeAnimation;
 
-  late final SpeakerApiService _speakerApiService;
-  final _managementApiService = ManagementApiService();
-
   Timer? _pollingTimer;
 
   @override
   void initState() {
     super.initState();
-    _speakerApiService = widget.apiService ?? SpeakerApiService();
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 200),
       vsync: this,
@@ -76,18 +66,6 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
         _animationController.reverse();
       });
     }
-  }
-
-  String _getNextAvailableEmoji(List<Speaker> speakers) {
-    final usedEmojis = speakers.map((s) => s.emoji).toSet();
-
-    for (final emoji in EmojiSelector.availableEmojis) {
-      if (!usedEmojis.contains(emoji)) {
-        return emoji;
-      }
-    }
-
-    return EmojiSelector.availableEmojis.first;
   }
 
   void _startPolling() {
@@ -194,213 +172,6 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
       child: Material(
         color: Colors.transparent,
         child: listTile,
-      ),
-    );
-  }
-
-  Future<void> _addAllSpeakersFromAccount() async {
-    _closeFab();
-
-    final appState = context.read<MyAppState>();
-    final config = appState.config;
-
-    // Validate configuration
-    if (config.apiUrl.isEmpty) {
-      _showConfigurationErrorDialog(
-        'API URL not configured',
-        'Please configure the Überböse API URL in the settings to use this feature.',
-      );
-      return;
-    }
-
-    if (config.accountId.isEmpty) {
-      _showConfigurationErrorDialog(
-        'Account ID not configured',
-        'Please configure your Account ID in the settings to use this feature.',
-      );
-      return;
-    }
-
-    if (config.mgmtUsername.isEmpty) {
-      _showConfigurationErrorDialog(
-        'Management username not configured',
-        'Please configure the management username in the settings to use this feature.',
-      );
-      return;
-    }
-
-    if (config.mgmtPassword.isEmpty) {
-      _showConfigurationErrorDialog(
-        'Management password not configured',
-        'Please configure the management password in the settings to use this feature.',
-      );
-      return;
-    }
-
-
-    // Show loading dialog
-    if (!mounted) return;
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: Card(
-          child: Padding(
-            padding: EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Fetching speakers from account...'),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-
-    try {
-      // Fetch IP addresses from management API
-      final ipAddresses = await _managementApiService.fetchAccountSpeakers(
-        config.apiUrl,
-        config.accountId,
-        config.mgmtUsername,
-        config.mgmtPassword,
-      );
-
-      if (!mounted) return;
-
-      if (ipAddresses.isEmpty) {
-        Navigator.pop(context); // Close loading dialog
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No speakers found in account'),
-            duration: Duration(seconds: 3),
-          ),
-        );
-        return;
-      }
-
-      // Process each IP address
-      int addedCount = 0;
-      int existingCount = 0;
-      int failedCount = 0;
-
-      for (final ipAddress in ipAddresses) {
-        // Check if speaker already exists
-        final existingSpeaker = appState.speakers.cast<Speaker?>().firstWhere(
-          (speaker) => speaker?.ipAddress == ipAddress,
-          orElse: () => null,
-        );
-
-        if (existingSpeaker != null) {
-          existingCount++;
-          continue;
-        }
-
-        // Try to fetch speaker info and add
-        try {
-          final emoji = _getNextAvailableEmoji(appState.speakers);
-          final newSpeaker = await _speakerApiService.createSpeakerFromIp(ipAddress, emoji);
-
-          appState.addSpeaker(newSpeaker);
-          addedCount++;
-
-          // Small delay to avoid overwhelming the speakers
-          await Future<void>.delayed(const Duration(milliseconds: 100));
-        } catch (e) {
-          failedCount++;
-        }
-      }
-
-      if (!mounted) return;
-
-      Navigator.pop(context); // Close loading dialog
-
-      // Show summary
-      if (addedCount > 0 || existingCount > 0) {
-        final parts = <String>[];
-        if (addedCount > 0) {
-          parts.add('Added $addedCount ${addedCount == 1 ? 'speaker' : 'speakers'}');
-        }
-        if (existingCount > 0) {
-          parts.add('$existingCount already existed');
-        }
-        if (failedCount > 0) {
-          parts.add('$failedCount failed');
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(parts.join(', ')),
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      } else {
-        showDialog<void>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Failed to Add Speakers'),
-            content: Text(
-              'Failed to add any speakers from the account. $failedCount ${failedCount == 1 ? 'speaker' : 'speakers'} could not be reached.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-
-      Navigator.pop(context); // Close loading dialog
-
-      showDialog<void>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Error'),
-          content: SelectableText(
-            'Failed to fetch speakers from account.\n\n${e.toString()}',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-    }
-  }
-
-  void _showConfigurationErrorDialog(String title, String message) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute<void>(
-                  builder: (context) => const ConfigurationPage(),
-                ),
-              );
-            },
-            child: const Text('Go to Settings'),
-          ),
-        ],
       ),
     );
   }
@@ -551,43 +322,6 @@ class _SpeakerListPageState extends State<SpeakerListPage> with SingleTickerProv
                       },
                       tooltip: 'Discover speakers',
                       child: const Icon(Icons.wifi_find),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          // Mini FAB 2: Add all from account
-          FadeTransition(
-            opacity: _fadeAnimation,
-            child: ScaleTransition(
-              scale: _fadeAnimation,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Material(
-                      elevation: 3,
-                      borderRadius: BorderRadius.circular(8),
-                      color: theme.colorScheme.surface,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        child: Text(
-                          'Add all from account',
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    FloatingActionButton.small(
-                      heroTag: 'add_all_fab',
-                      onPressed: _addAllSpeakersFromAccount,
-                      tooltip: 'Add all from account',
-                      child: const Icon(Icons.cloud_download),
                     ),
                   ],
                 ),
