@@ -21,6 +21,7 @@ import 'package:ueberboese_app/pages/device_events_page.dart';
 import 'package:ueberboese_app/utils/url_utils.dart';
 import 'package:ueberboese_app/pages/presets/presets_page.dart';
 import 'package:ueberboese_app/pages/speaker_settings_page.dart';
+import 'package:ueberboese_app/pages/speaker_doctor_page.dart';
 
 class SpeakerDetailPage extends StatefulWidget {
   final Speaker speaker;
@@ -1183,6 +1184,14 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
                   SpeakerSettingsPage(speaker: widget.speaker),
             ),
           );
+        } else if (value == 'doctor') {
+          Navigator.push(
+            context,
+            MaterialPageRoute<void>(
+              builder: (context) =>
+                  SpeakerDoctorPage(speaker: widget.speaker),
+            ),
+          );
         } else if (value == 'standby') {
           _sendToStandby();
         } else if (value == 'delete') {
@@ -1248,6 +1257,16 @@ class _SpeakerDetailPageState extends State<SpeakerDetailPage> {
               Icon(Icons.settings),
               SizedBox(width: 8),
               Text('Settings'),
+            ],
+          ),
+        ),
+        const PopupMenuItem<String>(
+          value: 'doctor',
+          child: Row(
+            children: [
+              Icon(Icons.home_repair_service),
+              SizedBox(width: 8),
+              Text('Doctor'),
             ],
           ),
         ),

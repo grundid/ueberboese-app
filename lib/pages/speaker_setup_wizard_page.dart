@@ -4,6 +4,7 @@ import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/models/wireless_network.dart';
 import 'package:ueberboese_app/services/speaker_api_service.dart';
 import 'package:ueberboese_app/services/speaker_setup_service.dart';
+import 'package:ueberboese_app/widgets/envswitch_log_view.dart';
 
 class SpeakerSetupWizardPage extends StatefulWidget {
   final SpeakerSetupService? setupService;
@@ -521,18 +522,7 @@ class _SpeakerSetupWizardPageState extends State<SpeakerSetupWizardPage> {
           'You can skip this step if you don\'t want to use your Überböse server now.',
       children: [
         if (_envswitchLog.isNotEmpty) ...[
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: SelectableText(
-              _envswitchLog.join('\n'),
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
-            ),
-          ),
+          EnvswitchLogView(log: _envswitchLog),
           const SizedBox(height: 16),
         ],
         if (!_envswitchDone) ...[

@@ -211,24 +211,54 @@ void main() {
     });
 
     group('configureEnvswitch', () {
-      test('connects to port 17000 and sends envswitch command', () async {
-        final writtenLines = <String>[];
-        // Simulate the speaker responding with 'ok' to each command.
-        final responseController = StreamController<Uint8List>();
-
-        final mockSocket = _MockSocket(
-          stream: responseController.stream,
+      /// Builds a mock socket that simulates the speaker's telnet protocol:
+      /// sends an initial "->" prompt on connect, then responds "ok\n->" to
+      /// each command (so the service can correctly match responses to commands).
+      _MockSocket buildEnvswitchSocket(
+          StreamController<Uint8List> ctrl, List<String> writtenLines) {
+        return _MockSocket(
+          stream: ctrl.stream,
           onWriteln: (line) {
             writtenLines.add(line);
-            // Echo a response back for each line written.
-            responseController.add(Uint8List.fromList('ok\n'.codeUnits));
+            ctrl.add(Uint8List.fromList('ok\n->'.codeUnits));
           },
           onFlush: () => Future<void>.value(),
           onClose: () {
-            responseController.close();
+            ctrl.close();
             return Future<void>.value();
           },
         );
+      }
+
+      test('uses custom speakerIp when provided', () async {
+        final ctrl = StreamController<Uint8List>();
+        final mockSocket = buildEnvswitchSocket(ctrl, []);
+        // Send initial prompt so the service can drain it.
+        ctrl.add(Uint8List.fromList('->'.codeUnits));
+
+        String? connectedHost;
+
+        final svc = SpeakerSetupService(
+          httpClient: mockClient,
+          envswitchDelay: Duration.zero,
+          socketConnect: (host, port, {timeout}) async {
+            connectedHost = host;
+            return mockSocket;
+          },
+        );
+
+        await svc.configureEnvswitch('https://api.example.com',
+            speakerIp: '10.0.0.42');
+
+        expect(connectedHost, '10.0.0.42');
+      });
+
+      test('connects to port 17000 and sends envswitch command', () async {
+        final writtenLines = <String>[];
+        final ctrl = StreamController<Uint8List>();
+        final mockSocket = buildEnvswitchSocket(ctrl, writtenLines);
+        // Send initial prompt so the service can drain it.
+        ctrl.add(Uint8List.fromList('->'.codeUnits));
 
         String? connectedHost;
         int? connectedPort;
@@ -259,6 +289,93 @@ void main() {
         expect(log.any((l) => l.startsWith('> sys reboot')), isTrue);
         expect(log.any((l) => l.startsWith('< ok')), isTrue);
       });
+    });
+    group('getSystemConfiguration', () {
+      test('connects to correct host and port and sends command', () async {
+        final responseController = StreamController<Uint8List>();
+        final writtenLines = <String>[];
+
+        final mockSocket = _MockSocket(
+          stream: responseController.stream,
+          onWriteln: (line) {
+            writtenLines.add(line);
+            // Send the response followed by the prompt so the idle timer fires.
+            responseController
+                .add(Uint8List.fromList('response\n'.codeUnits));
+            responseController.close();
+          },
+          onFlush: () => Future<void>.value(),
+          onClose: () {
+            if (!responseController.isClosed) responseController.close();
+            return Future<void>.value();
+          },
+        );
+
+        String? connectedHost;
+        int? connectedPort;
+
+        final svc = SpeakerSetupService(
+          httpClient: mockClient,
+          envswitchDelay: Duration.zero,
+          socketConnect: (host, port, {timeout}) async {
+            connectedHost = host;
+            connectedPort = port;
+            return mockSocket;
+          },
+        );
+
+        await svc.getSystemConfiguration('192.168.1.10');
+
+        expect(connectedHost, '192.168.1.10');
+        expect(connectedPort, 17000);
+        expect(writtenLines, contains('getpdo CurrentSystemConfiguration'));
+      });
+    });
+  });
+
+  group('parseSystemConfiguration', () {
+    test('parses quoted string values', () {
+      const input = '''
+margeServerUrl {
+  text: "https://example.com"
+}
+statsServerUrl {
+  text: "https://stats.example.com"
+}
+''';
+      final result = SpeakerSetupService.parseSystemConfiguration(input);
+      expect(result['margeServerUrl'], 'https://example.com');
+      expect(result['statsServerUrl'], 'https://stats.example.com');
+    });
+
+    test('parses unquoted boolean and number values', () {
+      const input = '''
+isZeroconfEnabled {
+  text: true
+}
+usePandoraProductionServer {
+  text: false
+}
+''';
+      final result = SpeakerSetupService.parseSystemConfiguration(input);
+      expect(result['isZeroconfEnabled'], 'true');
+      expect(result['usePandoraProductionServer'], 'false');
+    });
+
+    test('skips echo lines starting with ->', () {
+      const input = '''->getpdo CurrentSystemConfiguration
+margeServerUrl {
+  text: "https://example.com"
+}
+''';
+      final result = SpeakerSetupService.parseSystemConfiguration(input);
+      expect(result.containsKey('->getpdo'), isFalse);
+      expect(result['margeServerUrl'], 'https://example.com');
+    });
+
+    test('returns empty map for empty input', () {
+      final result = SpeakerSetupService.parseSystemConfiguration('');
+      expect(result, isEmpty);
     });
   });
 

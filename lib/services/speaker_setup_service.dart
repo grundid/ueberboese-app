@@ -94,12 +94,13 @@ class SpeakerSetupService {
     }
   }
 
-  /// Connects to the speaker on port 17000, sends envswitch commands line by
+  /// Connects to [speakerIp] on port 17000, sends envswitch commands line by
   /// line, and returns a log of all sent ("> ") and received ("< ") lines.
-  Future<List<String>> configureEnvswitch(String apiUrl) async {
+  Future<List<String>> configureEnvswitch(String apiUrl,
+      {String speakerIp = kSetupSpeakerIp}) async {
     final connectFn = socketConnect ?? Socket.connect;
     final socket = await connectFn(
-      kSetupSpeakerIp,
+      speakerIp,
       17000,
       timeout: timeout,
     );
@@ -117,33 +118,57 @@ class SpeakerSetupService {
       // Wait for the speaker to be ready before sending commands.
       await Future<void>.delayed(envswitchDelay);
 
-      // Buffer incoming data so we can capture responses per command.
+      // Buffer incoming data. The speaker uses "->" as its command prompt,
+      // signalling it is ready for the next command.
       final buffer = StringBuffer();
-      final dataCompleter = <Completer<String>>[];
+      // The active completer for the current wait. Using a list so the closure
+      // always holds a reference to the same container even as we swap values.
+      final pendingBox = <Completer<String>?>[ null ];
+
+      void tryComplete() {
+        final c = pendingBox[0];
+        if (c != null && !c.isCompleted && _hasPrompt(buffer.toString())) {
+          pendingBox[0] = null;
+          final s = buffer.toString();
+          buffer.clear();
+          c.complete(s);
+        }
+      }
 
       socket.cast<List<int>>().transform(utf8.decoder).listen((data) {
         buffer.write(data);
-        if (dataCompleter.isNotEmpty && !dataCompleter.first.isCompleted) {
-          dataCompleter.first.complete(buffer.toString());
-          buffer.clear();
-        }
+        tryComplete();
       });
+
+      Future<String> waitForPrompt(Duration timeLimit) {
+        final c = Completer<String>();
+        pendingBox[0] = c;
+        // If data already arrived and contains the prompt, complete immediately.
+        tryComplete();
+        return c.future.timeout(timeLimit, onTimeout: () {
+          pendingBox[0] = null;
+          final s = buffer.toString();
+          buffer.clear();
+          return s;
+        });
+      }
+
+      // Drain the initial "->" connection prompt before sending commands.
+      await waitForPrompt(const Duration(seconds: 3));
 
       for (final cmd in commands) {
         log.add('> $cmd');
-        final completer = Completer<String>();
-        dataCompleter.add(completer);
         socket.writeln(cmd);
         await socket.flush();
-        // Wait up to 3 seconds for a response line.
-        final response = await completer.future
-            .timeout(const Duration(seconds: 3), onTimeout: () => '');
-        if (response.trim().isNotEmpty) {
-          for (final line in response.trim().split('\n')) {
-            log.add('< ${line.trim()}');
+        // Wait up to 5 seconds for the speaker's "->" ready prompt.
+        final response = await waitForPrompt(const Duration(seconds: 5));
+        final cleaned = _stripPrompt(response).trim();
+        if (cleaned.isNotEmpty) {
+          for (final line in cleaned.split('\n')) {
+            final trimmed = line.trim();
+            if (trimmed.isNotEmpty) log.add('< $trimmed');
           }
         }
-        dataCompleter.remove(completer);
       }
 
       await socket.close();
@@ -153,6 +178,77 @@ class SpeakerSetupService {
       if (e is Exception) rethrow;
       throw Exception('Failed to configure envswitch: $e');
     }
+  }
+
+  /// Connects to [speakerIp] on port 17000, sends `getpdo CurrentSystemConfiguration`,
+  /// and returns the raw multi-line response string.
+  Future<String> getSystemConfiguration(String speakerIp) async {
+    final connectFn = socketConnect ?? Socket.connect;
+    final socket = await connectFn(speakerIp, 17000, timeout: timeout);
+    try {
+      await Future<void>.delayed(envswitchDelay);
+      final responseBuffer = StringBuffer();
+      final completer = Completer<String>();
+      Timer? idleTimer;
+
+      void complete() {
+        idleTimer?.cancel();
+        if (!completer.isCompleted) {
+          completer.complete(responseBuffer.toString());
+        }
+      }
+
+      socket.cast<List<int>>().transform(utf8.decoder).listen(
+        (data) {
+          responseBuffer.write(data);
+          // Reset idle timer on each new chunk; resolve after a short pause.
+          idleTimer?.cancel();
+          idleTimer = Timer(const Duration(milliseconds: 300), complete);
+        },
+        onDone: complete,
+      );
+
+      socket.writeln('getpdo CurrentSystemConfiguration');
+      await socket.flush();
+
+      final response = await completer.future
+          .timeout(const Duration(seconds: 5), onTimeout: () {
+        return responseBuffer.toString();
+      });
+      await socket.close();
+      return response;
+    } catch (e) {
+      socket.destroy();
+      if (e is Exception) rethrow;
+      throw Exception('Failed to get system configuration: $e');
+    }
+  }
+
+  /// Parses the `getpdo CurrentSystemConfiguration` response format into a map.
+  ///
+  /// Input format:
+  /// ```
+  /// keyName {
+  ///   text: "some value"
+  /// }
+  /// ```
+  static Map<String, String> parseSystemConfiguration(String response) {
+    final result = <String, String>{};
+    // Match blocks like: keyName {\n  text: "value"\n}
+    final blockPattern = RegExp(
+      r'(\w+)\s*\{\s*\n\s*text:\s*(.*?)\s*\n\s*\}',
+      multiLine: true,
+    );
+    for (final match in blockPattern.allMatches(response)) {
+      final key = match.group(1)!;
+      var value = match.group(2)!.trim();
+      // Strip surrounding quotes if present.
+      if (value.startsWith('"') && value.endsWith('"')) {
+        value = value.substring(1, value.length - 1);
+      }
+      result[key] = value;
+    }
+    return result;
   }
 
   Future<void> setMargeAccount(
@@ -204,6 +300,17 @@ class SpeakerSetupService {
     } finally {
       if (_ownClient()) client.close();
     }
+  }
+
+  /// Returns true when [s] ends with the speaker's command-prompt marker "->".
+  static bool _hasPrompt(String s) {
+    final t = s.trimRight();
+    return t.endsWith('->');
+  }
+
+  /// Removes trailing prompt artifacts ("->", "OK->", etc.) from a response.
+  static String _stripPrompt(String s) {
+    return s.replaceAll(RegExp(r'\s*->(?:OK)?\s*$'), '').trim();
   }
 
   String _escapeXml(String value) => value
