@@ -31,6 +31,7 @@ class EditSpotifyPresetPage extends StatefulWidget {
 
 class _EditSpotifyPresetPageState extends State<EditSpotifyPresetPage> {
   late TextEditingController _spotifyUriController;
+  late TextEditingController _nameController;
   late final SpotifyApiService _apiService;
   late final SpeakerApiService _speakerApiService;
   String? _decodingError;
@@ -49,6 +50,7 @@ class _EditSpotifyPresetPageState extends State<EditSpotifyPresetPage> {
   void initState() {
     super.initState();
     _spotifyUriController = TextEditingController();
+    _nameController = TextEditingController();
   }
 
   @override
@@ -94,6 +96,7 @@ class _EditSpotifyPresetPageState extends State<EditSpotifyPresetPage> {
 
     // Always add listener and fetch accounts, even on decoding error
     _spotifyUriController.addListener(_onUriChanged);
+    _nameController.addListener(() => setState(() {}));
     _fetchSpotifyAccounts();
 
     // Fetch entity info only if decoding succeeded and URI is non-empty
@@ -106,6 +109,7 @@ class _EditSpotifyPresetPageState extends State<EditSpotifyPresetPage> {
   void dispose() {
     _debounceTimer?.cancel();
     _spotifyUriController.dispose();
+    _nameController.dispose();
     super.dispose();
   }
 
@@ -143,6 +147,7 @@ class _EditSpotifyPresetPageState extends State<EditSpotifyPresetPage> {
         _entityFetchError = null;
         _isLoadingEntity = false;
       });
+      _nameController.clear();
       return;
     }
 
@@ -161,7 +166,9 @@ class _EditSpotifyPresetPageState extends State<EditSpotifyPresetPage> {
     setState(() {
       _isLoadingEntity = true;
       _entityFetchError = null;
+      _entity = null;
     });
+    _nameController.clear();
 
     try {
       final entity = await _apiService.getSpotifyEntity(apiUrl, spotifyUri);
@@ -173,6 +180,7 @@ class _EditSpotifyPresetPageState extends State<EditSpotifyPresetPage> {
         _entityFetchError = null;
         _isLoadingEntity = false;
       });
+      _nameController.text = entity.name;
     } catch (e) {
       if (!mounted) return;
 
@@ -350,8 +358,9 @@ class _EditSpotifyPresetPageState extends State<EditSpotifyPresetPage> {
       return;
     }
 
-    if (_entity == null) {
-      _showErrorDialog('Please wait for entity information to load');
+    final itemName = _nameController.text.trim();
+    if (itemName.isEmpty) {
+      _showErrorDialog('Please enter a name for this preset');
       return;
     }
 
@@ -365,8 +374,8 @@ class _EditSpotifyPresetPageState extends State<EditSpotifyPresetPage> {
         widget.preset.id,
         spotifyUri,
         _selectedAccount!.spotifyUserId,
-        _entity!.name,
-        _entity!.imageUrl,
+        itemName,
+        _entity?.imageUrl,
       );
 
       if (!mounted) return;
@@ -492,14 +501,6 @@ class _EditSpotifyPresetPageState extends State<EditSpotifyPresetPage> {
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
-                  const SizedBox(height: 16),
-                  SelectableText(
-                    _entity!.name,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
                 ],
               )
             else if (_entityFetchError != null)
@@ -529,6 +530,15 @@ class _EditSpotifyPresetPageState extends State<EditSpotifyPresetPage> {
               ),
             if (_entity != null || _isLoadingEntity || _entityFetchError != null)
               const SizedBox(height: 16),
+            TextField(
+              controller: _nameController,
+              enabled: _decodingError == null,
+              decoration: const InputDecoration(
+                labelText: 'Preset name',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
             // Spotify Account Dropdown
             if (_isLoadingAccounts)
               const Card(
@@ -622,7 +632,7 @@ class _EditSpotifyPresetPageState extends State<EditSpotifyPresetPage> {
             ElevatedButton(
               onPressed: _decodingError == null &&
                       _selectedAccount != null &&
-                      _entity != null &&
+                      _nameController.text.trim().isNotEmpty &&
                       !_isSaving
                   ? _onSavePressed
                   : null,

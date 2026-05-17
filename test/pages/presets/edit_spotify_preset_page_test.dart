@@ -78,8 +78,9 @@ void main() {
         ),
       );
 
-      expect(find.byType(TextField), findsOneWidget);
+      expect(find.byType(TextField), findsNWidgets(2));
       expect(find.text('Spotify URI'), findsOneWidget);
+      expect(find.text('Preset name'), findsOneWidget);
     });
 
     testWidgets('prefills TextField with decoded Spotify URI', (WidgetTester tester) async {
@@ -103,8 +104,10 @@ void main() {
         ),
       );
 
-      final textField = tester.widget<TextField>(find.byType(TextField));
-      expect(textField.controller?.text, equals(spotifyUri));
+      final uriField = tester.widget<TextField>(
+        find.ancestor(of: find.text('Spotify URI'), matching: find.byType(TextField)),
+      );
+      expect(uriField.controller?.text, equals(spotifyUri));
     });
 
     testWidgets('displays save button', (WidgetTester tester) async {
@@ -154,9 +157,11 @@ void main() {
       expect(find.text('Invalid location format'), findsOneWidget);
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
 
-      // TextField should be disabled
-      final textField = tester.widget<TextField>(find.byType(TextField));
-      expect(textField.enabled, isFalse);
+      // Both TextFields should be disabled
+      final textFields = tester.widgetList<TextField>(find.byType(TextField));
+      for (final tf in textFields) {
+        expect(tf.enabled, isFalse);
+      }
 
       // Save button should be disabled
       await tester.ensureVisible(find.byType(ElevatedButton));
@@ -188,9 +193,11 @@ void main() {
       expect(find.textContaining('Failed to decode Spotify URI'), findsOneWidget);
       expect(find.byIcon(Icons.error_outline), findsOneWidget);
 
-      // TextField should be disabled
-      final textField = tester.widget<TextField>(find.byType(TextField));
-      expect(textField.enabled, isFalse);
+      // Both TextFields should be disabled
+      final textFields = tester.widgetList<TextField>(find.byType(TextField));
+      for (final tf in textFields) {
+        expect(tf.enabled, isFalse);
+      }
     });
 
     testWidgets('correctly decodes example from requirements', (WidgetTester tester) async {
@@ -210,8 +217,10 @@ void main() {
         ),
       );
 
-      final textField = tester.widget<TextField>(find.byType(TextField));
-      expect(textField.controller?.text, equals('spotify:playlist:23SMdyOHA6KkzHoPOJ5KQ9'));
+      final uriField = tester.widget<TextField>(
+        find.ancestor(of: find.text('Spotify URI'), matching: find.byType(TextField)),
+      );
+      expect(uriField.controller?.text, equals('spotify:playlist:23SMdyOHA6KkzHoPOJ5KQ9'));
     });
 
     testWidgets('displays Open in Spotify button', (WidgetTester tester) async {
@@ -317,19 +326,11 @@ void main() {
         expect(image.width, equals(200));
         expect(image.height, equals(200));
 
-        // Verify name is displayed as SelectableText (allows copy/paste)
-        expect(find.byType(SelectableText), findsOneWidget);
-        final selectableText = tester.widget<SelectableText>(find.byType(SelectableText));
-        expect(selectableText.data, equals('My Favorite Songs'));
-
-        // Verify centered layout
-        final column = tester.widget<Column>(
-          find.ancestor(
-            of: find.byType(SelectableText),
-            matching: find.byType(Column),
-          ).first,
+        // Verify name is pre-filled in the name TextField
+        final nameField = tester.widget<TextField>(
+          find.ancestor(of: find.text('Preset name'), matching: find.byType(TextField)),
         );
-        expect(column.crossAxisAlignment, equals(CrossAxisAlignment.center));
+        expect(nameField.controller?.text, equals('My Favorite Songs'));
       });
 
       testWidgets('displays entity with image on successful fetch', (WidgetTester tester) async {
@@ -366,10 +367,11 @@ void main() {
         // Wait for async operations
         await tester.pumpAndSettle();
 
-        // Should display entity name as selectable text
-        expect(find.byType(SelectableText), findsOneWidget);
-        final selectableText = tester.widget<SelectableText>(find.byType(SelectableText));
-        expect(selectableText.data, equals('Bohemian Rhapsody'));
+        // Should pre-fill name TextField
+        final nameField = tester.widget<TextField>(
+          find.ancestor(of: find.text('Preset name'), matching: find.byType(TextField)),
+        );
+        expect(nameField.controller?.text, equals('Bohemian Rhapsody'));
 
         // Should display image
         expect(find.byType(Image), findsOneWidget);
@@ -408,10 +410,11 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        // Should display entity name as selectable text
-        expect(find.byType(SelectableText), findsOneWidget);
-        final selectableText = tester.widget<SelectableText>(find.byType(SelectableText));
-        expect(selectableText.data, equals('My Private Playlist'));
+        // Should pre-fill name TextField
+        final nameField = tester.widget<TextField>(
+          find.ancestor(of: find.text('Preset name'), matching: find.byType(TextField)),
+        );
+        expect(nameField.controller?.text, equals('My Private Playlist'));
 
         // Should display placeholder icon instead of image
         expect(find.byIcon(Icons.music_note), findsWidgets);
@@ -458,17 +461,27 @@ void main() {
         expect(find.text('Spotify entity not found'), findsOneWidget);
         expect(find.byIcon(Icons.info_outline), findsOneWidget);
 
-        // Select an account so save button can be enabled
+        // Select an account
         await tester.ensureVisible(find.byType(DropdownButtonFormField<SpotifyAccount>));
         await tester.tap(find.byType(DropdownButtonFormField<SpotifyAccount>));
         await tester.pumpAndSettle();
         await tester.tap(find.text('John Doe').last);
         await tester.pumpAndSettle();
 
-        // Save button should be disabled when entity fetch fails (entity is required for save)
+        // Name field is empty → save still disabled
         await tester.ensureVisible(find.byType(ElevatedButton));
-        final saveButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
-        expect(saveButton.onPressed, isNull);
+        final saveButtonBefore = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+        expect(saveButtonBefore.onPressed, isNull);
+
+        // Typing a name enables save
+        await tester.enterText(
+          find.ancestor(of: find.text('Preset name'), matching: find.byType(TextField)),
+          'My Custom Name',
+        );
+        await tester.pump();
+
+        final saveButtonAfter = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+        expect(saveButtonAfter.onPressed, isNotNull);
       });
 
       testWidgets('fetches entity info on URI change with debouncing', (WidgetTester tester) async {
@@ -512,19 +525,24 @@ void main() {
 
         await tester.pumpAndSettle();
 
-        // Initial entity should be displayed
-        expect(find.text('Initial Playlist'), findsOneWidget);
+        // Initial entity name should be pre-filled in the name field
+        final nameField = tester.widget<TextField>(
+          find.ancestor(of: find.text('Preset name'), matching: find.byType(TextField)),
+        );
+        expect(nameField.controller?.text, equals('Initial Playlist'));
 
         // Change the URI
-        await tester.enterText(find.byType(TextField), 'spotify:playlist:new456');
+        await tester.enterText(
+          find.ancestor(of: find.text('Spotify URI'), matching: find.byType(TextField)),
+          'spotify:playlist:new456',
+        );
 
         // Wait for debounce timer (500ms)
         await tester.pump(const Duration(milliseconds: 500));
         await tester.pumpAndSettle();
 
-        // New entity should be displayed
-        expect(find.text('New Playlist'), findsOneWidget);
-        expect(find.text('Initial Playlist'), findsNothing);
+        // New entity name should be pre-filled
+        expect(nameField.controller?.text, equals('New Playlist'));
       });
 
       testWidgets('does not fetch entity when URI is empty', (WidgetTester tester) async {
@@ -561,14 +579,20 @@ void main() {
         await tester.pumpAndSettle();
 
         // Clear the URI
-        await tester.enterText(find.byType(TextField), '');
+        await tester.enterText(
+          find.ancestor(of: find.text('Spotify URI'), matching: find.byType(TextField)),
+          '',
+        );
 
         // Wait for debounce
         await tester.pump(const Duration(milliseconds: 500));
         await tester.pumpAndSettle();
 
-        // No entity display should be visible
-        expect(find.byType(SelectableText), findsNothing);
+        // Name field should be cleared, no image displayed
+        final nameField = tester.widget<TextField>(
+          find.ancestor(of: find.text('Preset name'), matching: find.byType(TextField)),
+        );
+        expect(nameField.controller?.text, isEmpty);
         expect(find.text('Loading entity information...'), findsNothing);
       });
 
@@ -599,9 +623,14 @@ void main() {
         // Should show decoding error
         expect(find.text('Invalid location format'), findsOneWidget);
 
-        // Should not show entity loading or display
+        // Should not show entity loading
         expect(find.text('Loading entity information...'), findsNothing);
-        expect(find.byType(SelectableText), findsNothing);
+        // Name field should be empty and disabled
+        final nameField = tester.widget<TextField>(
+          find.ancestor(of: find.text('Preset name'), matching: find.byType(TextField)),
+        );
+        expect(nameField.controller?.text, isEmpty);
+        expect(nameField.enabled, isFalse);
       });
     });
 
@@ -1174,15 +1203,16 @@ void main() {
         await tester.pumpAndSettle();
 
         // Enter a Spotify URL
+        final uriFinder = find.ancestor(of: find.text('Spotify URI'), matching: find.byType(TextField));
         await tester.enterText(
-          find.byType(TextField),
+          uriFinder,
           'https://open.spotify.com/playlist/23SMdyOHA6KkzHoPOJ5KQ9',
         );
 
         await tester.pump();
 
         // Should automatically convert to URI
-        final textField = tester.widget<TextField>(find.byType(TextField));
+        final textField = tester.widget<TextField>(uriFinder);
         expect(textField.controller?.text, equals('spotify:playlist:23SMdyOHA6KkzHoPOJ5KQ9'));
       });
 
@@ -1215,15 +1245,16 @@ void main() {
         await tester.pumpAndSettle();
 
         // Enter a Spotify URL with query parameters
+        final uriFinder = find.ancestor(of: find.text('Spotify URI'), matching: find.byType(TextField));
         await tester.enterText(
-          find.byType(TextField),
+          uriFinder,
           'https://open.spotify.com/playlist/23SMdyOHA6KkzHoPOJ5KQ9?si=abc123xyz',
         );
 
         await tester.pump();
 
         // Should convert to URI without query params
-        final textField = tester.widget<TextField>(find.byType(TextField));
+        final textField = tester.widget<TextField>(uriFinder);
         expect(textField.controller?.text, equals('spotify:playlist:23SMdyOHA6KkzHoPOJ5KQ9'));
       });
 
@@ -1256,15 +1287,16 @@ void main() {
         await tester.pumpAndSettle();
 
         // Enter a Spotify URI
+        final uriFinder = find.ancestor(of: find.text('Spotify URI'), matching: find.byType(TextField));
         await tester.enterText(
-          find.byType(TextField),
+          uriFinder,
           'spotify:playlist:newPlaylist123',
         );
 
         await tester.pump();
 
         // Should stay as URI
-        final textField = tester.widget<TextField>(find.byType(TextField));
+        final textField = tester.widget<TextField>(uriFinder);
         expect(textField.controller?.text, equals('spotify:playlist:newPlaylist123'));
       });
 
@@ -1296,49 +1328,36 @@ void main() {
 
         await tester.pumpAndSettle();
 
+        final uriFinder = find.ancestor(of: find.text('Spotify URI'), matching: find.byType(TextField));
+
         // Test track
-        await tester.enterText(
-          find.byType(TextField),
-          'https://open.spotify.com/track/6rqhFgbbKwnb9MLmUQDhG6',
-        );
+        await tester.enterText(uriFinder, 'https://open.spotify.com/track/6rqhFgbbKwnb9MLmUQDhG6');
         await tester.pump();
-        var textField = tester.widget<TextField>(find.byType(TextField));
+        var textField = tester.widget<TextField>(uriFinder);
         expect(textField.controller?.text, equals('spotify:track:6rqhFgbbKwnb9MLmUQDhG6'));
 
         // Test album
-        await tester.enterText(
-          find.byType(TextField),
-          'https://open.spotify.com/album/1DFixLWuPkv3KT3TnV35m3',
-        );
+        await tester.enterText(uriFinder, 'https://open.spotify.com/album/1DFixLWuPkv3KT3TnV35m3');
         await tester.pump();
-        textField = tester.widget<TextField>(find.byType(TextField));
+        textField = tester.widget<TextField>(uriFinder);
         expect(textField.controller?.text, equals('spotify:album:1DFixLWuPkv3KT3TnV35m3'));
 
         // Test artist
-        await tester.enterText(
-          find.byType(TextField),
-          'https://open.spotify.com/artist/1vCWHaC5f2uS3yhpwWbIA6',
-        );
+        await tester.enterText(uriFinder, 'https://open.spotify.com/artist/1vCWHaC5f2uS3yhpwWbIA6');
         await tester.pump();
-        textField = tester.widget<TextField>(find.byType(TextField));
+        textField = tester.widget<TextField>(uriFinder);
         expect(textField.controller?.text, equals('spotify:artist:1vCWHaC5f2uS3yhpwWbIA6'));
 
         // Test show
-        await tester.enterText(
-          find.byType(TextField),
-          'https://open.spotify.com/show/6ups0LMt1G8n81XLlkbsPo',
-        );
+        await tester.enterText(uriFinder, 'https://open.spotify.com/show/6ups0LMt1G8n81XLlkbsPo');
         await tester.pump();
-        textField = tester.widget<TextField>(find.byType(TextField));
+        textField = tester.widget<TextField>(uriFinder);
         expect(textField.controller?.text, equals('spotify:show:6ups0LMt1G8n81XLlkbsPo'));
 
         // Test episode
-        await tester.enterText(
-          find.byType(TextField),
-          'https://open.spotify.com/episode/512ojhOuo1ktJprKbVcKyQ',
-        );
+        await tester.enterText(uriFinder, 'https://open.spotify.com/episode/512ojhOuo1ktJprKbVcKyQ');
         await tester.pump();
-        textField = tester.widget<TextField>(find.byType(TextField));
+        textField = tester.widget<TextField>(uriFinder);
         expect(textField.controller?.text, equals('spotify:episode:512ojhOuo1ktJprKbVcKyQ'));
       });
 
@@ -1370,28 +1389,24 @@ void main() {
 
         await tester.pumpAndSettle();
 
+        final uriFinder = find.ancestor(of: find.text('Spotify URI'), matching: find.byType(TextField));
+
         // Enter an invalid URL (not a Spotify URL)
-        await tester.enterText(
-          find.byType(TextField),
-          'https://example.com/playlist/123',
-        );
+        await tester.enterText(uriFinder, 'https://example.com/playlist/123');
 
         await tester.pump();
 
         // Should remain unchanged (no conversion)
-        final textField = tester.widget<TextField>(find.byType(TextField));
+        final textField = tester.widget<TextField>(uriFinder);
         expect(textField.controller?.text, equals('https://example.com/playlist/123'));
 
         // Enter an invalid Spotify URL (missing ID)
-        await tester.enterText(
-          find.byType(TextField),
-          'https://open.spotify.com/playlist/',
-        );
+        await tester.enterText(uriFinder, 'https://open.spotify.com/playlist/');
 
         await tester.pump();
 
         // Should remain unchanged
-        final textField2 = tester.widget<TextField>(find.byType(TextField));
+        final textField2 = tester.widget<TextField>(uriFinder);
         expect(textField2.controller?.text, equals('https://open.spotify.com/playlist/'));
       });
     });
@@ -1423,10 +1438,17 @@ void main() {
         expect(find.text('Invalid location format'), findsNothing);
         expect(find.textContaining('Failed to decode'), findsNothing);
 
-        // TextField should be enabled
-        final textField = tester.widget<TextField>(find.byType(TextField));
-        expect(textField.enabled, isTrue);
-        expect(textField.controller?.text, isEmpty);
+        // Both TextFields should be enabled and empty
+        final uriField = tester.widget<TextField>(
+          find.ancestor(of: find.text('Spotify URI'), matching: find.byType(TextField)),
+        );
+        expect(uriField.enabled, isTrue);
+        expect(uriField.controller?.text, isEmpty);
+        final nameField = tester.widget<TextField>(
+          find.ancestor(of: find.text('Preset name'), matching: find.byType(TextField)),
+        );
+        expect(nameField.enabled, isTrue);
+        expect(nameField.controller?.text, isEmpty);
       });
 
       testWidgets('accounts are fetched when location is empty', (WidgetTester tester) async {
@@ -1538,6 +1560,150 @@ void main() {
           spotifyUri,
           'user123',
           'Test Playlist',
+          null,
+        )).called(1);
+      });
+
+      testWidgets('uses edited name field value instead of entity name when saving', (WidgetTester tester) async {
+        const spotifyUri = 'spotify:playlist:test123';
+        final base64Encoded = base64Encode(utf8.encode(spotifyUri));
+        final location = '/playback/container/$base64Encoded';
+
+        final testPreset = Preset(
+          id: '2',
+          itemName: 'Test Playlist',
+          source: 'SPOTIFY',
+          location: location,
+          type: 'playlist',
+          isPresetable: true,
+        );
+
+        final accounts = [
+          SpotifyAccount(
+            displayName: 'John Doe',
+            createdAt: DateTime(2024, 1, 1),
+            spotifyUserId: 'user123',
+          ),
+        ];
+
+        const entity = SpotifyEntity(name: 'Auto Fetched Name', imageUrl: null);
+
+        when(mockApiService.listSpotifyAccounts(any)).thenAnswer((_) async => accounts);
+        when(mockApiService.getSpotifyEntity(any, any)).thenAnswer((_) async => entity);
+        when(mockSpeakerApiService.storePreset(any, any, any, any, any, any)).thenAnswer((_) async => []);
+
+        await tester.pumpWidget(
+          createWidgetWithProvider(
+            EditSpotifyPresetPage(
+              preset: testPreset,
+              speakerIp: '192.168.1.1',
+              apiService: mockApiService,
+              speakerApiService: mockSpeakerApiService,
+            ),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        // Edit the name field
+        await tester.enterText(
+          find.ancestor(of: find.text('Preset name'), matching: find.byType(TextField)),
+          'My Custom Name',
+        );
+        await tester.pump();
+
+        // Select account
+        await tester.tap(find.byType(DropdownButtonFormField<SpotifyAccount>));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('John Doe').last);
+        await tester.pumpAndSettle();
+
+        // Tap save
+        await tester.ensureVisible(find.widgetWithText(ElevatedButton, 'Save'));
+        await tester.tap(find.widgetWithText(ElevatedButton, 'Save'));
+        await tester.pump();
+
+        verify(mockSpeakerApiService.storePreset(
+          '192.168.1.1',
+          '2',
+          spotifyUri,
+          'user123',
+          'My Custom Name',
+          null,
+        )).called(1);
+      });
+
+      testWidgets('fetch failure — saves with manually typed name and null imageUrl', (WidgetTester tester) async {
+        const spotifyUri = 'spotify:playlist:test123';
+        final base64Encoded = base64Encode(utf8.encode(spotifyUri));
+        final location = '/playback/container/$base64Encoded';
+
+        final testPreset = Preset(
+          id: '3',
+          itemName: 'Test Playlist',
+          source: 'SPOTIFY',
+          location: location,
+          type: 'playlist',
+          isPresetable: true,
+        );
+
+        final accounts = [
+          SpotifyAccount(
+            displayName: 'John Doe',
+            createdAt: DateTime(2024, 1, 1),
+            spotifyUserId: 'user123',
+          ),
+        ];
+
+        when(mockApiService.listSpotifyAccounts(any)).thenAnswer((_) async => accounts);
+        when(mockApiService.getSpotifyEntity(any, any)).thenThrow(Exception('Network error'));
+        when(mockSpeakerApiService.storePreset(any, any, any, any, any, any)).thenAnswer((_) async => []);
+
+        await tester.pumpWidget(
+          createWidgetWithProvider(
+            EditSpotifyPresetPage(
+              preset: testPreset,
+              speakerIp: '192.168.1.1',
+              apiService: mockApiService,
+              speakerApiService: mockSpeakerApiService,
+            ),
+          ),
+        );
+
+        await tester.pumpAndSettle();
+
+        // Select account
+        await tester.tap(find.byType(DropdownButtonFormField<SpotifyAccount>));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('John Doe').last);
+        await tester.pumpAndSettle();
+
+        // Name field is empty → save disabled
+        var saveButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+        expect(saveButton.onPressed, isNull);
+
+        // Type a name
+        await tester.enterText(
+          find.ancestor(of: find.text('Preset name'), matching: find.byType(TextField)),
+          'Typed Name',
+        );
+        await tester.pump();
+
+        // Save should now be enabled
+        saveButton = tester.widget<ElevatedButton>(find.byType(ElevatedButton));
+        expect(saveButton.onPressed, isNotNull);
+
+        // Tap save
+        await tester.ensureVisible(find.widgetWithText(ElevatedButton, 'Save'));
+        await tester.tap(find.widgetWithText(ElevatedButton, 'Save'));
+        await tester.pump();
+
+        verify(mockSpeakerApiService.storePreset(
+          '192.168.1.1',
+          '3',
+          spotifyUri,
+          'user123',
+          'Typed Name',
           null,
         )).called(1);
       });
