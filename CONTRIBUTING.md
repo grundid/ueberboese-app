@@ -23,3 +23,11 @@ flutter run
 ```
 
 Hot reload: press `r` in the console were you started flutter
+
+## Before you commit
+
+Before you commit your changes always make sure to run:
+```shell
+flutter test
+flutter analyze
+```
