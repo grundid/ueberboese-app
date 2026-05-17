@@ -108,7 +108,10 @@ class SpeakerSetupService {
       final updatesUrl = '$apiUrl/updates/soundtouch';
       final commands = [
         'envswitch boseurls set $apiUrl $updatesUrl',
-        'exit',
+        'sys configuration bmxRegistryUrl $apiUrl/bmx/registry/v1/services',
+        'sys configuration statsServerUrl $apiUrl',
+        'getpdo CurrentSystemConfiguration',
+        'sys reboot',
       ];
 
       // Wait for the speaker to be ready before sending commands.

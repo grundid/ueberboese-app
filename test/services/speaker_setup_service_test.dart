@@ -249,10 +249,14 @@ void main() {
         expect(connectedHost, '192.0.2.1');
         expect(connectedPort, 17000);
         expect(writtenLines, contains('envswitch boseurls set https://api.example.com https://api.example.com/updates/soundtouch'));
-        expect(writtenLines, contains('exit'));
+        expect(writtenLines, contains('sys configuration bmxRegistryUrl https://api.example.com/bmx/registry/v1/services'));
+        expect(writtenLines, contains('sys configuration statsServerUrl https://api.example.com'));
+        expect(writtenLines, contains('getpdo CurrentSystemConfiguration'));
+        expect(writtenLines, contains('sys reboot'));
+        expect(writtenLines, isNot(contains('exit')));
         // Log should contain sent lines prefixed with '>' and received with '<'
         expect(log.any((l) => l.startsWith('> envswitch')), isTrue);
-        expect(log.any((l) => l.startsWith('> exit')), isTrue);
+        expect(log.any((l) => l.startsWith('> sys reboot')), isTrue);
         expect(log.any((l) => l.startsWith('< ok')), isTrue);
       });
     });
