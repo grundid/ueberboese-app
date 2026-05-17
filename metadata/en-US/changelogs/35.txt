@@ -1,0 +1,9 @@
+Features:
+- Add speaker doctor page with system config diagnostics and Überböse-API connect
+- Remove "Add all from account" FAB option
+- Show editable name field for Spotify presets, allow saving on fetch failure
+- set bmxRegistryUrl, statsServerUrl in wizard
+
+Documentation:
+- Add CONTRIBUTING.md
+- Mention test and lint command
