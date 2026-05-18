@@ -7,7 +7,9 @@ import 'package:provider/provider.dart';
 import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/models/app_config.dart';
 import 'package:ueberboese_app/models/speaker.dart';
+import 'package:ueberboese_app/models/speaker_info.dart';
 import 'package:ueberboese_app/pages/speaker_doctor_page.dart';
+import 'package:ueberboese_app/services/speaker_api_service.dart';
 import 'package:ueberboese_app/services/speaker_setup_service.dart';
 import 'package:ueberboese_app/widgets/envswitch_log_view.dart';
 
@@ -32,6 +34,41 @@ isZeroconfEnabled {
 }
 ''';
 
+/// Config response where margeServerUrl is wrong (doesn't match the api URL).
+const _wrongConfigResponse = '''
+margeServerUrl {
+  text: "https://old.server.com"
+}
+bmxRegistryUrl {
+  text: "https://api.example.com/bmx/registry/v1/services"
+}
+isZeroconfEnabled {
+  text: true
+}
+''';
+
+const _testInfo = SpeakerInfo(
+  name: 'Test Speaker',
+  type: 'SoundTouch 10',
+  deviceId: 'AABBCCDDEEFF',
+  accountId: '1234567',
+);
+
+class _FakeApiService extends SpeakerApiService {
+  final Future<SpeakerInfo> Function(String) _fetch;
+
+  _FakeApiService(this._fetch);
+
+  @override
+  Future<SpeakerInfo> fetchSpeakerInfo(String ipAddress) => _fetch(ipAddress);
+}
+
+SpeakerApiService _successApiService() =>
+    _FakeApiService((_) async => _testInfo);
+
+SpeakerApiService _failingApiService() =>
+    _FakeApiService((_) => Future.error(Exception('HTTP 503')));
+
 Widget _wrap(Widget child, {MyAppState? appState}) {
   return ChangeNotifierProvider.value(
     value: appState ?? MyAppState(),
@@ -44,8 +81,8 @@ Widget _wrap(Widget child, {MyAppState? appState}) {
 /// `getSystemConfiguration` (first connect): sends config text and closes
 /// the stream so the idle-timer resolves immediately.
 ///
-/// `configureEnvswitch` (subsequent connects): sends the initial "->" prompt
-/// and then responds "ok\n->" to each written command.
+/// `configureEnvswitch` / `rebootSpeaker` (subsequent connects): sends the
+/// initial "->" prompt and then responds "ok\n->" to each written command.
 SpeakerSetupService _buildService({required String configResponseText}) {
   int callCount = 0;
   return SpeakerSetupService(
@@ -56,7 +93,7 @@ SpeakerSetupService _buildService({required String configResponseText}) {
       final isFirstCall = callCount == 1;
 
       if (!isFirstCall) {
-        // Send initial ready-prompt for configureEnvswitch.
+        // Send initial ready-prompt for configureEnvswitch / rebootSpeaker.
         controller.add(Uint8List.fromList('->'.codeUnits));
       }
 
@@ -90,7 +127,6 @@ SpeakerSetupService _failingService() {
 void main() {
   group('SpeakerDoctorPage', () {
     testWidgets('shows loading indicator initially', (tester) async {
-      // Service whose socket factory never resolves.
       final service = SpeakerSetupService(
         envswitchDelay: Duration.zero,
         socketConnect: (host, port, {timeout}) =>
@@ -98,19 +134,19 @@ void main() {
       );
 
       await tester.pumpWidget(_wrap(
-        SpeakerDoctorPage(speaker: _testSpeaker, setupService: service),
+        SpeakerDoctorPage(speaker: _testSpeaker, setupService: service, apiService: _successApiService()),
       ));
 
-      // Don't pumpAndSettle — the loading spinner should appear before the
-      // async completes.
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      // Don't pumpAndSettle — loading spinners should appear before async completes.
+      // Both the config and info sections show a spinner simultaneously.
+      expect(find.byType(CircularProgressIndicator), findsWidgets);
     });
 
     testWidgets('shows config table after successful load', (tester) async {
       final service = _buildService(configResponseText: _configResponse);
 
       await tester.pumpWidget(_wrap(
-        SpeakerDoctorPage(speaker: _testSpeaker, setupService: service),
+        SpeakerDoctorPage(speaker: _testSpeaker, setupService: service, apiService: _successApiService()),
       ));
       await tester.pumpAndSettle();
 
@@ -120,11 +156,58 @@ void main() {
       expect(find.text('true'), findsOneWidget);
     });
 
+    testWidgets('config table is inside a Card', (tester) async {
+      final service = _buildService(configResponseText: _configResponse);
+
+      await tester.pumpWidget(_wrap(
+        SpeakerDoctorPage(speaker: _testSpeaker, setupService: service, apiService: _successApiService()),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(Card), findsWidgets);
+    });
+
+    testWidgets('config keys are selectable', (tester) async {
+      final service = _buildService(configResponseText: _configResponse);
+
+      await tester.pumpWidget(_wrap(
+        SpeakerDoctorPage(speaker: _testSpeaker, setupService: service, apiService: _successApiService()),
+      ));
+      await tester.pumpAndSettle();
+
+      // Keys are rendered as SelectableText.
+      final selectableTexts = tester.widgetList<SelectableText>(
+        find.byType(SelectableText),
+      );
+      final texts = selectableTexts.map((w) => w.data).toList();
+      expect(texts, contains('margeServerUrl'));
+    });
+
+    testWidgets('row with wrong value uses errorContainer color', (tester) async {
+      final service = _buildService(configResponseText: _wrongConfigResponse);
+      final appState = MyAppState();
+      appState.config = const AppConfig(apiUrl: 'https://api.example.com');
+
+      await tester.pumpWidget(_wrap(
+        SpeakerDoctorPage(speaker: _testSpeaker, setupService: service, apiService: _successApiService()),
+        appState: appState,
+      ));
+      await tester.pumpAndSettle();
+
+      // margeServerUrl is "https://old.server.com" but expected "https://api.example.com".
+      // The key and value SelectableText widgets for that row get a non-null color
+      // (onErrorContainer) applied to their style.
+      final keyWidget = tester.widget<SelectableText>(
+        find.widgetWithText(SelectableText, 'margeServerUrl'),
+      );
+      expect(keyWidget.style?.color, isNotNull);
+    });
+
     testWidgets('shows error message on socket failure', (tester) async {
       final service = _failingService();
 
       await tester.pumpWidget(_wrap(
-        SpeakerDoctorPage(speaker: _testSpeaker, setupService: service),
+        SpeakerDoctorPage(speaker: _testSpeaker, setupService: service, apiService: _successApiService()),
       ));
       await tester.pumpAndSettle();
 
@@ -135,11 +218,10 @@ void main() {
     testWidgets('connect button disabled when apiUrl is empty', (tester) async {
       final service = _buildService(configResponseText: _configResponse);
       final appState = MyAppState();
-      // Set config directly to avoid SharedPreferences in tests.
       appState.config = const AppConfig(apiUrl: '');
 
       await tester.pumpWidget(
-          _wrap(SpeakerDoctorPage(speaker: _testSpeaker, setupService: service),
+          _wrap(SpeakerDoctorPage(speaker: _testSpeaker, setupService: service, apiService: _successApiService()),
               appState: appState));
       await tester.pumpAndSettle();
 
@@ -155,7 +237,7 @@ void main() {
       appState.config = const AppConfig(apiUrl: 'https://api.example.com');
 
       await tester.pumpWidget(
-          _wrap(SpeakerDoctorPage(speaker: _testSpeaker, setupService: service),
+          _wrap(SpeakerDoctorPage(speaker: _testSpeaker, setupService: service, apiService: _successApiService()),
               appState: appState));
       await tester.pumpAndSettle();
 
@@ -172,15 +254,103 @@ void main() {
       appState.config = const AppConfig(apiUrl: 'https://api.example.com');
 
       await tester.pumpWidget(
-          _wrap(SpeakerDoctorPage(speaker: _testSpeaker, setupService: service),
+          _wrap(SpeakerDoctorPage(speaker: _testSpeaker, setupService: service, apiService: _successApiService()),
               appState: appState));
       await tester.pumpAndSettle();
 
+      await tester.ensureVisible(
+          find.widgetWithText(FilledButton, 'Connect speaker to Überböse-API'));
       await tester.tap(
           find.widgetWithText(FilledButton, 'Connect speaker to Überböse-API'));
       await tester.pumpAndSettle();
 
       expect(find.byType(EnvswitchLogView), findsOneWidget);
+    });
+
+    testWidgets('reboot card is shown', (tester) async {
+      final service = _buildService(configResponseText: _configResponse);
+
+      await tester.pumpWidget(_wrap(
+        SpeakerDoctorPage(speaker: _testSpeaker, setupService: service, apiService: _successApiService()),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Reboot speaker'), findsOneWidget);
+    });
+
+    testWidgets('reboot button triggers progress dialog immediately',
+        (tester) async {
+      final service = _buildService(configResponseText: _configResponse);
+
+      await tester.pumpWidget(_wrap(
+        SpeakerDoctorPage(speaker: _testSpeaker, setupService: service, apiService: _successApiService()),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('Reboot speaker'));
+      await tester.tap(find.text('Reboot speaker'));
+      await tester.pump();
+
+      expect(find.text('Rebooting speaker…'), findsOneWidget);
+
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('info card shows deviceID, type and accountId', (tester) async {
+      final service = _buildService(configResponseText: _configResponse);
+
+      await tester.pumpWidget(_wrap(
+        SpeakerDoctorPage(
+          speaker: _testSpeaker,
+          setupService: service,
+          apiService: _successApiService(),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Device ID'), findsOneWidget);
+      expect(find.text('AABBCCDDEEFF'), findsOneWidget);
+      expect(find.text('Type'), findsOneWidget);
+      expect(find.text('SoundTouch 10'), findsOneWidget);
+      expect(find.text('Account UUID'), findsOneWidget);
+      expect(find.text('1234567'), findsOneWidget);
+    });
+
+    testWidgets('info card shows fallback dash when accountId is null',
+        (tester) async {
+      final service = _buildService(configResponseText: _configResponse);
+      final apiService = _FakeApiService((_) async => const SpeakerInfo(
+            name: 'Test Speaker',
+            type: 'SoundTouch 10',
+            deviceId: 'AABBCCDDEEFF',
+          ));
+
+      await tester.pumpWidget(_wrap(
+        SpeakerDoctorPage(
+          speaker: _testSpeaker,
+          setupService: service,
+          apiService: apiService,
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('—'), findsOneWidget);
+    });
+
+    testWidgets('info card shows error and retry on failure', (tester) async {
+      final service = _buildService(configResponseText: _configResponse);
+
+      await tester.pumpWidget(_wrap(
+        SpeakerDoctorPage(
+          speaker: _testSpeaker,
+          setupService: service,
+          apiService: _failingApiService(),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Failed to load device info:'), findsOneWidget);
+      expect(find.text('Retry'), findsWidgets);
     });
   });
 }

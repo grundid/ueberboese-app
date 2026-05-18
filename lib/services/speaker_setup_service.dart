@@ -108,9 +108,11 @@ class SpeakerSetupService {
     try {
       final updatesUrl = '$apiUrl/updates/soundtouch';
       final commands = [
-        'envswitch boseurls set $apiUrl $updatesUrl',
         'sys configuration bmxRegistryUrl $apiUrl/bmx/registry/v1/services',
         'sys configuration statsServerUrl $apiUrl',
+        'sys configuration margeServerUrl $apiUrl',
+        'sys configuration swUpdateUrl $updatesUrl',
+        'envswitch boseurls set $apiUrl $updatesUrl',
         'getpdo CurrentSystemConfiguration',
         'sys reboot',
       ];
@@ -249,6 +251,22 @@ class SpeakerSetupService {
       result[key] = value;
     }
     return result;
+  }
+
+  /// Connects to [speakerIp] on port 17000 and sends `sys reboot`.
+  Future<void> rebootSpeaker(String speakerIp) async {
+    final connectFn = socketConnect ?? Socket.connect;
+    final socket = await connectFn(speakerIp, 17000, timeout: timeout);
+    try {
+      await Future<void>.delayed(envswitchDelay);
+      socket.writeln('sys reboot');
+      await socket.flush();
+      await socket.close();
+    } catch (e) {
+      socket.destroy();
+      if (e is Exception) rethrow;
+      throw Exception('Failed to reboot speaker: $e');
+    }
   }
 
   Future<void> setMargeAccount(

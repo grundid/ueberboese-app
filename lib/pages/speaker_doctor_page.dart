@@ -2,18 +2,32 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ueberboese_app/main.dart';
 import 'package:ueberboese_app/models/speaker.dart';
+import 'package:ueberboese_app/models/speaker_info.dart';
 import 'package:ueberboese_app/pages/configuration_page.dart';
+import 'package:ueberboese_app/services/speaker_api_service.dart';
 import 'package:ueberboese_app/services/speaker_setup_service.dart';
 import 'package:ueberboese_app/widgets/envswitch_log_view.dart';
+
+/// Config keys that will be reconfigured by the "Connect to Überböse-API"
+/// button. Rows with these keys are highlighted when their value doesn't match
+/// the expected URL.
+const _reconfiguredKeys = {
+  'bmxRegistryUrl',
+  'statsServerUrl',
+  'margeServerUrl',
+  'swUpdateUrl',
+};
 
 class SpeakerDoctorPage extends StatefulWidget {
   final Speaker speaker;
   final SpeakerSetupService? setupService;
+  final SpeakerApiService? apiService;
 
   const SpeakerDoctorPage({
     super.key,
     required this.speaker,
     this.setupService,
+    this.apiService,
   });
 
   @override
@@ -22,18 +36,25 @@ class SpeakerDoctorPage extends StatefulWidget {
 
 class _SpeakerDoctorPageState extends State<SpeakerDoctorPage> {
   late final SpeakerSetupService _service;
+  late final SpeakerApiService _apiService;
 
   bool _loading = true;
   String? _error;
   Map<String, String>? _config;
   List<String>? _envswitchLog;
 
+  bool _infoLoading = true;
+  String? _infoError;
+  SpeakerInfo? _info;
+
   @override
   void initState() {
     super.initState();
     _service = widget.setupService ??
         SpeakerSetupService(envswitchDelay: Duration.zero);
+    _apiService = widget.apiService ?? SpeakerApiService();
     _loadConfig();
+    _loadInfo();
   }
 
   Future<void> _loadConfig() async {
@@ -54,6 +75,27 @@ class _SpeakerDoctorPageState extends State<SpeakerDoctorPage> {
       setState(() {
         _error = e.toString();
         _loading = false;
+      });
+    }
+  }
+
+  Future<void> _loadInfo() async {
+    setState(() {
+      _infoLoading = true;
+      _infoError = null;
+    });
+    try {
+      final info = await _apiService.fetchSpeakerInfo(widget.speaker.ipAddress);
+      if (!mounted) return;
+      setState(() {
+        _info = info;
+        _infoLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _infoError = e.toString();
+        _infoLoading = false;
       });
     }
   }
@@ -108,6 +150,50 @@ class _SpeakerDoctorPageState extends State<SpeakerDoctorPage> {
     }
   }
 
+  Future<void> _onReboot() async {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Rebooting speaker…'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      await _service.rebootSpeaker(widget.speaker.ipAddress);
+      if (!mounted) return;
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context);
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Reboot failed'),
+          content: Text(e.toString()),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -122,21 +208,115 @@ class _SpeakerDoctorPageState extends State<SpeakerDoctorPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('System Configuration',
-                style: theme.textTheme.titleMedium),
-            const SizedBox(height: 8),
-            _buildConfigSection(theme),
-            const SizedBox(height: 24),
-            const Divider(),
+            _buildInfoCard(theme),
             const SizedBox(height: 16),
-            _buildConnectSection(context, theme, apiUrl),
+            _buildConfigCard(theme, apiUrl),
+            const SizedBox(height: 16),
+            _buildConnectCard(context, theme, apiUrl),
+            const SizedBox(height: 16),
+            _buildRebootCard(theme),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildConfigSection(ThemeData theme) {
+  Widget _buildInfoCard(ThemeData theme) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Device Info', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 12),
+            _buildInfoContent(theme),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoContent(ThemeData theme) {
+    if (_infoLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_infoError != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Failed to load device info:',
+              style: TextStyle(color: theme.colorScheme.error)),
+          const SizedBox(height: 4),
+          Text(_infoError!,
+              style: TextStyle(color: theme.colorScheme.error, fontSize: 12)),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: _loadInfo,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Retry'),
+          ),
+        ],
+      );
+    }
+    if (_info == null) {
+      return const Text('No device info returned.');
+    }
+
+    final rows = [
+      ('Device ID', _info!.deviceId),
+      ('Type', _info!.type),
+      ('Account UUID', _info!.accountId ?? '—'),
+    ];
+
+    return Table(
+      border: TableBorder.all(
+        color: theme.colorScheme.outlineVariant,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      columnWidths: const {
+        0: IntrinsicColumnWidth(),
+        1: FlexColumnWidth(),
+      },
+      children: rows.map((row) {
+        return TableRow(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              child: SelectableText(
+                row.$1,
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              child: SelectableText(row.$2,
+                  style: theme.textTheme.bodySmall),
+            ),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildConfigCard(ThemeData theme, String apiUrl) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('System Configuration', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 12),
+            _buildConfigContent(theme, apiUrl),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildConfigContent(ThemeData theme, String apiUrl) {
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -162,6 +342,16 @@ class _SpeakerDoctorPageState extends State<SpeakerDoctorPage> {
       return const Text('No configuration data returned.');
     }
 
+    final updatesUrl = apiUrl.isNotEmpty ? '$apiUrl/updates/soundtouch' : null;
+    final expectedValues = apiUrl.isNotEmpty
+        ? {
+            'bmxRegistryUrl': '$apiUrl/bmx/registry/v1/services',
+            'statsServerUrl': apiUrl,
+            'margeServerUrl': apiUrl,
+            'swUpdateUrl': updatesUrl!,
+          }
+        : <String, String>{};
+
     return Table(
       border: TableBorder.all(
         color: theme.colorScheme.outlineVariant,
@@ -172,18 +362,34 @@ class _SpeakerDoctorPageState extends State<SpeakerDoctorPage> {
         1: FlexColumnWidth(),
       },
       children: _config!.entries.map((entry) {
+        final isReconfigured = _reconfiguredKeys.contains(entry.key);
+        final expected = expectedValues[entry.key];
+        final isWrong = isReconfigured &&
+            expected != null &&
+            entry.value != expected;
+        final rowColor = isWrong ? theme.colorScheme.errorContainer : null;
+
         return TableRow(
+          decoration: rowColor != null ? BoxDecoration(color: rowColor) : null,
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              child: Text(entry.key,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(fontWeight: FontWeight.bold)),
+              child: SelectableText(
+                entry.key,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: isWrong ? theme.colorScheme.onErrorContainer : null,
+                ),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              child: SelectableText(entry.value,
-                  style: theme.textTheme.bodySmall),
+              child: SelectableText(
+                entry.value,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: isWrong ? theme.colorScheme.onErrorContainer : null,
+                ),
+              ),
             ),
           ],
         );
@@ -191,104 +397,134 @@ class _SpeakerDoctorPageState extends State<SpeakerDoctorPage> {
     );
   }
 
-  Widget _buildConnectSection(
+  Widget _buildConnectCard(
       BuildContext context, ThemeData theme, String apiUrl) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text('Connect to Überböse-API', style: theme.textTheme.titleMedium),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.errorContainer,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(Icons.warning_amber_rounded,
-                  color: theme.colorScheme.onErrorContainer),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (apiUrl.isEmpty) ...[
-                      Text(
-                        'No API URL configured.',
-                        style: TextStyle(
-                            color: theme.colorScheme.onErrorContainer,
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 4),
-                      TextButton(
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          foregroundColor: theme.colorScheme.onErrorContainer,
-                        ),
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute<void>(
-                              builder: (context) => const ConfigurationPage()),
-                        ),
-                        child: const Text('Open Settings to configure it'),
-                      ),
-                    ] else ...[
-                      RichText(
-                        text: TextSpan(
-                          style: TextStyle(
-                              color: theme.colorScheme.onErrorContainer,
-                              fontSize: 13),
-                          children: [
-                            const TextSpan(text: 'API URL: '),
-                            TextSpan(
-                              text: apiUrl,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'You can change this in Settings.',
-                        style: TextStyle(
-                            color: theme.colorScheme.onErrorContainer,
-                            fontSize: 12),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'This will reconfigure the speaker to use the URL above '
-                        'and reboot it. Only proceed if you are sure.',
-                        style: TextStyle(
-                            color: theme.colorScheme.onErrorContainer,
-                            fontSize: 13),
-                      ),
-                    ],
-                  ],
-                ),
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Connect to Überböse-API', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.errorContainer,
+                borderRadius: BorderRadius.circular(8),
               ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.warning_amber_rounded,
+                      color: theme.colorScheme.onErrorContainer),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (apiUrl.isEmpty) ...[
+                          Text(
+                            'No API URL configured.',
+                            style: TextStyle(
+                                color: theme.colorScheme.onErrorContainer,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 4),
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              foregroundColor:
+                                  theme.colorScheme.onErrorContainer,
+                            ),
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute<void>(
+                                  builder: (context) =>
+                                      const ConfigurationPage()),
+                            ),
+                            child: const Text('Open Settings to configure it'),
+                          ),
+                        ] else ...[
+                          RichText(
+                            text: TextSpan(
+                              style: TextStyle(
+                                  color: theme.colorScheme.onErrorContainer,
+                                  fontSize: 13),
+                              children: [
+                                const TextSpan(text: 'Target API: '),
+                                TextSpan(
+                                  text: apiUrl,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Wrong URL? Change it in Settings first.',
+                            style: TextStyle(
+                                color: theme.colorScheme.onErrorContainer,
+                                fontSize: 12),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Overwrites all server URLs on the speaker and triggers a reboot.',
+                            style: TextStyle(
+                                color: theme.colorScheme.onErrorContainer,
+                                fontSize: 13),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: apiUrl.isNotEmpty ? _onConnectToUeberboese : null,
+              style: FilledButton.styleFrom(
+                backgroundColor: theme.colorScheme.error,
+                foregroundColor: theme.colorScheme.onError,
+              ),
+              child: const Text('Connect speaker to Überböse-API'),
+            ),
+            if (_envswitchLog != null) ...[
+              const SizedBox(height: 16),
+              EnvswitchLogView(log: _envswitchLog!),
             ],
-          ),
+          ],
         ),
-        const SizedBox(height: 12),
-        FilledButton(
-          onPressed: apiUrl.isNotEmpty ? _onConnectToUeberboese : null,
-          style: FilledButton.styleFrom(
-            backgroundColor: theme.colorScheme.error,
-            foregroundColor: theme.colorScheme.onError,
-          ),
-          child: const Text('Connect speaker to Überböse-API'),
+      ),
+    );
+  }
+
+  Widget _buildRebootCard(ThemeData theme) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Reboot', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: _onReboot,
+              icon: const Icon(Icons.restart_alt),
+              label: const Text('Reboot speaker'),
+              style: FilledButton.styleFrom(
+                backgroundColor: theme.colorScheme.error,
+                foregroundColor: theme.colorScheme.onError,
+              ),
+            ),
+          ],
         ),
-        if (_envswitchLog != null) ...[
-          const SizedBox(height: 16),
-          EnvswitchLogView(log: _envswitchLog!),
-        ],
-      ],
+      ),
     );
   }
 }
