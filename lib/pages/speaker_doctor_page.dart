@@ -204,7 +204,8 @@ class _SpeakerDoctorPageState extends State<SpeakerDoctorPage> {
         title: Text('Doctor — ${widget.speaker.name}'),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(
+            16, 16, 16, 16 + MediaQuery.of(context).padding.bottom),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -266,7 +267,7 @@ class _SpeakerDoctorPageState extends State<SpeakerDoctorPage> {
     final rows = [
       ('Device ID', _info!.deviceId),
       ('Type', _info!.type),
-      ('Account UUID', _info!.accountId ?? '—'),
+      ('Marge Account ID', _info!.accountId ?? '—'),
     ];
 
     return Table(

@@ -312,7 +312,7 @@ void main() {
       expect(find.text('AABBCCDDEEFF'), findsOneWidget);
       expect(find.text('Type'), findsOneWidget);
       expect(find.text('SoundTouch 10'), findsOneWidget);
-      expect(find.text('Account UUID'), findsOneWidget);
+      expect(find.text('Marge Account ID'), findsOneWidget);
       expect(find.text('1234567'), findsOneWidget);
     });
 
