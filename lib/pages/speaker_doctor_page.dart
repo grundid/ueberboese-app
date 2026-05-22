@@ -6,6 +6,7 @@ import 'package:ueberboese_app/models/speaker_info.dart';
 import 'package:ueberboese_app/pages/configuration_page.dart';
 import 'package:ueberboese_app/services/speaker_api_service.dart';
 import 'package:ueberboese_app/services/speaker_setup_service.dart';
+import 'package:ueberboese_app/widgets/async_filled_button.dart';
 import 'package:ueberboese_app/widgets/envswitch_log_view.dart';
 
 /// Config keys that will be reconfigured by the "Connect to Überböse-API"
@@ -42,6 +43,8 @@ class _SpeakerDoctorPageState extends State<SpeakerDoctorPage> {
   String? _error;
   Map<String, String>? _config;
   List<String>? _envswitchLog;
+
+  bool _isRebooting = false;
 
   bool _infoLoading = true;
   String? _infoError;
@@ -151,33 +154,16 @@ class _SpeakerDoctorPageState extends State<SpeakerDoctorPage> {
   }
 
   Future<void> _onReboot() async {
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: Card(
-          child: Padding(
-            padding: EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Rebooting speaker…'),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+    setState(() => _isRebooting = true);
 
     try {
       await _service.rebootSpeaker(widget.speaker.ipAddress);
       if (!mounted) return;
-      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Speaker is rebooting…')),
+      );
     } catch (e) {
       if (!mounted) return;
-      Navigator.pop(context);
       showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
@@ -191,6 +177,8 @@ class _SpeakerDoctorPageState extends State<SpeakerDoctorPage> {
           ],
         ),
       );
+    } finally {
+      if (mounted) setState(() => _isRebooting = false);
     }
   }
 
@@ -514,8 +502,9 @@ class _SpeakerDoctorPageState extends State<SpeakerDoctorPage> {
           children: [
             Text('Reboot', style: theme.textTheme.titleMedium),
             const SizedBox(height: 12),
-            FilledButton.icon(
+            AsyncFilledButton(
               onPressed: _onReboot,
+              isLoading: _isRebooting,
               icon: const Icon(Icons.restart_alt),
               label: const Text('Reboot speaker'),
               style: FilledButton.styleFrom(

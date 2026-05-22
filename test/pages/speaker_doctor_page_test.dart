@@ -11,6 +11,7 @@ import 'package:ueberboese_app/models/speaker_info.dart';
 import 'package:ueberboese_app/pages/speaker_doctor_page.dart';
 import 'package:ueberboese_app/services/speaker_api_service.dart';
 import 'package:ueberboese_app/services/speaker_setup_service.dart';
+import 'package:ueberboese_app/widgets/async_filled_button.dart';
 import 'package:ueberboese_app/widgets/envswitch_log_view.dart';
 
 const _testSpeaker = Speaker(
@@ -278,12 +279,16 @@ void main() {
       expect(find.text('Reboot speaker'), findsOneWidget);
     });
 
-    testWidgets('reboot button triggers progress dialog immediately',
+    testWidgets('reboot button shows inline spinner while rebooting',
         (tester) async {
       final service = _buildService(configResponseText: _configResponse);
 
       await tester.pumpWidget(_wrap(
-        SpeakerDoctorPage(speaker: _testSpeaker, setupService: service, apiService: _successApiService()),
+        SpeakerDoctorPage(
+          speaker: _testSpeaker,
+          setupService: service,
+          apiService: _successApiService(),
+        ),
       ));
       await tester.pumpAndSettle();
 
@@ -291,9 +296,85 @@ void main() {
       await tester.tap(find.text('Reboot speaker'));
       await tester.pump();
 
-      expect(find.text('Rebooting speaker…'), findsOneWidget);
+      // Spinner inside AsyncFilledButton, no modal dialog.
+      final button = tester.widget<AsyncFilledButton>(
+        find.byType(AsyncFilledButton),
+      );
+      expect(button.isLoading, isTrue);
+      expect(find.byType(CircularProgressIndicator), findsWidgets);
+      expect(find.text('Rebooting speaker…'), findsNothing);
 
       await tester.pumpAndSettle();
+    });
+
+    testWidgets('reboot button re-enables and shows snackbar on success',
+        (tester) async {
+      final service = _buildService(configResponseText: _configResponse);
+
+      await tester.pumpWidget(_wrap(
+        SpeakerDoctorPage(
+          speaker: _testSpeaker,
+          setupService: service,
+          apiService: _successApiService(),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('Reboot speaker'));
+      await tester.tap(find.text('Reboot speaker'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Speaker is rebooting…'), findsOneWidget);
+      final button = tester.widget<AsyncFilledButton>(
+        find.byType(AsyncFilledButton),
+      );
+      expect(button.isLoading, isFalse);
+    });
+
+    testWidgets('reboot button shows AlertDialog on failure', (tester) async {
+      int callCount = 0;
+      final mixedService = SpeakerSetupService(
+        envswitchDelay: Duration.zero,
+        socketConnect: (host, port, {timeout}) async {
+          callCount++;
+          if (callCount == 1) {
+            // First call: return config data for getSystemConfiguration.
+            final controller = StreamController<Uint8List>();
+            return _FakeSocket(
+              stream: controller.stream,
+              onWriteln: (_) {
+                controller.add(
+                    Uint8List.fromList(_configResponse.codeUnits));
+                controller.close();
+              },
+              onClose: () {
+                if (!controller.isClosed) controller.close();
+                return Future<void>.value();
+              },
+            );
+          }
+          throw Exception('reboot connection refused');
+        },
+      );
+
+      await tester.pumpWidget(_wrap(
+        SpeakerDoctorPage(
+          speaker: _testSpeaker,
+          setupService: mixedService,
+          apiService: _successApiService(),
+        ),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('Reboot speaker'));
+      await tester.tap(find.text('Reboot speaker'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Reboot failed'), findsOneWidget);
+      final button = tester.widget<AsyncFilledButton>(
+        find.byType(AsyncFilledButton),
+      );
+      expect(button.isLoading, isFalse);
     });
 
     testWidgets('info card shows deviceID, type and accountId', (tester) async {
