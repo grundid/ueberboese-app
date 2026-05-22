@@ -1,0 +1,6 @@
+Features:
+- add link Marge account card to speaker doctor page
+- add visual feedback to speaker reboot
+
+Build Systems:
+- Corrected macOS file name
