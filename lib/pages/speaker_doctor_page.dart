@@ -50,6 +50,11 @@ class _SpeakerDoctorPageState extends State<SpeakerDoctorPage> {
   String? _infoError;
   SpeakerInfo? _info;
 
+  final _accountIdController = TextEditingController();
+  final _authTokenController = TextEditingController();
+  String? _margeAccountError;
+  bool _isLinkingAccount = false;
+
   @override
   void initState() {
     super.initState();
@@ -58,6 +63,25 @@ class _SpeakerDoctorPageState extends State<SpeakerDoctorPage> {
     _apiService = widget.apiService ?? SpeakerApiService();
     _loadConfig();
     _loadInfo();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_accountIdController.text.isEmpty) {
+      _accountIdController.text =
+          context.read<MyAppState>().config.accountId;
+    }
+    if (_authTokenController.text.isEmpty) {
+      _authTokenController.text = 'auth123';
+    }
+  }
+
+  @override
+  void dispose() {
+    _accountIdController.dispose();
+    _authTokenController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadConfig() async {
@@ -182,6 +206,34 @@ class _SpeakerDoctorPageState extends State<SpeakerDoctorPage> {
     }
   }
 
+  Future<void> _onMargeAccountConfirm() async {
+    final accountId = _accountIdController.text.trim();
+    final authToken = _authTokenController.text.trim();
+    if (accountId.isEmpty || authToken.isEmpty) {
+      setState(
+          () => _margeAccountError = 'Account ID and auth token are required.');
+      return;
+    }
+    setState(() {
+      _margeAccountError = null;
+      _isLinkingAccount = true;
+    });
+    try {
+      await _service.setMargeAccount(
+          widget.speaker.ipAddress, accountId, authToken);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Marge account linked successfully.')),
+      );
+      _loadInfo();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _margeAccountError = e.toString());
+    } finally {
+      if (mounted) setState(() => _isLinkingAccount = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -197,11 +249,13 @@ class _SpeakerDoctorPageState extends State<SpeakerDoctorPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildInfoCard(theme),
-            const SizedBox(height: 16),
             _buildConfigCard(theme, apiUrl),
             const SizedBox(height: 16),
             _buildConnectCard(context, theme, apiUrl),
+            const SizedBox(height: 16),
+            _buildInfoCard(theme),
+            const SizedBox(height: 16),
+            _buildMargeAccountCard(theme),
             const SizedBox(height: 16),
             _buildRebootCard(theme),
           ],
@@ -493,6 +547,54 @@ class _SpeakerDoctorPageState extends State<SpeakerDoctorPage> {
     );
   }
 
+  Widget _buildMargeAccountCard(ThemeData theme) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Link Marge Account', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _accountIdController,
+              decoration: const InputDecoration(
+                labelText: 'Marge Account ID',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _authTokenController,
+              decoration: const InputDecoration(
+                labelText: 'Auth Token',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            if (_margeAccountError != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _margeAccountError!,
+                style: TextStyle(color: theme.colorScheme.error, fontSize: 13),
+              ),
+            ],
+            const SizedBox(height: 12),
+            AsyncFilledButton(
+              onPressed: _onMargeAccountConfirm,
+              isLoading: _isLinkingAccount,
+              icon: const Icon(Icons.link),
+              label: const Text('Link Account'),
+              style: FilledButton.styleFrom(
+                backgroundColor: theme.colorScheme.error,
+                foregroundColor: theme.colorScheme.onError,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildRebootCard(ThemeData theme) {
     return Card(
       child: Padding(
@@ -507,10 +609,6 @@ class _SpeakerDoctorPageState extends State<SpeakerDoctorPage> {
               isLoading: _isRebooting,
               icon: const Icon(Icons.restart_alt),
               label: const Text('Reboot speaker'),
-              style: FilledButton.styleFrom(
-                backgroundColor: theme.colorScheme.error,
-                foregroundColor: theme.colorScheme.onError,
-              ),
             ),
           ],
         ),

@@ -298,7 +298,7 @@ void main() {
 
       // Spinner inside AsyncFilledButton, no modal dialog.
       final button = tester.widget<AsyncFilledButton>(
-        find.byType(AsyncFilledButton),
+        find.widgetWithText(AsyncFilledButton, 'Reboot speaker'),
       );
       expect(button.isLoading, isTrue);
       expect(find.byType(CircularProgressIndicator), findsWidgets);
@@ -326,7 +326,7 @@ void main() {
 
       expect(find.text('Speaker is rebooting…'), findsOneWidget);
       final button = tester.widget<AsyncFilledButton>(
-        find.byType(AsyncFilledButton),
+        find.widgetWithText(AsyncFilledButton, 'Reboot speaker'),
       );
       expect(button.isLoading, isFalse);
     });
@@ -372,7 +372,7 @@ void main() {
 
       expect(find.text('Reboot failed'), findsOneWidget);
       final button = tester.widget<AsyncFilledButton>(
-        find.byType(AsyncFilledButton),
+        find.widgetWithText(AsyncFilledButton, 'Reboot speaker'),
       );
       expect(button.isLoading, isFalse);
     });
@@ -389,12 +389,12 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(find.text('Device ID'), findsOneWidget);
-      expect(find.text('AABBCCDDEEFF'), findsOneWidget);
-      expect(find.text('Type'), findsOneWidget);
-      expect(find.text('SoundTouch 10'), findsOneWidget);
-      expect(find.text('Marge Account ID'), findsOneWidget);
-      expect(find.text('1234567'), findsOneWidget);
+      expect(find.widgetWithText(SelectableText, 'Device ID'), findsOneWidget);
+      expect(find.widgetWithText(SelectableText, 'AABBCCDDEEFF'), findsOneWidget);
+      expect(find.widgetWithText(SelectableText, 'Type'), findsOneWidget);
+      expect(find.widgetWithText(SelectableText, 'SoundTouch 10'), findsOneWidget);
+      expect(find.widgetWithText(SelectableText, 'Marge Account ID'), findsOneWidget);
+      expect(find.widgetWithText(SelectableText, '1234567'), findsOneWidget);
     });
 
     testWidgets('info card shows fallback dash when accountId is null',
@@ -433,7 +433,185 @@ void main() {
       expect(find.text('Failed to load device info:'), findsOneWidget);
       expect(find.text('Retry'), findsWidgets);
     });
+
+    testWidgets('link marge account card renders fields and button',
+        (tester) async {
+      final service = _buildService(configResponseText: _configResponse);
+
+      await tester.pumpWidget(_wrap(
+        SpeakerDoctorPage(
+            speaker: _testSpeaker,
+            setupService: service,
+            apiService: _successApiService()),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Link Marge Account'), findsOneWidget);
+      expect(find.widgetWithText(TextField, 'Marge Account ID'), findsOneWidget);
+      expect(find.widgetWithText(TextField, 'Auth Token'), findsOneWidget);
+      expect(find.widgetWithText(AsyncFilledButton, 'Link Account'), findsOneWidget);
+    });
+
+    testWidgets('account id field is pre-populated from app config',
+        (tester) async {
+      final service = _buildService(configResponseText: _configResponse);
+      final appState = MyAppState();
+      appState.config = const AppConfig(accountId: 'my-account-id');
+
+      await tester.pumpWidget(_wrap(
+        SpeakerDoctorPage(
+            speaker: _testSpeaker,
+            setupService: service,
+            apiService: _successApiService()),
+        appState: appState,
+      ));
+      await tester.pumpAndSettle();
+
+      final accountIdField = tester.widget<TextField>(
+        find.widgetWithText(TextField, 'Marge Account ID'),
+      );
+      expect(accountIdField.controller?.text, 'my-account-id');
+    });
+
+    testWidgets('auth token field is pre-populated with auth123',
+        (tester) async {
+      final service = _buildService(configResponseText: _configResponse);
+
+      await tester.pumpWidget(_wrap(
+        SpeakerDoctorPage(
+            speaker: _testSpeaker,
+            setupService: service,
+            apiService: _successApiService()),
+      ));
+      await tester.pumpAndSettle();
+
+      final authTokenField = tester.widget<TextField>(
+        find.widgetWithText(TextField, 'Auth Token'),
+      );
+      expect(authTokenField.controller?.text, 'auth123');
+    });
+
+    testWidgets('link account shows inline error when fields are empty',
+        (tester) async {
+      final service = _buildService(configResponseText: _configResponse);
+
+      await tester.pumpWidget(_wrap(
+        SpeakerDoctorPage(
+            speaker: _testSpeaker,
+            setupService: service,
+            apiService: _successApiService()),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester
+          .ensureVisible(find.widgetWithText(AsyncFilledButton, 'Link Account'));
+      await tester.tap(find.widgetWithText(AsyncFilledButton, 'Link Account'));
+      await tester.pump();
+
+      expect(find.text('Account ID and auth token are required.'),
+          findsOneWidget);
+    });
+
+    testWidgets(
+        'link account shows snackbar and reloads info on success',
+        (tester) async {
+      int fetchInfoCount = 0;
+      final apiService = _FakeApiService((_) async {
+        fetchInfoCount++;
+        return _testInfo;
+      });
+      bool setMargeAccountCalled = false;
+      final service = _FakeSetupService(
+        configResponseText: _configResponse,
+        onSetMargeAccount: (ip, accountId, authToken) async {
+          setMargeAccountCalled = true;
+        },
+      );
+
+      await tester.pumpWidget(_wrap(
+        SpeakerDoctorPage(
+            speaker: _testSpeaker,
+            setupService: service,
+            apiService: apiService),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Marge Account ID'), 'acc123');
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Auth Token'), 'token456');
+      await tester
+          .ensureVisible(find.widgetWithText(AsyncFilledButton, 'Link Account'));
+      await tester.tap(find.widgetWithText(AsyncFilledButton, 'Link Account'));
+      await tester.pumpAndSettle();
+
+      expect(setMargeAccountCalled, isTrue);
+      expect(find.text('Marge account linked successfully.'), findsOneWidget);
+      // fetchSpeakerInfo called once on init, once after successful link.
+      expect(fetchInfoCount, 2);
+    });
+
+    testWidgets('link account shows inline error on failure', (tester) async {
+      final service = _FakeSetupService(
+        configResponseText: _configResponse,
+        onSetMargeAccount: (ip, accountId, authToken) =>
+            Future.error(Exception('HTTP 500')),
+      );
+
+      await tester.pumpWidget(_wrap(
+        SpeakerDoctorPage(
+            speaker: _testSpeaker,
+            setupService: service,
+            apiService: _successApiService()),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Marge Account ID'), 'acc123');
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Auth Token'), 'token456');
+      await tester
+          .ensureVisible(find.widgetWithText(AsyncFilledButton, 'Link Account'));
+      await tester.tap(find.widgetWithText(AsyncFilledButton, 'Link Account'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('HTTP 500'), findsOneWidget);
+    });
   });
+}
+
+/// A [SpeakerSetupService] that uses a real telnet socket fake for
+/// getSystemConfiguration but routes setMargeAccount through a callback.
+class _FakeSetupService extends SpeakerSetupService {
+  final Future<void> Function(String ip, String accountId, String authToken)
+      onSetMargeAccount;
+
+  _FakeSetupService({
+    required String configResponseText,
+    required this.onSetMargeAccount,
+  }) : super(
+          envswitchDelay: Duration.zero,
+          socketConnect: (host, port, {timeout}) async {
+            final controller = StreamController<Uint8List>();
+            return _FakeSocket(
+              stream: controller.stream,
+              onWriteln: (_) {
+                controller
+                    .add(Uint8List.fromList(configResponseText.codeUnits));
+                controller.close();
+              },
+              onClose: () {
+                if (!controller.isClosed) controller.close();
+                return Future<void>.value();
+              },
+            );
+          },
+        );
+
+  @override
+  Future<void> setMargeAccount(
+          String speakerIp, String accountId, String authToken) =>
+      onSetMargeAccount(speakerIp, accountId, authToken);
 }
 
 class _FakeSocket extends Stream<Uint8List> implements Socket {
